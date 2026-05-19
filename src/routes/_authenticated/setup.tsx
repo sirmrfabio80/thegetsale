@@ -275,6 +275,31 @@ function SetupPage() {
             )}
           </ReviewRow>
 
+          <ReviewRow
+            title="Style"
+            count={styles.size}
+            onEdit={() => scrollToStep("step-styles")}
+          >
+            {styles.size === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                None selected — we'll show a balanced read.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {[...styles].map((s) => (
+                  <span
+                    key={s}
+                    className="border border-border px-3 py-1 text-xs text-foreground"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+          </ReviewRow>
+
+
+
           <ReviewRow title="Notifications" onEdit={() => scrollToStep("step-notifications")}>
             <dl className="space-y-2 text-sm">
               {[
