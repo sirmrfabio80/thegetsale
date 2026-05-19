@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useAuth, signOut } from "@/lib/auth";
+import { useProfile } from "@/hooks/use-profile";
+import { AvatarBlock } from "@/components/profile/AvatarBlock";
 import {
   DropdownMenu,
   DropdownMenuContent,
