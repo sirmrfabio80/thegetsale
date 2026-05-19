@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { SelectableChip } from "@/components/setup/SelectableChip";
 import { NotificationCard } from "@/components/setup/NotificationCard";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
+import { loadSetup, saveSetup } from "@/data/setupStorage";
 
 export const Route = createFileRoute("/setup")({
   head: () => ({
@@ -27,6 +28,31 @@ function SetupPage() {
   const [emailSignals, setEmailSignals] = useState(true);
   const [smsDrops, setSmsDrops] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate from localStorage after mount (SSR-safe).
+  useEffect(() => {
+    const stored = loadSetup();
+    if (stored) {
+      setHouses(new Set(stored.houses));
+      setCategories(new Set(stored.categories));
+      setEmailSignals(stored.notifications.emailSignals);
+      setSmsDrops(stored.notifications.smsDrops);
+      setWeeklyDigest(stored.notifications.weeklyDigest);
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist on every change, but only after hydration so initial defaults
+  // don't overwrite stored state.
+  useEffect(() => {
+    if (!hydrated) return;
+    saveSetup({
+      houses: [...houses],
+      categories: [...categories],
+      notifications: { emailSignals, smsDrops, weeklyDigest },
+    });
+  }, [hydrated, houses, categories, emailSignals, smsDrops, weeklyDigest]);
 
   const toggle = (set: Set<string>, value: string) => {
     const next = new Set(set);
@@ -42,12 +68,11 @@ function SetupPage() {
 
   const handleStart = () => {
     if (!valid) return;
-    // Local-only for now; will be persisted later.
-    // eslint-disable-next-line no-console
-    console.log("setup complete", {
+    saveSetup({
       houses: [...houses],
       categories: [...categories],
       notifications: { emailSignals, smsDrops, weeklyDigest },
+      completedAt: new Date().toISOString(),
     });
     navigate({ to: "/dashboard" });
   };

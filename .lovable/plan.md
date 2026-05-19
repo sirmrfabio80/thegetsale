@@ -1,104 +1,56 @@
-## /setup — post-sign-up signal setup
+## Persist setup selections to localStorage
 
-A new route that walks the user through three quiet, editorial steps, then routes to `/dashboard`. All state is local — no Supabase, no notification wiring.
+Save the user's house, category, and notification choices so a refresh or revisit of `/setup` restores their progress. Scoped to the setup flow only — no changes to dashboard, watchlist, or brand detail.
 
-### Route
+### Storage shape
 
-- New file: `src/routes/setup.tsx` → `/setup`
-- Uses `PageLayout` for the porcelain background, top nav, footer (consistent with the rest of the app).
-- `head()` with route-specific title + description ("Set your signals — The Get").
-- On completion, `useNavigate()` → `/dashboard`.
+One key, one JSON blob — easy to evolve, easy to clear.
 
-### Layout & pacing
+- Key: `theget.setup.v1`
+- Value:
+  ```ts
+  {
+    houses: string[];
+    categories: string[];
+    notifications: {
+      emailSignals: boolean;
+      smsDrops: boolean;
+      weeklyDigest: boolean;
+    };
+    completedAt?: string; // ISO, set when "Start watching" is pressed
+  }
+  ```
 
-One screen, three stacked sections separated by `SectionRule` — not a multi-page wizard. This keeps it editorial rather than form-heavy. A slim step indicator at the top ("01 · 02 · 03") for orientation only, no "Next/Back" wizard chrome.
+Versioned key (`v1`) so we can change the schema later without crashing existing browsers — a parse failure or version mismatch falls back to defaults silently.
 
-```text
-─────────────────────────────────
- eyebrow: Setup
- H1 (serif): Tell The Get what
-             to watch first.
- lede (muted): Follow the houses…
-─────────────────────────────────
- 01  Houses
-   Quiet luxury     [chips...]
-   Heritage houses  [chips...]
-   Runway signal    [chips...]
-   Contemporary     [chips...]
-   helper: 3 selected · You can change this later.
-─────────────────────────────────
- 02  Categories
-   [Bags] [Shoes] [Ready-to-wear] …
-─────────────────────────────────
- 03  Notifications
-   ▢ Email signals       (on)
-   ▢ SMS urgent drops    (off)
-   ▢ Weekly digest       (off)
-   note: You can edit notification preferences anytime.
-─────────────────────────────────
- [ Start watching → ]   (disabled until valid)
-```
+### New helper
 
-### Step 1 — Houses
+`src/data/setupStorage.ts`
+- `loadSetup(): SetupState | null` — SSR-safe (checks `typeof window`), wraps `JSON.parse` in try/catch, returns `null` on any failure.
+- `saveSetup(state: SetupState): void` — SSR-safe, swallows quota/serialization errors.
+- `clearSetup(): void` — utility for future "reset" UX (not wired now).
+- Exports the `SETUP_STORAGE_KEY` constant and the `SetupState` type.
 
-- New data file `src/data/setupBrands.ts` exporting the four curated groups exactly as specified (Quiet luxury, Heritage houses, Runway signal, Contemporary). Kept separate from `src/data/brands.ts` so existing dashboard/brand-detail logic is untouched.
-- Each group renders a label + a row of `BrandChip` toggles.
-- Selection stored in a `Set<string>` of brand names.
-- Live count: "3 selected · You can change this later." (muted, small).
-- Validation: at least 3 brands required.
+### Wiring in `src/routes/setup.tsx`
 
-### Step 2 — Categories
+- Initialize each `useState` with a lazy initializer that reads from `loadSetup()`. SSR returns defaults; the client hydrates from storage on mount via a single `useEffect` that calls `setHouses` / `setCategories` / setters with stored values if present. This avoids hydration mismatches (server HTML always renders defaults, client rehydrates after mount).
+- A single `useEffect` watching `[houses, categories, emailSignals, smsDrops, weeklyDigest]` calls `saveSetup(...)` so every toggle is persisted immediately.
+- `handleStart` writes one final save with `completedAt: new Date().toISOString()` before navigating to `/dashboard`.
 
-- Categories: Bags, Shoes, Ready-to-wear, Outerwear, Jewellery, Accessories.
-- Same chip pattern as Step 1, separate `Set<string>`.
-- Validation: at least 1 required.
-- Chips ≥ 44px tap height, generous gap on mobile.
+### Why this approach
 
-### Step 3 — Notifications
+- Single effect for writes keeps logic in one place — no scattered `setX` + `save` pairs to forget.
+- Lazy default + post-mount hydration is the safest SSR pattern for TanStack Start; reading localStorage during render would crash SSR.
+- One key keeps `localStorage` tidy and makes a future migration to Supabase a single read.
 
-- Three `NotificationCard`s using shadcn `Switch`:
-  - Email signals — default **on**.
-  - SMS urgent drops — default off — sub-copy: "Only for high-confidence price or availability signals."
-  - Weekly digest — default off.
-- Footer note: "You can edit notification preferences anytime."
+### Out of scope
 
-### Completion
+- No "reset setup" button (helper exists for future use).
+- No cross-tab sync via `storage` events.
+- No Supabase persistence — local only, as before.
+- No migration of any pre-existing key (none exists yet).
 
-- Primary CTA "Start watching" — shadcn `Button`, full-width on mobile, right-aligned auto-width on desktop.
-- Disabled until: houses ≥ 3 AND categories ≥ 1.
-- On click: log selections to a single local object (kept in component state, not persisted), then `navigate({ to: "/dashboard" })`.
-- No toast — keeps the moment quiet.
+### Files
 
-### New components (small, reusable, scoped to setup)
-
-- `src/components/setup/SelectableChip.tsx` — pill toggle for brand & category chips. Selected = ink fill + porcelain text; idle = hairline border + muted text. Min height 44px.
-- `src/components/setup/NotificationCard.tsx` — bordered card with title, sub-copy, and shadcn `Switch`.
-- `src/components/setup/StepHeader.tsx` — eyebrow number ("01") + serif step title.
-
-No changes to `BrandCard`, dashboard, watchlist, or brand detail.
-
-### Design tokens
-
-- Reuses existing tokens in `src/styles.css` — porcelain `--background`, ink `--foreground`, hairline `--border`, `--muted-foreground`. No new colors.
-- Headings use the existing `font-serif` (Instrument Serif); body uses default Inter.
-- Spacing: `py-16 md:py-24` for the intro, `mt-12` between sections, chip gap `gap-2`.
-
-### Technical details
-
-- Files added:
-  - `src/routes/setup.tsx`
-  - `src/data/setupBrands.ts`
-  - `src/components/setup/SelectableChip.tsx`
-  - `src/components/setup/NotificationCard.tsx`
-  - `src/components/setup/StepHeader.tsx`
-- Uses `useState` only — no context, no store, no persistence.
-- shadcn primitives used: `Button`, `Switch` (already in the project via shadcn setup).
-- No new dependencies.
-- No edits to `routeTree.gen.ts` (auto-generated by the TanStack plugin).
-
-### Out of scope (explicit)
-
-- No Supabase tables, auth, or persistence.
-- No email/SMS provider wiring.
-- No edits to dashboard, watchlist, or brand detail routes.
-- No link to `/setup` added in the top nav (route exists for direct navigation after a future sign-up flow).
+- Add: `src/data/setupStorage.ts`
+- Edit: `src/routes/setup.tsx` (hydration effect + persistence effect + completion write)
