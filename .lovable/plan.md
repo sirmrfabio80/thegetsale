@@ -1,96 +1,57 @@
-## Scope check
+# Database foundation for The Get sale intelligence
 
-The `/setup` onboarding form is already built (`src/routes/_authenticated/setup.tsx`): houses, categories, notifications, review, then `→ /dashboard`. It runs on first sign-in via the `/auth/callback` redirect (no `completedAt` ⇒ `/setup`). No changes needed there.
+## Findings
 
-This plan covers the new work: a minimal `/profile` page with a private, user-scoped avatar.
+- No DB `brands` table exists. Brands today live as frontend mock data in `src/data/brands.ts`. I will create the real table.
+- No admin role mechanism exists. Only `public.profiles` is in the DB. Per project security rules, roles must live in a separate `user_roles` table, never on `profiles`. I'll create that as the minimal safe foundation.
+- Server-side writes (prediction job, admin tools) will go through TanStack `createServerFn` using `supabaseAdmin` (service role), which bypasses RLS — so no separate "service" policy is needed. Admin policies cover the human-admin case.
 
-## 1. Database
+## What gets created
 
-Migration adds a thin profiles table tied to `auth.users`:
+### 1. Role infrastructure (prerequisite)
+- `public.app_role` enum: `admin`, `user`.
+- `public.user_roles` table: `(id, user_id → auth.users, role app_role, created_at)` with unique `(user_id, role)`.
+- Security-definer function `public.has_role(_user_id uuid, _role app_role) returns boolean`.
+- RLS on `user_roles`: each user can read their own roles; only admins can insert/update/delete roles.
+- Promoting the first admin is a manual one-off via the data-insert tool after migration (out of scope here).
 
-- `public.profiles`
-  - `id uuid PK = auth.users.id` (no FK to `auth.users` — we'll populate via trigger)
-  - `display_name text null`
-  - `avatar_path text null` (storage object path, not a URL)
-  - `created_at`, `updated_at` timestamps
-- RLS on, policies:
-  - Select: `auth.uid() = id`
-  - Insert: `auth.uid() = id`
-  - Update: `auth.uid() = id`
-- Trigger on `auth.users` after insert → `public.handle_new_user()` inserts a profile row with `id = new.id` and `display_name = new.raw_user_meta_data->>'full_name'`. `SECURITY DEFINER`, `SET search_path = public`.
-- `update_updated_at_column()` trigger on profiles.
+### 2. `public.brands`
+Fields: `id uuid pk`, `slug text unique not null`, `name text not null`, `house_group text`, `is_active boolean not null default true`, `created_at`, `updated_at`.
+- Index on `slug`, `is_active`.
+- RLS: any authenticated user can `SELECT` active brands; only admins can insert/update/delete.
 
-## 2. Storage
+### 3. `public.sale_events`
+All fields per spec. `sale_type` and `status` constrained via CHECK to known values (`status in ('draft','published','archived')`; `source_type in ('admin_confirmed','admin_observed','imported')`).
+- Indexes on `brand_id`, `(status, start_date)`.
+- RLS:
+  - Authenticated users: `SELECT` only when `status = 'published'`.
+  - Admins: full insert/update/delete.
 
-Migration creates a **private** bucket `avatars` and policies on `storage.objects`:
+### 4. `public.sale_predictions`
+All fields per spec. `confidence_score numeric check (between 0 and 1)`, `status` CHECK same values as above.
+- Indexes on `brand_id`, `(status, predicted_start_date)`.
+- RLS:
+  - Authenticated users: `SELECT` only when `status = 'published'`.
+  - Admins: full insert/update/delete.
+  - Service-role writes (prediction job via `supabaseAdmin`) bypass RLS automatically.
 
-- Bucket: `id='avatars'`, `public=false`, `file_size_limit=5242880`, `allowed_mime_types={image/png,image/jpeg,image/webp}`.
-- Policies (only for `bucket_id = 'avatars'`):
-  - Select / Insert / Update / Delete: `auth.role() = 'authenticated' AND (storage.foldername(name))[1] = auth.uid()::text`
+### 5. `public.prediction_runs`
+All fields per spec. `status` CHECK in (`running`, `succeeded`, `failed`).
+- RLS:
+  - Authenticated non-admin: no access.
+  - Admins: `SELECT` only.
+  - Inserts/updates happen through service-role from the future prediction job (RLS bypassed).
 
-Object path convention: `{user_id}/profile.{ext}`. Because the bucket is private, the UI reads via short-lived signed URLs.
+### 6. Shared plumbing
+- Reuse `public.update_updated_at_column()` (already exists) via `BEFORE UPDATE` triggers on `brands`, `sale_events`. `sale_predictions` uses `generated_at` and explicit `reviewed_at`, so no `updated_at` trigger.
 
-## 3. Server functions (`src/lib/profile.functions.ts`)
+## Out of scope (per constraints)
+- No admin UI.
+- No prediction algorithm or job.
+- No homepage/dashboard changes.
+- No seeding of brand data from `src/data/brands.ts` — that's a follow-up.
 
-All gated by `requireSupabaseAuth` so RLS applies as the user:
-
-- `getMyProfile()` → `{ id, displayName, email, avatarPath, avatarUrl }`. If `avatarPath` set, creates a 60-min signed URL via the auth-scoped client.
-- `setAvatarPath({ path })` → upserts `profiles.avatar_path`. Returns refreshed signed URL.
-- `removeAvatar()` → deletes object from `avatars` bucket and clears `avatar_path`.
-
-Upload itself happens directly from the browser using `supabase.storage.from('avatars').upload(...)` so progress/size stays client-side; storage RLS enforces the per-user folder. After a successful upload the client calls `setAvatarPath`.
-
-## 4. Route: `/profile` (`src/routes/_authenticated/profile.tsx`)
-
-- `beforeLoad` gates on `supabase.auth.getUser()` (per TanStack/Supabase guidance) so the bearer token is hydrated before the loader.
-- `loader` calls `getMyProfile`.
-- Renders inside `PageLayout`. Minimal porcelain card:
-  - Eyebrow "Account", serif heading "Your profile".
-  - Avatar block (left): 96px square, ink border, signed-URL image or initials fallback (`displayName`/`email` first letter, serif, ink on porcelain).
-  - Right column: name + email (read-only for now), and actions:
-    - `Upload photo` (or `Replace photo` when avatar exists) — opens hidden `<input type=file accept="image/png,image/jpeg,image/webp">`.
-    - `Remove photo` (only when avatar exists), quiet underline button.
-  - Status row under actions: uploading spinner + filename, success toast via existing `sonner`, calm inline error copy on failure.
-- Client-side validation before upload:
-  - MIME in allow-list.
-  - Size ≤ 5 MB.
-  - On reject, inline message ("Use a JPG, PNG, or WebP under 5 MB.").
-
-Visual rules: reuse `bg-background` (porcelain), `text-foreground` (ink), `border-border`, no shadows, no gradients, `font-serif` for headings, `eyebrow` class for labels. No avatar inside a colored badge — keep it like an editorial portrait frame.
-
-## 5. Authenticated chrome touch-ups
-
-- `PageLayout` dropdown trigger: when `getMyProfile` returns an avatar URL, swap the initial-letter circle for the actual image; keep initials as fallback. Pull this through a lightweight `useProfile` query (TanStack Query) keyed `['me','profile']` and `router.invalidate()` won't be needed — invalidate the query after upload/remove.
-- Add `Profile` item in the dropdown above `Sign out`, linking to `/profile`.
-
-## 6. Out of scope (explicit)
-
-- Editing display name / email / notifications.
-- Public avatar URLs or sharing.
-- Server-side image processing / cropping.
-- Migrating the existing localStorage setup state into the profile row.
-
-## Files
-
-New
-- `src/routes/_authenticated/profile.tsx`
-- `src/lib/profile.functions.ts`
-- `src/components/profile/AvatarBlock.tsx` (avatar + initials fallback)
-- `src/hooks/use-profile.ts` (TanStack Query wrapper for header use)
-
-Edited
-- `src/components/PageLayout.tsx` (avatar in trigger, Profile link)
-
-Migrations
-- `profiles` table + RLS + new-user trigger + `updated_at` trigger
-- `avatars` storage bucket + RLS policies
-
-## Verification
-
-- Sign in → `/profile`: shows initials, no avatar.
-- Upload a 200KB JPG → preview updates, signed URL renders, header avatar updates.
-- Refresh `/profile`: avatar persists.
-- Upload 10 MB file → blocked client-side with inline message; no network call.
-- Upload a `.txt` renamed `.jpg` → MIME-checked client-side; storage MIME allow-list backstop.
-- In a second browser as user B, attempting to PUT to `avatars/{userA}/profile.jpg` fails with 403 (RLS).
-- `Remove photo` → object deleted, `avatar_path` cleared, fallback returns.
+## Follow-ups you'll want next
+1. Promote your account to `admin` via a one-off insert into `user_roles`.
+2. Seed `brands` from the existing frontend list.
+3. Replace `src/data/brands.ts` reads with a server function backed by the new table.
