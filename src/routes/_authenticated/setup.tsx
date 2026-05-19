@@ -7,7 +7,9 @@ import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
-import { loadSetup, saveSetup } from "@/data/setupStorage";
+import { loadSetup, saveSetup, type StylePreference } from "@/data/setupStorage";
+import { STYLE_OPTIONS } from "@/data/styles";
+
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({
@@ -26,7 +28,9 @@ function SetupPage() {
   const navigate = useNavigate();
   const [houses, setHouses] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Set<string>>(new Set());
+  const [styles, setStyles] = useState<Set<StylePreference>>(new Set());
   const [emailSignals, setEmailSignals] = useState(true);
+
   const [smsDrops, setSmsDrops] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -37,6 +41,7 @@ function SetupPage() {
     if (stored) {
       setHouses(new Set(stored.houses));
       setCategories(new Set(stored.categories));
+      setStyles(new Set((stored.styles ?? []) as StylePreference[]));
       setEmailSignals(stored.notifications.emailSignals);
       setSmsDrops(stored.notifications.smsDrops);
       setWeeklyDigest(stored.notifications.weeklyDigest);
@@ -51,11 +56,12 @@ function SetupPage() {
     saveSetup({
       houses: [...houses],
       categories: [...categories],
+      styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
     });
-  }, [hydrated, houses, categories, emailSignals, smsDrops, weeklyDigest]);
+  }, [hydrated, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
 
-  const toggle = (set: Set<string>, value: string) => {
+  const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
     if (next.has(value)) next.delete(value);
     else next.add(value);
@@ -72,11 +78,13 @@ function SetupPage() {
     saveSetup({
       houses: [...houses],
       categories: [...categories],
+      styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
       completedAt: new Date().toISOString(),
     });
     navigate({ to: "/dashboard" });
   };
+
 
   const scrollToStep = (id: string) => {
     if (typeof document === "undefined") return;
@@ -148,9 +156,51 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 3 — Notifications */}
+      {/* Step 3 — Style */}
+      <section id="step-styles">
+        <StepHeader
+          number="03"
+          title="Style"
+          hint={`${styles.size} selected · optional`}
+        />
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          Pick the aesthetics that feel like you. We'll tune your first dashboard around them.
+        </p>
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {STYLE_OPTIONS.map((opt) => {
+            const selected = styles.has(opt.value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setStyles((s) => toggle(s, opt.value))}
+                className={`border p-4 text-left transition-colors ${
+                  selected
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-foreground hover:border-foreground"
+                }`}
+              >
+                <p className="font-serif text-lg">{opt.value}</p>
+                <p
+                  className={`mt-1 text-xs ${
+                    selected ? "text-background/70" : "text-muted-foreground"
+                  }`}
+                >
+                  {opt.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <SectionRule />
+
+      {/* Step 4 — Notifications */}
       <section id="step-notifications">
-        <StepHeader number="03" title="Notifications" />
+        <StepHeader number="04" title="Notifications" />
+
         <div className="mt-8 grid grid-cols-1 gap-3">
           <NotificationCard
             title="Email signals"
@@ -178,9 +228,10 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 4 — Review */}
+      {/* Step 5 — Review */}
       <section>
-        <StepHeader number="04" title="Review" />
+        <StepHeader number="05" title="Review" />
+
         <div className="mt-8">
           <ReviewRow title="Houses" count={houses.size} onEdit={() => scrollToStep("step-houses")}>
             {houses.size === 0 ? (
@@ -223,6 +274,31 @@ function SetupPage() {
               </div>
             )}
           </ReviewRow>
+
+          <ReviewRow
+            title="Style"
+            count={styles.size}
+            onEdit={() => scrollToStep("step-styles")}
+          >
+            {styles.size === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                None selected — we'll show a balanced read.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {[...styles].map((s) => (
+                  <span
+                    key={s}
+                    className="border border-border px-3 py-1 text-xs text-foreground"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+          </ReviewRow>
+
+
 
           <ReviewRow title="Notifications" onEdit={() => scrollToStep("step-notifications")}>
             <dl className="space-y-2 text-sm">

@@ -5,8 +5,10 @@ import { brands } from "@/data/brands";
 import { BrandCard } from "@/components/BrandCard";
 import type { Category } from "@/data/types";
 import { cn } from "@/lib/utils";
-import { loadSetup } from "@/data/setupStorage";
+import { loadSetup, type StylePreference } from "@/data/setupStorage";
 import { mapSetupCategories, matchesSelection } from "@/data/categoryMap";
+import { styleScore } from "@/data/styles";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -29,6 +31,7 @@ function Dashboard() {
   const [catCount, setCatCount] = useState(0);
   const [hasSetup, setHasSetup] = useState(false);
   const [onlyMine, setOnlyMine] = useState(false);
+  const [styles, setStyles] = useState<StylePreference[]>([]);
 
   useEffect(() => {
     const s = loadSetup();
@@ -38,7 +41,9 @@ function Dashboard() {
     setMappedCats(mapSetupCategories(s.categories));
     setHouseCount(s.houses.length);
     setCatCount(s.categories.length);
+    setStyles((s.styles ?? []) as StylePreference[]);
   }, []);
+
 
   const matchedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -60,9 +65,12 @@ function Dashboard() {
     return [...base].sort((a, b) => {
       const am = matchedIds.has(a.id) ? 0 : 1;
       const bm = matchedIds.has(b.id) ? 0 : 1;
-      return am - bm;
+      if (am !== bm) return am - bm;
+      // Tie-break by style affinity so the dashboard feels tuned.
+      return styleScore(b.tagline, styles) - styleScore(a.tagline, styles);
     });
-  }, [filter, q, onlyMine, matchedIds, hasSetup]);
+  }, [filter, q, onlyMine, matchedIds, hasSetup, styles]);
+
 
   return (
     <PageLayout>
@@ -79,11 +87,13 @@ function Dashboard() {
       <div className="mt-10 flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         {hasSetup ? (
           <p>
-            Personalised from your setup · {houseCount} {houseCount === 1 ? "house" : "houses"} · {catCount} {catCount === 1 ? "category" : "categories"}
+            Personalised · {houseCount} {houseCount === 1 ? "house" : "houses"} · {catCount} {catCount === 1 ? "category" : "categories"}
+            {styles.length > 0 ? ` · Tuned to ${styles.slice(0, 2).join(", ")}${styles.length > 2 ? "…" : ""}` : ""}
           </p>
         ) : (
           <p>Personalise this feed</p>
         )}
+
         <Link to="/setup" className="underline-offset-4 hover:text-foreground hover:underline">
           {hasSetup ? "Edit" : "Set up signals"}
         </Link>
