@@ -85,6 +85,34 @@ async function signInWithProvider(provider: "google" | "apple"): Promise<OAuthRe
 }
 
 
+export type EmailAuthResult = { error?: Error; needsVerification?: boolean; authenticated?: boolean };
+
+export async function signUpWithEmail(email: string, password: string): Promise<EmailAuthResult> {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) return { error };
+    if (data.session) return { authenticated: true };
+    return { needsVerification: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e : new Error(String(e)) };
+  }
+}
+
+export async function signInWithEmail(email: string, password: string): Promise<EmailAuthResult> {
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error };
+    return { authenticated: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e : new Error(String(e)) };
+  }
+}
+
 export async function signOut() {
   await supabase.auth.signOut();
 }
+
