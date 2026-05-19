@@ -60,18 +60,27 @@ export function useAuth(): AuthState {
 
 export type OAuthResult = { error?: Error; redirected?: boolean; authenticated?: boolean };
 
-export async function signInWithGoogle(): Promise<OAuthResult> {
-  return signInWithProvider("google");
+export async function signInWithGoogle(redirectTo?: string): Promise<OAuthResult> {
+  return signInWithProvider("google", redirectTo);
 }
 
-export async function signInWithApple(): Promise<OAuthResult> {
-  return signInWithProvider("apple");
+export async function signInWithApple(redirectTo?: string): Promise<OAuthResult> {
+  return signInWithProvider("apple", redirectTo);
 }
 
-async function signInWithProvider(provider: "google" | "apple"): Promise<OAuthResult> {
+function buildCallbackUrl(redirectTo?: string): string {
+  const base = `${window.location.origin}/auth/callback`;
+  if (!redirectTo) return base;
+  return `${base}?redirect=${encodeURIComponent(redirectTo)}`;
+}
+
+async function signInWithProvider(
+  provider: "google" | "apple",
+  redirectTo?: string,
+): Promise<OAuthResult> {
   try {
     const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: `${window.location.origin}/auth/callback`,
+      redirect_uri: buildCallbackUrl(redirectTo),
     });
     if (result.error) {
       return { error: result.error instanceof Error ? result.error : new Error(String(result.error)) };
@@ -87,12 +96,16 @@ async function signInWithProvider(provider: "google" | "apple"): Promise<OAuthRe
 
 export type EmailAuthResult = { error?: Error; needsVerification?: boolean; authenticated?: boolean };
 
-export async function signUpWithEmail(email: string, password: string): Promise<EmailAuthResult> {
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  redirectTo?: string,
+): Promise<EmailAuthResult> {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: buildCallbackUrl(redirectTo) },
     });
     if (error) return { error };
     if (data.session) return { authenticated: true };
