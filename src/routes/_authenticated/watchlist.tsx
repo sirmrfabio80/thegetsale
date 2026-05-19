@@ -3,7 +3,7 @@ import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { useWatchlist } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
 
-export const Route = createFileRoute("/watchlist")({
+export const Route = createFileRoute("/_authenticated/watchlist")({
   head: () => ({
     meta: [
       { title: "Watchlist — The Get" },

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
 import { loadSetup, saveSetup } from "@/data/setupStorage";
 
-export const Route = createFileRoute("/setup")({
+export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({
     meta: [
       { title: "Set your signals — The Get" },

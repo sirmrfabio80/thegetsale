@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { useAuth, signOut } from "@/lib/auth";
 
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export function PageLayout({ children }: { children: ReactNode }) {
 }
 
 function TopNav() {
+  const auth = useAuth();
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-10">
@@ -21,6 +23,14 @@ function TopNav() {
         <nav className="flex items-center gap-1 text-[12px]">
           <NavLink to="/dashboard">Signals</NavLink>
           <NavLink to="/watchlist">Watchlist</NavLink>
+          {auth.isAuthenticated && (
+            <button
+              onClick={() => signOut()}
+              className="ml-2 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Sign out
+            </button>
+          )}
         </nav>
       </div>
     </header>

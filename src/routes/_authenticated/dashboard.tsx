@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { loadSetup } from "@/data/setupStorage";
 import { mapSetupCategories, matchesSelection } from "@/data/categoryMap";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Signals — The Get" },

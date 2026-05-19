@@ -4,7 +4,7 @@ import { getBrand } from "@/data/brands";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 
-export const Route = createFileRoute("/brand/$id")({
+export const Route = createFileRoute("/_authenticated/brand/$id")({
   loader: ({ params }) => {
     const brand = getBrand(params.id);
     if (!brand) throw notFound();

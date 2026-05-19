@@ -1,62 +1,85 @@
-## Personalise `/dashboard` from `/setup` selections
+## Public marketing homepage + auth separation
 
-Read the user's saved houses, categories, and notification prefs and use them to **prioritise** signals on the dashboard — matched brands rise to the top, with an opt-in "Only my selections" toggle to hard-filter.
+Make `/` a public landing page and put the real product behind a sign-in gate. No Supabase in this prompt — auth is a small local stub that can be swapped for real auth later without touching pages.
 
-### Data shape reality check
+### Route restructure
 
-The setup options and the mock dashboard brands don't share a vocabulary:
+Move authenticated product routes under a pathless `_authenticated` layout. URLs do not change (the underscore prefix is pathless).
 
-| | Setup | Dashboard brands |
-|---|---|---|
-| Houses | Real brand names (The Row, Prada, Loewe…) | Fictional houses (Maison Ardoise, North Room…) |
-| Categories | Bags, Shoes, Ready-to-wear, Outerwear, Jewellery, Accessories | Womens, Mens, Accessories, Footwear, Jewellery |
-
-So house-name matching won't yield hits against current mock data. The personalisation will be driven by **category mapping**, with house matching wired up correctly for when real brand data lands later.
-
-### Category mapping (`src/data/categoryMap.ts`)
-
-```ts
-Bags          -> Accessories
-Shoes         -> Footwear
-Jewellery     -> Jewellery
-Accessories   -> Accessories
-Ready-to-wear -> Womens, Mens
-Outerwear     -> Womens, Mens
+```
+src/routes/
+  __root.tsx
+  index.tsx                       (public — REBUILT as marketing landing)
+  login.tsx                       (new, public)
+  signup.tsx                       (new, public)
+  _authenticated.tsx               (new — guards children, renders <Outlet/>)
+  _authenticated/
+    dashboard.tsx                  (moved from src/routes/dashboard.tsx)
+    watchlist.tsx                  (moved from src/routes/watchlist.tsx)
+    setup.tsx                      (moved from src/routes/setup.tsx)
+    brand.$id.tsx                  (moved from src/routes/brand.$id.tsx)
 ```
 
-A pure helper: `matchesSelection(brand, selectedHouses, selectedCategories) -> boolean`.
+Move is file-relocation only — internal logic, imports, and `Link to="/dashboard"` style usages stay intact. `createFileRoute("/dashboard")` becomes `createFileRoute("/_authenticated/dashboard")` etc.
 
-### Dashboard changes (`src/routes/dashboard.tsx`)
+`_authenticated.tsx` uses `beforeLoad` to read auth from router context and `throw redirect({ to: "/login", search: { redirect: location.href } })` when not signed in. Component is `() => <Outlet />`.
 
-1. **Hydrate**: `useEffect` reads `loadSetup()` on mount into local state (`selectedHouses: Set<string>`, `selectedCategories: Set<string>`). SSR-safe — no setup means no personalisation, page works exactly as today.
+### Local auth stub (`src/lib/auth.ts`)
 
-2. **Sort, don't hide (default)**: extend the `useMemo` so matched brands come first, unmatched after, original order preserved within each group. Each matched `BrandCard` gets a small `For you` eyebrow tag (see component change below).
+Storage key `theget.auth.v1` holds `{ email: string }`. Pure helpers:
+- `getAuth(): { isAuthenticated: boolean; email: string | null }` — SSR-safe
+- `signIn(email: string)` — writes storage, dispatches a `theget:auth` window event
+- `signOut()` — clears storage, dispatches event
+- `useAuth()` hook subscribes to the event so nav re-renders on sign in/out
 
-3. **"Only my selections" toggle**: a small pill next to the category filters, only rendered when setup exists. When on, unmatched brands are filtered out entirely. Default off.
+Router context (`src/router.tsx`) gets `auth: { isAuthenticated: boolean }`, read once at router creation from `getAuth()`. On auth change we call `router.invalidate()` so `beforeLoad` re-runs. (No Supabase, no real sessions — explicitly a placeholder until real auth lands.)
 
-4. **Personalisation banner**: thin row above the filter bar.
-   - If setup exists: `Personalised from your setup · N houses · M categories` + small `Edit` link → `/setup`.
-   - If no setup exists: `Personalise this feed` + `Set up signals` link → `/setup`.
-   - Calm, single-line, uses existing eyebrow/muted-foreground treatment. No card, no banner box.
+### Public marketing page (`src/routes/index.tsx`, rebuilt)
 
-5. **Empty states**: if "Only my selections" hides everything, copy becomes `Nothing in your selections today. Loosen the filter or edit your setup.` with a link to `/setup`.
+Uses a new `MarketingLayout` (separate from the app `PageLayout`) so the chrome is distinct from the signed-in product.
 
-### `BrandCard` change
+Sections, in order:
 
-Add an optional `forYou?: boolean` prop. When true, render a tiny `For you` eyebrow label in the card's top-right (matching the existing card type). No layout shift when absent — uses the same row as the existing signal pill.
+1. **Top nav** — sticky, porcelain bg, hairline border. Left: `The Get` wordmark (Instrument Serif). Right: `Sign in` text link + `Sign up` primary button (ink-black fill, white text, ≥44px tap target). Mobile: same layout — wordmark left, Sign in + Sign up right, no hamburger needed at this density.
+2. **Hero** — generous top padding. Eyebrow `Private shopping intelligence`. Headline `Know when to buy.` / `Know when to wait.` (second line italic muted). Supporting copy as per brief. Two CTAs: primary `Create your signal` → `/signup`, secondary `See how it works` → `#how-it-works` anchor.
+3. **How it works** (`#how-it-works`) — 3-column editorial grid: `Cadence — markdown rhythm by house`, `Inventory — availability and scarcity movement`, `Market — seasonal timing and category signals`. Numbered (01/02/03), serif numerals, muted body copy.
+4. **Dashboard preview tease** — section header `A look inside`. Grid of 3 mock signal cards (`SignalPreviewCard`) showing only: category eyebrow, house name, one-line headline, signal badge. Lower half (confidence/window/depth row) is rendered as blurred placeholder bars (no real values, no link to the real brand pages). Below the grid: muted line `Full signals unlock after sign-up.` with a small inline `Create your signal` link. Built as a static preview component using lightly fictionalised copy — does not import `brands` data, does not link to `/brand/...`, does not render anything from the authenticated product.
+5. **Editorial pull-quote** — keep the existing editor's note styling for tone (single italic serif quote).
+6. **Final CTA** — full-width band: serif headline `Start with the houses you already watch.`, primary button `Create your signal` → `/signup`, small `Sign in` text link beneath.
+7. **Footer** — minimal: wordmark left, prototype note right (same as today).
 
-### Why prioritise rather than filter by default
+### Login / Signup pages
 
-The setup brief promised "personalise homepage suggestions, dashboard". Hard-filtering on first load risks showing a near-empty page (especially given the mock-data mismatch) and hides the broader market read that's core to the product's promise. Prioritising preserves the editorial feel while still answering "what's most relevant to me?".
+Minimal editorial pages reusing the marketing chrome:
+- `/login` — email + password fields, `Sign in` button. Submitting calls `signIn(email)` then `navigate({ to: search.redirect ?? "/dashboard" })`. Link to `/signup` underneath.
+- `/signup` — same shape with `Create your signal` button. On submit: `signIn(email)` then redirect to `/setup` (so the existing post-signup flow kicks in).
+- Both have `validateSearch` for an optional `redirect` string, and `beforeLoad` that bounces signed-in users straight to the redirect target (or `/dashboard`).
+- Password field is decorative only in this prompt (no validation/storage) — explicitly a stub until real auth.
+
+### Components added
+
+- `src/components/marketing/MarketingLayout.tsx` — page wrapper with `MarketingNav` + footer.
+- `src/components/marketing/MarketingNav.tsx` — wordmark, Sign in link, Sign up button. Reads `useAuth()`; if signed in, shows `Open app` → `/dashboard` and `Sign out` instead.
+- `src/components/marketing/SignalPreviewCard.tsx` — static teaser card with blurred lower section. No data dependency on `brands`.
+- `src/components/marketing/Hero.tsx`, `HowItWorks.tsx`, `PreviewSection.tsx`, `FinalCTA.tsx` — small section components to keep `index.tsx` readable.
+
+### Authenticated app chrome
+
+`PageLayout` (used by dashboard/watchlist/brand/setup) gets a small addition: a right-side `Sign out` text link in `TopNav` when authenticated. No other changes to existing dashboard/watchlist/brand card logic.
 
 ### Files
 
-- Add: `src/data/categoryMap.ts` (mapping + `matchesSelection` helper)
-- Edit: `src/routes/dashboard.tsx` (hydrate, sort, banner, toggle, empty states)
-- Edit: `src/components/BrandCard.tsx` (optional `forYou` badge)
+- Add: `src/lib/auth.ts`, `src/components/marketing/{MarketingLayout,MarketingNav,Hero,HowItWorks,PreviewSection,FinalCTA,SignalPreviewCard}.tsx`, `src/routes/login.tsx`, `src/routes/signup.tsx`, `src/routes/_authenticated.tsx`
+- Move: `dashboard.tsx`, `watchlist.tsx`, `setup.tsx`, `brand.$id.tsx` → `src/routes/_authenticated/`
+- Edit: `src/routes/index.tsx` (rebuild marketing page), `src/router.tsx` (wire auth context), `src/components/PageLayout.tsx` (Sign out link when authed)
 
 ### Out of scope
 
-- No changes to `/setup`, `/watchlist`, `/brand/$id`, or the `brands` data file.
-- No notification-pref-based behaviour on the dashboard (those affect email/SMS, not the feed).
-- No replacing mock brands with the real setup brand list — separate, larger change.
+- Real auth (Supabase, password storage, OAuth). The `auth.ts` stub is explicitly local-only.
+- Any change to brand cards, dashboard filters, watchlist, setup flow, or `/brand/$id` content.
+- New mock data — preview cards use hard-coded fictional copy in the preview component, not the real `brands` array.
+
+### Risks
+
+- Moving files updates `routeTree.gen.ts`. Internal `<Link to="/dashboard">` etc. keep working because the URL is unchanged, but the route id changes to `/_authenticated/dashboard`. Any code using route ids directly (rare here) would need updating — I'll search for those before moving.
+- The local auth stub is trivially bypassable (DevTools). That's acceptable for a prototype; the real gate lands when Supabase auth is added.
