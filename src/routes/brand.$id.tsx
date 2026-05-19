@@ -199,6 +199,19 @@ function PublicBrandPreview({ brand }: { brand: Brand }) {
             <p className="mt-4 max-w-xl font-serif text-xl italic leading-snug text-foreground/80 md:text-2xl">
               {brand.tagline}
             </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={promptSignIn}
+                className="inline-flex h-11 items-center gap-2 border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+              >
+                <Bookmark className="h-3.5 w-3.5" aria-hidden />
+                Add to watchlist
+              </button>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                Sign in required
+              </p>
+            </div>
           </div>
           <aside className="md:col-span-4 md:border-l md:border-border md:pl-8">
             <dl className="space-y-5 text-[13px] leading-relaxed">
