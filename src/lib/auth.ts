@@ -59,12 +59,21 @@ export function useAuth(): AuthState {
 }
 
 export async function signInWithGoogle(): Promise<{ error?: Error }> {
-  const result = await lovable.auth.signInWithOAuth("google", {
+  return signInWithProvider("google");
+}
+
+export async function signInWithApple(): Promise<{ error?: Error }> {
+  return signInWithProvider("apple");
+}
+
+async function signInWithProvider(provider: "google" | "apple"): Promise<{ error?: Error }> {
+  const result = await lovable.auth.signInWithOAuth(provider, {
     redirect_uri: `${window.location.origin}/auth/callback`,
   });
   if (result.error) return { error: result.error instanceof Error ? result.error : new Error(String(result.error)) };
   return {};
 }
+
 
 export async function signOut() {
   await supabase.auth.signOut();
