@@ -121,3 +121,46 @@ export const removeAvatar = createServerFn({ method: "POST" })
       avatarUrl: null,
     };
   });
+
+export const updateDisplayName = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        displayName: z
+          .string()
+          .trim()
+          .min(1, "Name can't be empty")
+          .max(80, "Keep it under 80 characters"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<ProfileDTO> => {
+    const { supabase, userId, claims } = context;
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(
+        { id: userId, display_name: data.displayName },
+        { onConflict: "id" },
+      );
+    if (error) throw new Error(error.message);
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name, avatar_path")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const avatarPath = profile?.avatar_path ?? null;
+    const avatarUrl = await signAvatar(supabase, avatarPath);
+
+    return {
+      id: userId,
+      email: (claims?.email as string | undefined) ?? null,
+      displayName: profile?.display_name ?? data.displayName,
+      avatarPath,
+      avatarUrl,
+    };
+  });
+
