@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { AvatarBlock } from "@/components/profile/AvatarBlock";
+import { ConnectedAccounts } from "@/components/profile/ConnectedAccounts";
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -299,6 +300,10 @@ function ProfilePage() {
           </div>
         )}
       </section>
+
+      <div className="mt-10">
+        <ConnectedAccounts email={profile?.email ?? null} />
+      </div>
 
       {pendingFile && (
         <AvatarCropModal
