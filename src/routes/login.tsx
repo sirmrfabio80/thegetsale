@@ -28,12 +28,20 @@ function LoginPage() {
         heading="Sign in."
         supporting="Continue with Google, Apple, or email to pick up where you left off."
         footer={
-          <p className="text-sm text-muted-foreground">
-            New here?{" "}
-            <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70">
-              Create your signal
-            </Link>
-          </p>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Forgot your password?{" "}
+              <Link to="/forgot-password" className="text-foreground underline underline-offset-4 hover:opacity-70">
+                Reset it
+              </Link>
+            </p>
+            <p>
+              New here?{" "}
+              <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70">
+                Create your signal
+              </Link>
+            </p>
+          </div>
         }
       />
     </MarketingLayout>
