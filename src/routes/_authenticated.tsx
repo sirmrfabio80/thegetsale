@@ -2,12 +2,9 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context }) => {
     if (context.auth?.status === "unauthenticated") {
-      throw redirect({
-        to: "/login",
-        search: { redirect: location.href },
-      });
+      throw redirect({ to: "/" });
     }
   },
   component: AuthenticatedLayout,
