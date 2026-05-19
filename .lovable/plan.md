@@ -1,85 +1,86 @@
-## Public marketing homepage + auth separation
+## Google sign-in via Supabase Auth
 
-Make `/` a public landing page and put the real product behind a sign-in gate. No Supabase in this prompt — auth is a small local stub that can be swapped for real auth later without touching pages.
+Replace the local-storage auth stub with real Supabase Auth using Google OAuth (via the Lovable broker). All three public CTAs ("Sign in", "Sign up", "Create your signal") lead into the same Google flow.
 
-### Route restructure
+### Step 1 — Enable Lovable Cloud
 
-Move authenticated product routes under a pathless `_authenticated` layout. URLs do not change (the underscore prefix is pathless).
+The project has no Supabase integration yet. Calling `supabase--enable` provisions a Supabase project, generates `src/integrations/supabase/client.ts`, and sets the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, etc.). Also call `supabase--configure_social_auth` with `providers: ["google"]` to enable Google in Supabase Auth (without this the first Google sign-in fails with `Unsupported provider`).
 
-```
-src/routes/
-  __root.tsx
-  index.tsx                       (public — REBUILT as marketing landing)
-  login.tsx                       (new, public)
-  signup.tsx                       (new, public)
-  _authenticated.tsx               (new — guards children, renders <Outlet/>)
-  _authenticated/
-    dashboard.tsx                  (moved from src/routes/dashboard.tsx)
-    watchlist.tsx                  (moved from src/routes/watchlist.tsx)
-    setup.tsx                      (moved from src/routes/setup.tsx)
-    brand.$id.tsx                  (moved from src/routes/brand.$id.tsx)
-```
+### Step 2 — Auth module rewrite (`src/lib/auth.ts`)
 
-Move is file-relocation only — internal logic, imports, and `Link to="/dashboard"` style usages stay intact. `createFileRoute("/dashboard")` becomes `createFileRoute("/_authenticated/dashboard")` etc.
+Replace the local stub with a thin wrapper around Supabase:
 
-`_authenticated.tsx` uses `beforeLoad` to read auth from router context and `throw redirect({ to: "/login", search: { redirect: location.href } })` when not signed in. Component is `() => <Outlet />`.
+- `useAuth()` hook returns `{ status: "loading" | "authenticated" | "unauthenticated", user, email }`. Subscribes to `supabase.auth.onAuthStateChange` and hydrates from `supabase.auth.getSession()` on mount.
+- `signInWithGoogle()` — calls the Lovable broker (`lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth/callback" })`). Required by Lovable guidance — do NOT call `supabase.auth.signInWithOAuth` directly for Google.
+- `signOut()` — `supabase.auth.signOut()`.
 
-### Local auth stub (`src/lib/auth.ts`)
+The old `theget.auth.v1` localStorage key and synthetic `theget:auth` events are removed. Supabase's own persistence handles sessions.
 
-Storage key `theget.auth.v1` holds `{ email: string }`. Pure helpers:
-- `getAuth(): { isAuthenticated: boolean; email: string | null }` — SSR-safe
-- `signIn(email: string)` — writes storage, dispatches a `theget:auth` window event
-- `signOut()` — clears storage, dispatches event
-- `useAuth()` hook subscribes to the event so nav re-renders on sign in/out
+### Step 3 — Router auth context
 
-Router context (`src/router.tsx`) gets `auth: { isAuthenticated: boolean }`, read once at router creation from `getAuth()`. On auth change we call `router.invalidate()` so `beforeLoad` re-runs. (No Supabase, no real sessions — explicitly a placeholder until real auth lands.)
+`src/router.tsx`:
+- Context shape becomes `{ queryClient, auth: { status, user } }`.
+- On router creation, prime context with `status: "loading"`. Subscribe to `supabase.auth.onAuthStateChange`; on every event, update the router context and call `router.invalidate()` so `beforeLoad` guards re-run.
+- Also do an initial `supabase.auth.getSession()` and update context as soon as it resolves.
 
-### Public marketing page (`src/routes/index.tsx`, rebuilt)
+### Step 4 — `_authenticated` guard with no flicker
 
-Uses a new `MarketingLayout` (separate from the app `PageLayout`) so the chrome is distinct from the signed-in product.
+`src/routes/_authenticated.tsx`:
+- `beforeLoad` reads `context.auth.status`.
+  - `"loading"` → don't redirect; let the component render its loading state (returning a pending promise here would block the whole tree; better to render a calm loading shell).
+  - `"unauthenticated"` → `throw redirect({ to: "/login", search: { redirect: location.href } })`.
+  - `"authenticated"` → fall through to `<Outlet />`.
+- Component shows a minimal centered "Loading…" shell when `status === "loading"` so protected content never flashes.
 
-Sections, in order:
+### Step 5 — Post-auth routing (`/auth/callback`)
 
-1. **Top nav** — sticky, porcelain bg, hairline border. Left: `The Get` wordmark (Instrument Serif). Right: `Sign in` text link + `Sign up` primary button (ink-black fill, white text, ≥44px tap target). Mobile: same layout — wordmark left, Sign in + Sign up right, no hamburger needed at this density.
-2. **Hero** — generous top padding. Eyebrow `Private shopping intelligence`. Headline `Know when to buy.` / `Know when to wait.` (second line italic muted). Supporting copy as per brief. Two CTAs: primary `Create your signal` → `/signup`, secondary `See how it works` → `#how-it-works` anchor.
-3. **How it works** (`#how-it-works`) — 3-column editorial grid: `Cadence — markdown rhythm by house`, `Inventory — availability and scarcity movement`, `Market — seasonal timing and category signals`. Numbered (01/02/03), serif numerals, muted body copy.
-4. **Dashboard preview tease** — section header `A look inside`. Grid of 3 mock signal cards (`SignalPreviewCard`) showing only: category eyebrow, house name, one-line headline, signal badge. Lower half (confidence/window/depth row) is rendered as blurred placeholder bars (no real values, no link to the real brand pages). Below the grid: muted line `Full signals unlock after sign-up.` with a small inline `Create your signal` link. Built as a static preview component using lightly fictionalised copy — does not import `brands` data, does not link to `/brand/...`, does not render anything from the authenticated product.
-5. **Editorial pull-quote** — keep the existing editor's note styling for tone (single italic serif quote).
-6. **Final CTA** — full-width band: serif headline `Start with the houses you already watch.`, primary button `Create your signal` → `/signup`, small `Sign in` text link beneath.
-7. **Footer** — minimal: wordmark left, prototype note right (same as today).
+New file `src/routes/auth.callback.tsx`:
+- Renders a calm "Signing you in…" page.
+- In a `useEffect`, wait for `supabase.auth.getSession()` to resolve, then:
+  - If no session → `navigate({ to: "/login" })`.
+  - Else if `loadSetup()?.completedAt` is set → `/dashboard`.
+  - Else → `/setup`.
+- Honours the `redirect` search param if present (overrides the setup-vs-dashboard decision when set, so the `_authenticated` guard's redirect-back still works).
 
-### Login / Signup pages
+The OAuth `redirect_uri` passed to the broker points at this route.
 
-Minimal editorial pages reusing the marketing chrome:
-- `/login` — email + password fields, `Sign in` button. Submitting calls `signIn(email)` then `navigate({ to: search.redirect ?? "/dashboard" })`. Link to `/signup` underneath.
-- `/signup` — same shape with `Create your signal` button. On submit: `signIn(email)` then redirect to `/setup` (so the existing post-signup flow kicks in).
-- Both have `validateSearch` for an optional `redirect` string, and `beforeLoad` that bounces signed-in users straight to the redirect target (or `/dashboard`).
-- Password field is decorative only in this prompt (no validation/storage) — explicitly a stub until real auth.
+### Step 6 — Public CTAs and pages
 
-### Components added
+- **`/signup`** — Rewrite to a single editorial page:
+  - Heading: `Create your private signal.`
+  - Supporting copy: `Sign in with Google to follow houses, save pieces, and receive sharper buy/wait signals.`
+  - Single primary button: `Continue with Google` → `signInWithGoogle()`.
+  - Small footer line: `Already with us? Sign in` (also triggers Google flow, since email/password is out of scope).
+- **`/login`** — Same shape but with heading `Sign in.` and the supporting copy `Continue with Google to pick up where you left off.` Button label `Continue with Google`. Email/password form is removed.
+- **`Hero` "Create your signal"**, **`MarketingNav` "Sign up"** button, and **`MarketingNav` "Sign in"** link all route to `/signup` (no behavioural change needed — `/signup` is now the single Google entry point).
+- **`FinalCTA`** — same: keeps linking to `/signup`.
 
-- `src/components/marketing/MarketingLayout.tsx` — page wrapper with `MarketingNav` + footer.
-- `src/components/marketing/MarketingNav.tsx` — wordmark, Sign in link, Sign up button. Reads `useAuth()`; if signed in, shows `Open app` → `/dashboard` and `Sign out` instead.
-- `src/components/marketing/SignalPreviewCard.tsx` — static teaser card with blurred lower section. No data dependency on `brands`.
-- `src/components/marketing/Hero.tsx`, `HowItWorks.tsx`, `PreviewSection.tsx`, `FinalCTA.tsx` — small section components to keep `index.tsx` readable.
+### Step 7 — Authenticated chrome (account entry point)
 
-### Authenticated app chrome
+`src/components/PageLayout.tsx`:
+- Replace the simple "Sign out" link in `TopNav` with a tiny account block on the right: rendered only when `auth.status === "authenticated"`.
+  - Shows the user's display name (from `user.user_metadata.full_name`) or falls back to email.
+  - A small dropdown / popover (use shadcn `DropdownMenu`) with two items: a static "Signed in as …" label and `Sign out`.
+- Keep the existing `Signals` / `Watchlist` nav links unchanged.
 
-`PageLayout` (used by dashboard/watchlist/brand/setup) gets a small addition: a right-side `Sign out` text link in `TopNav` when authenticated. No other changes to existing dashboard/watchlist/brand card logic.
+### Step 8 — Protected route coverage
+
+Already correct from the previous turn: `dashboard`, `watchlist`, `setup`, `brand.$id` all live under `src/routes/_authenticated/`. Confirm during implementation that nothing else slipped out.
 
 ### Files
 
-- Add: `src/lib/auth.ts`, `src/components/marketing/{MarketingLayout,MarketingNav,Hero,HowItWorks,PreviewSection,FinalCTA,SignalPreviewCard}.tsx`, `src/routes/login.tsx`, `src/routes/signup.tsx`, `src/routes/_authenticated.tsx`
-- Move: `dashboard.tsx`, `watchlist.tsx`, `setup.tsx`, `brand.$id.tsx` → `src/routes/_authenticated/`
-- Edit: `src/routes/index.tsx` (rebuild marketing page), `src/router.tsx` (wire auth context), `src/components/PageLayout.tsx` (Sign out link when authed)
+- Edit: `src/router.tsx`, `src/lib/auth.ts`, `src/routes/__root.tsx` (context type), `src/routes/_authenticated.tsx`, `src/routes/login.tsx`, `src/routes/signup.tsx`, `src/components/PageLayout.tsx`, `src/components/marketing/MarketingNav.tsx` (use new `useAuth()` shape and `signOut`)
+- Add: `src/routes/auth.callback.tsx`
+- Tool calls: `supabase--enable`, `supabase--configure_social_auth` (Google)
 
-### Out of scope
+### Out of scope (per the prompt)
 
-- Real auth (Supabase, password storage, OAuth). The `auth.ts` stub is explicitly local-only.
-- Any change to brand cards, dashboard filters, watchlist, setup flow, or `/brand/$id` content.
-- New mock data — preview cards use hard-coded fictional copy in the preview component, not the real `brands` array.
+- Email/password auth, magic links, other providers.
+- Profile avatar upload, notifications, profile picture handling.
+- Any new tables (profiles, roles). Setup completion still lives in localStorage for now; a `profiles` table can be added in a later prompt without breaking this work.
 
-### Risks
+### Risks / notes
 
-- Moving files updates `routeTree.gen.ts`. Internal `<Link to="/dashboard">` etc. keep working because the URL is unchanged, but the route id changes to `/_authenticated/dashboard`. Any code using route ids directly (rare here) would need updating — I'll search for those before moving.
-- The local auth stub is trivially bypassable (DevTools). That's acceptable for a prototype; the real gate lands when Supabase auth is added.
+- The previous-prompt sign-in used a localStorage stub. Any user "signed in" before this change will appear signed out — acceptable since no real data is tied to that stub.
+- `auth.status === "loading"` on first paint is the trade-off for no flicker; the loading shell is intentionally brief and only shows on protected routes.
+- Google in Supabase Auth requires the Google provider to be enabled — handled by `configure_social_auth` in step 1.
