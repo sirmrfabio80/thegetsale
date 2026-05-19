@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { SelectableChip } from "@/components/setup/SelectableChip";
 import { NotificationCard } from "@/components/setup/NotificationCard";
+import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
@@ -75,6 +76,11 @@ function SetupPage() {
       completedAt: new Date().toISOString(),
     });
     navigate({ to: "/dashboard" });
+  };
+
+  const scrollToStep = (id: string) => {
+    if (typeof document === "undefined") return;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
