@@ -36,6 +36,5 @@ export interface Brand {
 
 export interface WatchlistItem {
   brandId: string;
-  itemName: string;
   addedAt: string;
 }

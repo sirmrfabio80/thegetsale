@@ -2,9 +2,9 @@ import { useSyncExternalStore } from "react";
 import type { WatchlistItem } from "./types";
 
 let watchlist: WatchlistItem[] = [
-  { brandId: "maison-ardoise", itemName: "Ardoise Wool Coat", addedAt: "2026-05-02" },
-  { brandId: "halden", itemName: "Halden Derby, Oak", addedAt: "2026-05-10" },
-  { brandId: "branwell", itemName: "Branwell Cashmere Crew", addedAt: "2026-05-14" },
+  { brandId: "maison-ardoise", addedAt: "2026-05-02" },
+  { brandId: "halden", addedAt: "2026-05-10" },
+  { brandId: "branwell", addedAt: "2026-05-14" },
 ];
 
 const listeners = new Set<() => void>();
@@ -18,14 +18,28 @@ export const watchlistStore = {
   get() {
     return watchlist;
   },
-  add(item: WatchlistItem) {
-    if (watchlist.some((w) => w.brandId === item.brandId && w.itemName === item.itemName)) return;
-    watchlist = [item, ...watchlist];
+  has(brandId: string) {
+    return watchlist.some((w) => w.brandId === brandId);
+  },
+  add(brandId: string) {
+    if (watchlist.some((w) => w.brandId === brandId)) return;
+    watchlist = [
+      { brandId, addedAt: new Date().toISOString().slice(0, 10) },
+      ...watchlist,
+    ];
     emit();
   },
-  remove(brandId: string, itemName: string) {
-    watchlist = watchlist.filter((w) => !(w.brandId === brandId && w.itemName === itemName));
+  remove(brandId: string) {
+    watchlist = watchlist.filter((w) => w.brandId !== brandId);
     emit();
+  },
+  toggle(brandId: string) {
+    if (watchlistStore.has(brandId)) {
+      watchlistStore.remove(brandId);
+      return false;
+    }
+    watchlistStore.add(brandId);
+    return true;
   },
 };
 
