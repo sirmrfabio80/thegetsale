@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInWithGoogle } from "@/lib/auth";
+import { signInWithApple, signInWithGoogle } from "@/lib/auth";
 
 type Props = {
   heading: string;
@@ -8,19 +8,28 @@ type Props = {
   footer?: React.ReactNode;
 };
 
-export function GoogleAuthCard({ heading, supporting, buttonLabel = "Continue with Google", footer }: Props) {
-  const [loading, setLoading] = useState(false);
+type Pending = "google" | "apple" | null;
+
+export function GoogleAuthCard({
+  heading,
+  supporting,
+  buttonLabel = "Continue with Google",
+  footer,
+}: Props) {
+  const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleClick = async () => {
+  const run = async (
+    provider: "google" | "apple",
+    fn: () => Promise<{ error?: Error }>,
+  ) => {
     setError(null);
-    setLoading(true);
-    const { error } = await signInWithGoogle();
+    setPending(provider);
+    const { error } = await fn();
     if (error) {
       setError(error.message);
-      setLoading(false);
+      setPending(null);
     }
-    // On success the broker redirects; no further work here.
   };
 
   return (
@@ -31,17 +40,25 @@ export function GoogleAuthCard({ heading, supporting, buttonLabel = "Continue wi
 
       <button
         type="button"
-        onClick={handleClick}
-        disabled={loading}
+        onClick={() => run("google", signInWithGoogle)}
+        disabled={pending !== null}
         className="mt-10 inline-flex h-12 w-full items-center justify-center gap-3 border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         <GoogleGlyph />
-        {loading ? "Connecting…" : buttonLabel}
+        {pending === "google" ? "Connecting…" : buttonLabel}
       </button>
 
-      {error && (
-        <p className="mt-4 text-xs text-destructive">{error}</p>
-      )}
+      <button
+        type="button"
+        onClick={() => run("apple", signInWithApple)}
+        disabled={pending !== null}
+        className="mt-3 inline-flex h-12 w-full items-center justify-center gap-3 border border-foreground bg-background px-6 text-[12px] uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-60"
+      >
+        <AppleGlyph />
+        {pending === "apple" ? "Connecting…" : "Continue with Apple"}
+      </button>
+
+      {error && <p className="mt-4 text-xs text-destructive">{error}</p>}
 
       <p className="mt-6 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         We only ask for your name and email.
@@ -55,24 +72,20 @@ export function GoogleAuthCard({ heading, supporting, buttonLabel = "Continue wi
 function GoogleGlyph() {
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden className="shrink-0">
+      <path fill="#fff" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.71-1.57 2.7-3.9 2.7-6.62z" />
+      <path fill="#fff" opacity="0.85" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.93v2.32A9 9 0 009 18z" />
+      <path fill="#fff" opacity="0.7" d="M3.97 10.72A5.4 5.4 0 013.68 9c0-.6.1-1.18.29-1.72V4.96H.93A9 9 0 000 9c0 1.45.35 2.83.93 4.04l3.04-2.32z" />
+      <path fill="#fff" opacity="0.55" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 00.93 4.96L3.97 7.28C4.68 5.16 6.66 3.58 9 3.58z" />
+    </svg>
+  );
+}
+
+function AppleGlyph() {
+  return (
+    <svg width="14" height="16" viewBox="0 0 14 16" aria-hidden className="shrink-0">
       <path
-        fill="#fff"
-        d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.71-1.57 2.7-3.9 2.7-6.62z"
-      />
-      <path
-        fill="#fff"
-        opacity="0.85"
-        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.93v2.32A9 9 0 009 18z"
-      />
-      <path
-        fill="#fff"
-        opacity="0.7"
-        d="M3.97 10.72A5.4 5.4 0 013.68 9c0-.6.1-1.18.29-1.72V4.96H.93A9 9 0 000 9c0 1.45.35 2.83.93 4.04l3.04-2.32z"
-      />
-      <path
-        fill="#fff"
-        opacity="0.55"
-        d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 00.93 4.96L3.97 7.28C4.68 5.16 6.66 3.58 9 3.58z"
+        fill="currentColor"
+        d="M11.36 8.46c-.02-2.05 1.68-3.04 1.76-3.09-.96-1.4-2.45-1.59-2.98-1.61-1.27-.13-2.48.74-3.13.74-.65 0-1.65-.72-2.71-.7-1.39.02-2.68.81-3.4 2.05-1.45 2.52-.37 6.24 1.04 8.28.69 1 1.51 2.12 2.59 2.08 1.04-.04 1.43-.67 2.69-.67 1.25 0 1.6.67 2.7.65 1.12-.02 1.82-1.01 2.5-2.02.79-1.16 1.11-2.29 1.13-2.35-.02-.01-2.17-.83-2.19-3.29zM9.31 2.43C9.88 1.74 10.27.78 10.16-.18c-.82.03-1.81.55-2.4 1.23-.53.61-1 1.59-.87 2.52.92.07 1.85-.47 2.42-1.14z"
       />
     </svg>
   );
