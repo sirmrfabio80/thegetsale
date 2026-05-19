@@ -93,3 +93,8 @@
     background-color: var(--color-border);
   }
 }
+
+@keyframes theget-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
