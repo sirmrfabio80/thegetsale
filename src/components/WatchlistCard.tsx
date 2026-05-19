@@ -13,10 +13,10 @@ export function WatchlistCard({ item }: { item: WatchlistItem }) {
     <article className="group border border-border bg-card px-5 py-6 transition-all md:hover:border-foreground/20">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="eyebrow mb-2">{brand.name}</p>
-          <h3 className="truncate font-serif text-xl leading-tight">{item.itemName}</h3>
+          <p className="eyebrow mb-2">{brand.category}</p>
+          <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Added {formatDate(item.addedAt)}
+            Watching since {formatDate(item.addedAt)}
           </p>
         </div>
         <SignalBadge signal={brand.signal} />
@@ -36,8 +36,8 @@ export function WatchlistCard({ item }: { item: WatchlistItem }) {
         </Link>
         <button
           onClick={() => {
-            watchlistStore.remove(item.brandId, item.itemName);
-            toast("Removed from watchlist");
+            watchlistStore.remove(item.brandId);
+            toast(`${brand.name} removed from watchlist`);
           }}
           className="text-muted-foreground transition-colors hover:text-foreground"
         >

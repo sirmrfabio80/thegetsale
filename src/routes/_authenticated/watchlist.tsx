@@ -46,7 +46,7 @@ function WatchlistPage() {
       ) : (
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {items.map((it) => (
-            <WatchlistCard key={`${it.brandId}-${it.itemName}`} item={it} />
+            <WatchlistCard key={it.brandId} item={it} />
           ))}
         </section>
       )}
