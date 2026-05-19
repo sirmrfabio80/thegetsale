@@ -1,24 +1,46 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { signInWithApple, signInWithGoogle, type OAuthResult } from "@/lib/auth";
+import { z } from "zod";
+import {
+  signInWithApple,
+  signInWithEmail,
+  signInWithGoogle,
+  signUpWithEmail,
+  type OAuthResult,
+} from "@/lib/auth";
+
+type Mode = "signup" | "signin";
 
 type Props = {
   heading: string;
   supporting: string;
   buttonLabel?: string;
   footer?: React.ReactNode;
+  mode?: Mode;
 };
 
-type Pending = "google" | "apple" | null;
+type Pending = "google" | "apple" | "email" | null;
+
+const credentialsSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address").max(255),
+  password: z
+    .string()
+    .min(8, "Use at least 8 characters")
+    .max(72, "Keep it under 72 characters"),
+});
 
 export function GoogleAuthCard({
   heading,
   supporting,
   buttonLabel = "Continue with Google",
   footer,
+  mode = "signup",
 }: Props) {
   const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
   const run = async (
@@ -26,6 +48,7 @@ export function GoogleAuthCard({
     fn: () => Promise<OAuthResult>,
   ) => {
     setError(null);
+    setNotice(null);
     setPending(provider);
     try {
       const result = await fn();
@@ -35,7 +58,6 @@ export function GoogleAuthCard({
         return;
       }
       if (result.authenticated) {
-        // Already signed in via the broker — forward through the callback router.
         navigate({ to: "/auth/callback" });
         return;
       }
@@ -46,6 +68,55 @@ export function GoogleAuthCard({
     }
   };
 
+  const onEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    const parsed = credentialsSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Check your details and try again.");
+      return;
+    }
+    setPending("email");
+    const result =
+      mode === "signup"
+        ? await signUpWithEmail(parsed.data.email, parsed.data.password)
+        : await signInWithEmail(parsed.data.email, parsed.data.password);
+    if (result.error) {
+      const msg = result.error.message;
+      setError(
+        /invalid login credentials/i.test(msg)
+          ? "Those details didn't match. Try again or use Google/Apple."
+          : /already registered|user already/i.test(msg)
+          ? "An account with that email already exists. Sign in instead."
+          : msg || "Couldn't complete sign-in.",
+      );
+      setPending(null);
+      return;
+    }
+    if (result.needsVerification) {
+      setNotice("Check your inbox to confirm your email, then sign in.");
+      setPassword("");
+      setPending(null);
+      return;
+    }
+    if (result.authenticated) {
+      navigate({ to: "/auth/callback" });
+      return;
+    }
+    setPending(null);
+  };
+
+  const busy = pending !== null;
+  const emailLabel =
+    pending === "email"
+      ? mode === "signup"
+        ? "Creating account…"
+        : "Signing in…"
+      : mode === "signup"
+      ? "Create account"
+      : "Sign in";
+
   return (
     <section className="mx-auto w-full max-w-md px-5 pt-20 pb-24 md:pt-28">
       <p className="eyebrow">The Get</p>
@@ -55,7 +126,7 @@ export function GoogleAuthCard({
       <button
         type="button"
         onClick={() => run("google", signInWithGoogle)}
-        disabled={pending !== null}
+        disabled={busy}
         className="mt-10 inline-flex h-12 w-full items-center justify-center gap-3 border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         <GoogleGlyph />
@@ -65,14 +136,65 @@ export function GoogleAuthCard({
       <button
         type="button"
         onClick={() => run("apple", signInWithApple)}
-        disabled={pending !== null}
+        disabled={busy}
         className="mt-3 inline-flex h-12 w-full items-center justify-center gap-3 border border-foreground bg-background px-6 text-[12px] uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-60"
       >
         <AppleGlyph />
         {pending === "apple" ? "Connecting…" : "Continue with Apple"}
       </button>
 
-      {error && <p className="mt-4 text-xs text-destructive">{error}</p>}
+      <div className="my-8 flex items-center gap-4 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        or with email
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <form onSubmit={onEmailSubmit} className="space-y-3" noValidate>
+        <label className="block">
+          <span className="sr-only">Email</span>
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            disabled={busy}
+            className="h-12 w-full border border-foreground bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground disabled:opacity-60"
+          />
+        </label>
+        <label className="block">
+          <span className="sr-only">Password</span>
+          <input
+            type="password"
+            required
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={mode === "signup" ? "Create a password (8+ characters)" : "Your password"}
+            disabled={busy}
+            className="h-12 w-full border border-foreground bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground disabled:opacity-60"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={busy}
+          className="inline-flex h-12 w-full items-center justify-center border border-foreground bg-background px-6 text-[12px] uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-60"
+        >
+          {emailLabel}
+        </button>
+      </form>
+
+      {error && (
+        <p className="mt-4 text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p className="mt-4 text-xs text-foreground" role="status">
+          {notice}
+        </p>
+      )}
 
       <p className="mt-6 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         We only ask for your name and email.
