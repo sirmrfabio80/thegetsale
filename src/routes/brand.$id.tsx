@@ -5,7 +5,9 @@ import { getBrand } from "@/data/brands";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand } from "@/data/types";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Bookmark, Lock } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,
@@ -162,6 +164,18 @@ function getWatchedPieces(brand: Brand): WatchedPiece[] {
 
 function PublicBrandPreview({ brand }: { brand: Brand }) {
   const signupSearch = { redirect: `/brand/${brand.id}` };
+  const navigate = useNavigate();
+
+  const promptSignIn = () => {
+    toast(`Sign in to watch ${brand.name}`, {
+      description: "Create a free account to follow houses and see the full signal.",
+      action: {
+        label: "Sign in",
+        onClick: () => navigate({ to: "/login", search: signupSearch }),
+      },
+    });
+  };
+
 
   return (
     <MarketingLayout>
@@ -185,6 +199,19 @@ function PublicBrandPreview({ brand }: { brand: Brand }) {
             <p className="mt-4 max-w-xl font-serif text-xl italic leading-snug text-foreground/80 md:text-2xl">
               {brand.tagline}
             </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={promptSignIn}
+                className="inline-flex h-11 items-center gap-2 border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+              >
+                <Bookmark className="h-3.5 w-3.5" aria-hidden />
+                Add to watchlist
+              </button>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                Sign in required
+              </p>
+            </div>
           </div>
           <aside className="md:col-span-4 md:border-l md:border-border md:pl-8">
             <dl className="space-y-5 text-[13px] leading-relaxed">
