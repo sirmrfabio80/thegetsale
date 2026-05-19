@@ -228,9 +228,10 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 4 — Review */}
+      {/* Step 5 — Review */}
       <section>
-        <StepHeader number="04" title="Review" />
+        <StepHeader number="05" title="Review" />
+
         <div className="mt-8">
           <ReviewRow title="Houses" count={houses.size} onEdit={() => scrollToStep("step-houses")}>
             {houses.size === 0 ? (
