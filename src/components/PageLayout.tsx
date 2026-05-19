@@ -24,6 +24,11 @@ export function PageLayout({ children }: { children: ReactNode }) {
 
 function TopNav() {
   const auth = useAuth();
+  const profileQuery = useProfile();
+  const profile = profileQuery.data;
+  const fallback = profile?.displayName ?? profile?.email ?? auth.displayName ?? auth.email ?? "?";
+  const triggerLabel = profile?.displayName ?? profile?.email ?? auth.displayName ?? auth.email ?? "";
+
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-10">
@@ -35,12 +40,10 @@ function TopNav() {
           <NavLink to="/watchlist">Watchlist</NavLink>
           {auth.status === "authenticated" && (
             <DropdownMenu>
-              <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
-                <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] uppercase text-background">
-                  {(auth.displayName ?? auth.email ?? "?").slice(0, 1)}
-                </span>
+              <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border px-2 pr-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
+                <AvatarBlock url={profile?.avatarUrl ?? null} fallback={fallback} size="sm" />
                 <span className="hidden max-w-[160px] truncate normal-case tracking-normal sm:inline">
-                  {auth.displayName ?? auth.email}
+                  {triggerLabel}
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[220px]">
@@ -48,9 +51,12 @@ function TopNav() {
                   Signed in as
                 </DropdownMenuLabel>
                 <DropdownMenuLabel className="pt-0 text-sm font-normal text-foreground">
-                  {auth.email}
+                  {profile?.email ?? auth.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">Profile</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => signOut()}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
