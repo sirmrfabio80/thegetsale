@@ -24,8 +24,9 @@ function SignupPage() {
   return (
     <MarketingLayout>
       <GoogleAuthCard
+        mode="signup"
         heading="Create your private signal."
-        supporting="Sign in with Google to follow houses, save pieces, and receive sharper buy/wait signals."
+        supporting="Sign up with Google, Apple, or email to follow houses, save pieces, and receive sharper buy/wait signals."
         footer={
           <p className="text-sm text-muted-foreground">
             Already with us?{" "}
