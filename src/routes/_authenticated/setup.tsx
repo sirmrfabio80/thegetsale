@@ -28,7 +28,9 @@ function SetupPage() {
   const navigate = useNavigate();
   const [houses, setHouses] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Set<string>>(new Set());
+  const [styles, setStyles] = useState<Set<StylePreference>>(new Set());
   const [emailSignals, setEmailSignals] = useState(true);
+
   const [smsDrops, setSmsDrops] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
   const [hydrated, setHydrated] = useState(false);
