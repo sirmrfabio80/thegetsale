@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      brands: {
+        Row: {
+          created_at: string
+          house_group: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          house_group?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          house_group?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prediction_runs: {
+        Row: {
+          algorithm_version: string
+          brands_processed: number
+          errors: Json | null
+          finished_at: string | null
+          id: string
+          predictions_created: number
+          predictions_updated: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          algorithm_version: string
+          brands_processed?: number
+          errors?: Json | null
+          finished_at?: string | null
+          id?: string
+          predictions_created?: number
+          predictions_updated?: number
+          started_at?: string
+          status: string
+        }
+        Update: {
+          algorithm_version?: string
+          brands_processed?: number
+          errors?: Json | null
+          finished_at?: string | null
+          id?: string
+          predictions_created?: number
+          predictions_updated?: number
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_path: string | null
@@ -38,15 +104,166 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_events: {
+        Row: {
+          admin_notes: string | null
+          brand_id: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          discount_max: number | null
+          discount_min: number | null
+          end_date: string | null
+          id: string
+          sale_type: string
+          source_type: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          brand_id: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_max?: number | null
+          discount_min?: number | null
+          end_date?: string | null
+          id?: string
+          sale_type: string
+          source_type?: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          brand_id?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_max?: number | null
+          discount_min?: number | null
+          end_date?: string | null
+          id?: string
+          sale_type?: string
+          source_type?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_events_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_predictions: {
+        Row: {
+          algorithm_version: string
+          basis_years: number[] | null
+          brand_id: string
+          category: string | null
+          confidence_label: string
+          confidence_score: number
+          generated_at: string
+          id: string
+          predicted_end_date: string | null
+          predicted_start_date: string
+          reasoning_summary: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sale_type: string
+          sample_size: number
+          status: string
+        }
+        Insert: {
+          algorithm_version: string
+          basis_years?: number[] | null
+          brand_id: string
+          category?: string | null
+          confidence_label: string
+          confidence_score: number
+          generated_at?: string
+          id?: string
+          predicted_end_date?: string | null
+          predicted_start_date: string
+          reasoning_summary?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sale_type: string
+          sample_size?: number
+          status?: string
+        }
+        Update: {
+          algorithm_version?: string
+          basis_years?: number[] | null
+          brand_id?: string
+          category?: string | null
+          confidence_label?: string
+          confidence_score?: number
+          generated_at?: string
+          id?: string
+          predicted_end_date?: string | null
+          predicted_start_date?: string
+          reasoning_summary?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sale_type?: string
+          sample_size?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_predictions_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -173,6 +390,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
