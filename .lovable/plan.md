@@ -1,86 +1,96 @@
-## Google sign-in via Supabase Auth
+## Scope check
 
-Replace the local-storage auth stub with real Supabase Auth using Google OAuth (via the Lovable broker). All three public CTAs ("Sign in", "Sign up", "Create your signal") lead into the same Google flow.
+The `/setup` onboarding form is already built (`src/routes/_authenticated/setup.tsx`): houses, categories, notifications, review, then `→ /dashboard`. It runs on first sign-in via the `/auth/callback` redirect (no `completedAt` ⇒ `/setup`). No changes needed there.
 
-### Step 1 — Enable Lovable Cloud
+This plan covers the new work: a minimal `/profile` page with a private, user-scoped avatar.
 
-The project has no Supabase integration yet. Calling `supabase--enable` provisions a Supabase project, generates `src/integrations/supabase/client.ts`, and sets the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, etc.). Also call `supabase--configure_social_auth` with `providers: ["google"]` to enable Google in Supabase Auth (without this the first Google sign-in fails with `Unsupported provider`).
+## 1. Database
 
-### Step 2 — Auth module rewrite (`src/lib/auth.ts`)
+Migration adds a thin profiles table tied to `auth.users`:
 
-Replace the local stub with a thin wrapper around Supabase:
+- `public.profiles`
+  - `id uuid PK = auth.users.id` (no FK to `auth.users` — we'll populate via trigger)
+  - `display_name text null`
+  - `avatar_path text null` (storage object path, not a URL)
+  - `created_at`, `updated_at` timestamps
+- RLS on, policies:
+  - Select: `auth.uid() = id`
+  - Insert: `auth.uid() = id`
+  - Update: `auth.uid() = id`
+- Trigger on `auth.users` after insert → `public.handle_new_user()` inserts a profile row with `id = new.id` and `display_name = new.raw_user_meta_data->>'full_name'`. `SECURITY DEFINER`, `SET search_path = public`.
+- `update_updated_at_column()` trigger on profiles.
 
-- `useAuth()` hook returns `{ status: "loading" | "authenticated" | "unauthenticated", user, email }`. Subscribes to `supabase.auth.onAuthStateChange` and hydrates from `supabase.auth.getSession()` on mount.
-- `signInWithGoogle()` — calls the Lovable broker (`lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth/callback" })`). Required by Lovable guidance — do NOT call `supabase.auth.signInWithOAuth` directly for Google.
-- `signOut()` — `supabase.auth.signOut()`.
+## 2. Storage
 
-The old `theget.auth.v1` localStorage key and synthetic `theget:auth` events are removed. Supabase's own persistence handles sessions.
+Migration creates a **private** bucket `avatars` and policies on `storage.objects`:
 
-### Step 3 — Router auth context
+- Bucket: `id='avatars'`, `public=false`, `file_size_limit=5242880`, `allowed_mime_types={image/png,image/jpeg,image/webp}`.
+- Policies (only for `bucket_id = 'avatars'`):
+  - Select / Insert / Update / Delete: `auth.role() = 'authenticated' AND (storage.foldername(name))[1] = auth.uid()::text`
 
-`src/router.tsx`:
-- Context shape becomes `{ queryClient, auth: { status, user } }`.
-- On router creation, prime context with `status: "loading"`. Subscribe to `supabase.auth.onAuthStateChange`; on every event, update the router context and call `router.invalidate()` so `beforeLoad` guards re-run.
-- Also do an initial `supabase.auth.getSession()` and update context as soon as it resolves.
+Object path convention: `{user_id}/profile.{ext}`. Because the bucket is private, the UI reads via short-lived signed URLs.
 
-### Step 4 — `_authenticated` guard with no flicker
+## 3. Server functions (`src/lib/profile.functions.ts`)
 
-`src/routes/_authenticated.tsx`:
-- `beforeLoad` reads `context.auth.status`.
-  - `"loading"` → don't redirect; let the component render its loading state (returning a pending promise here would block the whole tree; better to render a calm loading shell).
-  - `"unauthenticated"` → `throw redirect({ to: "/login", search: { redirect: location.href } })`.
-  - `"authenticated"` → fall through to `<Outlet />`.
-- Component shows a minimal centered "Loading…" shell when `status === "loading"` so protected content never flashes.
+All gated by `requireSupabaseAuth` so RLS applies as the user:
 
-### Step 5 — Post-auth routing (`/auth/callback`)
+- `getMyProfile()` → `{ id, displayName, email, avatarPath, avatarUrl }`. If `avatarPath` set, creates a 60-min signed URL via the auth-scoped client.
+- `setAvatarPath({ path })` → upserts `profiles.avatar_path`. Returns refreshed signed URL.
+- `removeAvatar()` → deletes object from `avatars` bucket and clears `avatar_path`.
 
-New file `src/routes/auth.callback.tsx`:
-- Renders a calm "Signing you in…" page.
-- In a `useEffect`, wait for `supabase.auth.getSession()` to resolve, then:
-  - If no session → `navigate({ to: "/login" })`.
-  - Else if `loadSetup()?.completedAt` is set → `/dashboard`.
-  - Else → `/setup`.
-- Honours the `redirect` search param if present (overrides the setup-vs-dashboard decision when set, so the `_authenticated` guard's redirect-back still works).
+Upload itself happens directly from the browser using `supabase.storage.from('avatars').upload(...)` so progress/size stays client-side; storage RLS enforces the per-user folder. After a successful upload the client calls `setAvatarPath`.
 
-The OAuth `redirect_uri` passed to the broker points at this route.
+## 4. Route: `/profile` (`src/routes/_authenticated/profile.tsx`)
 
-### Step 6 — Public CTAs and pages
+- `beforeLoad` gates on `supabase.auth.getUser()` (per TanStack/Supabase guidance) so the bearer token is hydrated before the loader.
+- `loader` calls `getMyProfile`.
+- Renders inside `PageLayout`. Minimal porcelain card:
+  - Eyebrow "Account", serif heading "Your profile".
+  - Avatar block (left): 96px square, ink border, signed-URL image or initials fallback (`displayName`/`email` first letter, serif, ink on porcelain).
+  - Right column: name + email (read-only for now), and actions:
+    - `Upload photo` (or `Replace photo` when avatar exists) — opens hidden `<input type=file accept="image/png,image/jpeg,image/webp">`.
+    - `Remove photo` (only when avatar exists), quiet underline button.
+  - Status row under actions: uploading spinner + filename, success toast via existing `sonner`, calm inline error copy on failure.
+- Client-side validation before upload:
+  - MIME in allow-list.
+  - Size ≤ 5 MB.
+  - On reject, inline message ("Use a JPG, PNG, or WebP under 5 MB.").
 
-- **`/signup`** — Rewrite to a single editorial page:
-  - Heading: `Create your private signal.`
-  - Supporting copy: `Sign in with Google to follow houses, save pieces, and receive sharper buy/wait signals.`
-  - Single primary button: `Continue with Google` → `signInWithGoogle()`.
-  - Small footer line: `Already with us? Sign in` (also triggers Google flow, since email/password is out of scope).
-- **`/login`** — Same shape but with heading `Sign in.` and the supporting copy `Continue with Google to pick up where you left off.` Button label `Continue with Google`. Email/password form is removed.
-- **`Hero` "Create your signal"**, **`MarketingNav` "Sign up"** button, and **`MarketingNav` "Sign in"** link all route to `/signup` (no behavioural change needed — `/signup` is now the single Google entry point).
-- **`FinalCTA`** — same: keeps linking to `/signup`.
+Visual rules: reuse `bg-background` (porcelain), `text-foreground` (ink), `border-border`, no shadows, no gradients, `font-serif` for headings, `eyebrow` class for labels. No avatar inside a colored badge — keep it like an editorial portrait frame.
 
-### Step 7 — Authenticated chrome (account entry point)
+## 5. Authenticated chrome touch-ups
 
-`src/components/PageLayout.tsx`:
-- Replace the simple "Sign out" link in `TopNav` with a tiny account block on the right: rendered only when `auth.status === "authenticated"`.
-  - Shows the user's display name (from `user.user_metadata.full_name`) or falls back to email.
-  - A small dropdown / popover (use shadcn `DropdownMenu`) with two items: a static "Signed in as …" label and `Sign out`.
-- Keep the existing `Signals` / `Watchlist` nav links unchanged.
+- `PageLayout` dropdown trigger: when `getMyProfile` returns an avatar URL, swap the initial-letter circle for the actual image; keep initials as fallback. Pull this through a lightweight `useProfile` query (TanStack Query) keyed `['me','profile']` and `router.invalidate()` won't be needed — invalidate the query after upload/remove.
+- Add `Profile` item in the dropdown above `Sign out`, linking to `/profile`.
 
-### Step 8 — Protected route coverage
+## 6. Out of scope (explicit)
 
-Already correct from the previous turn: `dashboard`, `watchlist`, `setup`, `brand.$id` all live under `src/routes/_authenticated/`. Confirm during implementation that nothing else slipped out.
+- Editing display name / email / notifications.
+- Public avatar URLs or sharing.
+- Server-side image processing / cropping.
+- Migrating the existing localStorage setup state into the profile row.
 
-### Files
+## Files
 
-- Edit: `src/router.tsx`, `src/lib/auth.ts`, `src/routes/__root.tsx` (context type), `src/routes/_authenticated.tsx`, `src/routes/login.tsx`, `src/routes/signup.tsx`, `src/components/PageLayout.tsx`, `src/components/marketing/MarketingNav.tsx` (use new `useAuth()` shape and `signOut`)
-- Add: `src/routes/auth.callback.tsx`
-- Tool calls: `supabase--enable`, `supabase--configure_social_auth` (Google)
+New
+- `src/routes/_authenticated/profile.tsx`
+- `src/lib/profile.functions.ts`
+- `src/components/profile/AvatarBlock.tsx` (avatar + initials fallback)
+- `src/hooks/use-profile.ts` (TanStack Query wrapper for header use)
 
-### Out of scope (per the prompt)
+Edited
+- `src/components/PageLayout.tsx` (avatar in trigger, Profile link)
 
-- Email/password auth, magic links, other providers.
-- Profile avatar upload, notifications, profile picture handling.
-- Any new tables (profiles, roles). Setup completion still lives in localStorage for now; a `profiles` table can be added in a later prompt without breaking this work.
+Migrations
+- `profiles` table + RLS + new-user trigger + `updated_at` trigger
+- `avatars` storage bucket + RLS policies
 
-### Risks / notes
+## Verification
 
-- The previous-prompt sign-in used a localStorage stub. Any user "signed in" before this change will appear signed out — acceptable since no real data is tied to that stub.
-- `auth.status === "loading"` on first paint is the trade-off for no flicker; the loading shell is intentionally brief and only shows on protected routes.
-- Google in Supabase Auth requires the Google provider to be enabled — handled by `configure_social_auth` in step 1.
+- Sign in → `/profile`: shows initials, no avatar.
+- Upload a 200KB JPG → preview updates, signed URL renders, header avatar updates.
+- Refresh `/profile`: avatar persists.
+- Upload 10 MB file → blocked client-side with inline message; no network call.
+- Upload a `.txt` renamed `.jpg` → MIME-checked client-side; storage MIME allow-list backstop.
+- In a second browser as user B, attempting to PUT to `avatars/{userA}/profile.jpg` fails with 403 (RLS).
+- `Remove photo` → object deleted, `avatar_path` cleared, fallback returns.
