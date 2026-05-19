@@ -41,6 +41,7 @@ function SetupPage() {
     if (stored) {
       setHouses(new Set(stored.houses));
       setCategories(new Set(stored.categories));
+      setStyles(new Set((stored.styles ?? []) as StylePreference[]));
       setEmailSignals(stored.notifications.emailSignals);
       setSmsDrops(stored.notifications.smsDrops);
       setWeeklyDigest(stored.notifications.weeklyDigest);
@@ -55,11 +56,12 @@ function SetupPage() {
     saveSetup({
       houses: [...houses],
       categories: [...categories],
+      styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
     });
-  }, [hydrated, houses, categories, emailSignals, smsDrops, weeklyDigest]);
+  }, [hydrated, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
 
-  const toggle = (set: Set<string>, value: string) => {
+  const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
     if (next.has(value)) next.delete(value);
     else next.add(value);
@@ -76,11 +78,13 @@ function SetupPage() {
     saveSetup({
       houses: [...houses],
       categories: [...categories],
+      styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
       completedAt: new Date().toISOString(),
     });
     navigate({ to: "/dashboard" });
   };
+
 
   const scrollToStep = (id: string) => {
     if (typeof document === "undefined") return;
