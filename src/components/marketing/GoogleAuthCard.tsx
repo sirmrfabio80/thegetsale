@@ -17,6 +17,7 @@ type Props = {
   buttonLabel?: string;
   footer?: React.ReactNode;
   mode?: Mode;
+  redirectTo?: string;
 };
 
 type Pending = "google" | "apple" | "email" | null;
@@ -35,6 +36,7 @@ export function GoogleAuthCard({
   buttonLabel = "Continue with Google",
   footer,
   mode = "signup",
+  redirectTo,
 }: Props) {
   const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,22 +45,30 @@ export function GoogleAuthCard({
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  const goAfterAuth = () => {
+    if (redirectTo) {
+      navigate({ to: "/auth/callback", search: { redirect: redirectTo } });
+    } else {
+      navigate({ to: "/auth/callback" });
+    }
+  };
+
   const run = async (
     provider: "google" | "apple",
-    fn: () => Promise<OAuthResult>,
+    fn: (redirectTo?: string) => Promise<OAuthResult>,
   ) => {
     setError(null);
     setNotice(null);
     setPending(provider);
     try {
-      const result = await fn();
+      const result = await fn(redirectTo);
       if (result.error) {
         setError(result.error.message || "Couldn't start sign-in. Please try again.");
         setPending(null);
         return;
       }
       if (result.authenticated) {
-        navigate({ to: "/auth/callback" });
+        goAfterAuth();
         return;
       }
       // result.redirected === true: browser is navigating to the provider; keep spinner.
@@ -80,7 +90,7 @@ export function GoogleAuthCard({
     setPending("email");
     const result =
       mode === "signup"
-        ? await signUpWithEmail(parsed.data.email, parsed.data.password)
+        ? await signUpWithEmail(parsed.data.email, parsed.data.password, redirectTo)
         : await signInWithEmail(parsed.data.email, parsed.data.password);
     if (result.error) {
       const msg = result.error.message;
@@ -101,7 +111,7 @@ export function GoogleAuthCard({
       return;
     }
     if (result.authenticated) {
-      navigate({ to: "/auth/callback" });
+      goAfterAuth();
       return;
     }
     setPending(null);

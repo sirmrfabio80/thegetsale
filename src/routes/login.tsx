@@ -21,12 +21,14 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const { redirect: redirectTo } = Route.useSearch();
   return (
     <MarketingLayout>
       <GoogleAuthCard
         mode="signin"
         heading="Sign in."
         supporting="Continue with Google, Apple, or email to pick up where you left off."
+        redirectTo={redirectTo}
         footer={
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>
@@ -37,7 +39,11 @@ function LoginPage() {
             </p>
             <p>
               New here?{" "}
-              <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70">
+              <Link
+                to="/signup"
+                search={redirectTo ? { redirect: redirectTo } : undefined}
+                className="text-foreground underline underline-offset-4 hover:opacity-70"
+              >
                 Create your signal
               </Link>
             </p>
