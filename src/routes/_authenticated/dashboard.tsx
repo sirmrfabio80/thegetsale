@@ -5,8 +5,10 @@ import { brands } from "@/data/brands";
 import { BrandCard } from "@/components/BrandCard";
 import type { Category } from "@/data/types";
 import { cn } from "@/lib/utils";
-import { loadSetup } from "@/data/setupStorage";
+import { loadSetup, type StylePreference } from "@/data/setupStorage";
 import { mapSetupCategories, matchesSelection } from "@/data/categoryMap";
+import { styleScore } from "@/data/styles";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
