@@ -13,7 +13,7 @@ export type ProfileDTO = {
 };
 
 async function signAvatar(
-  supabase: Awaited<ReturnType<typeof requireSupabaseAuth>> extends never ? never : any,
+  supabase: { storage: { from: (b: string) => { createSignedUrl: (p: string, ttl: number) => Promise<{ data: { signedUrl: string } | null }> } } },
   path: string | null,
 ): Promise<string | null> {
   if (!path) return null;
