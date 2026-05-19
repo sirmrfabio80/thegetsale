@@ -57,7 +57,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient; auth: { isAuthenticated: boolean; email: string | null } }>()({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient; auth: { status: "loading" | "authenticated" | "unauthenticated"; user: import("@supabase/supabase-js").User | null } }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
