@@ -2,18 +2,20 @@ import type { Brand } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { watchlistStore } from "@/data/store";
+import { useWatchlist, watchlistStore } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {
-  const onAdd = () => {
-    watchlistStore.add({
-      brandId: brand.id,
-      itemName: `${brand.name} — current selection`,
-      addedAt: new Date().toISOString().slice(0, 10),
-    });
-    toast.success("Added to watchlist", {
-      description: `${brand.name} — current selection`,
-    });
+  const items = useWatchlist();
+  const isWatched = items.some((w) => w.brandId === brand.id);
+
+  const onToggle = () => {
+    if (isWatched) {
+      watchlistStore.remove(brand.id);
+      toast(`${brand.name} removed from watchlist`);
+    } else {
+      watchlistStore.add(brand.id);
+      toast.success(`${brand.name} added to watchlist`);
+    }
   };
 
   return (
@@ -47,8 +49,12 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <Button onClick={onAdd} className="rounded-none">
-          Add to watchlist
+        <Button
+          onClick={onToggle}
+          variant={isWatched ? "outline" : "default"}
+          className="rounded-none"
+        >
+          {isWatched ? "Remove from watchlist" : "Add to watchlist"}
         </Button>
         <Button variant="outline" className="rounded-none" onClick={() => toast("Saved for later")}>
           Save signal
