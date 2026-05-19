@@ -164,6 +164,18 @@ function getWatchedPieces(brand: Brand): WatchedPiece[] {
 
 function PublicBrandPreview({ brand }: { brand: Brand }) {
   const signupSearch = { redirect: `/brand/${brand.id}` };
+  const navigate = useNavigate();
+
+  const promptSignIn = () => {
+    toast(`Sign in to watch ${brand.name}`, {
+      description: "Create a free account to follow houses and see the full signal.",
+      action: {
+        label: "Sign in",
+        onClick: () => navigate({ to: "/login", search: signupSearch }),
+      },
+    });
+  };
+
 
   return (
     <MarketingLayout>
