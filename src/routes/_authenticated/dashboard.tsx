@@ -65,9 +65,12 @@ function Dashboard() {
     return [...base].sort((a, b) => {
       const am = matchedIds.has(a.id) ? 0 : 1;
       const bm = matchedIds.has(b.id) ? 0 : 1;
-      return am - bm;
+      if (am !== bm) return am - bm;
+      // Tie-break by style affinity so the dashboard feels tuned.
+      return styleScore(b.tagline, styles) - styleScore(a.tagline, styles);
     });
-  }, [filter, q, onlyMine, matchedIds, hasSetup]);
+  }, [filter, q, onlyMine, matchedIds, hasSetup, styles]);
+
 
   return (
     <PageLayout>
