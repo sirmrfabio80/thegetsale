@@ -1,0 +1,164 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { PageLayout, SectionRule } from "@/components/PageLayout";
+import { SelectableChip } from "@/components/setup/SelectableChip";
+import { NotificationCard } from "@/components/setup/NotificationCard";
+import { StepHeader } from "@/components/setup/StepHeader";
+import { Button } from "@/components/ui/button";
+import { brandGroups, setupCategories } from "@/data/setupBrands";
+
+export const Route = createFileRoute("/setup")({
+  head: () => ({
+    meta: [
+      { title: "Set your signals — The Get" },
+      {
+        name: "description",
+        content: "Choose the houses and categories The Get should watch for you.",
+      },
+    ],
+  }),
+  component: SetupPage,
+});
+
+function SetupPage() {
+  const navigate = useNavigate();
+  const [houses, setHouses] = useState<Set<string>>(new Set());
+  const [categories, setCategories] = useState<Set<string>>(new Set());
+  const [emailSignals, setEmailSignals] = useState(true);
+  const [smsDrops, setSmsDrops] = useState(false);
+  const [weeklyDigest, setWeeklyDigest] = useState(false);
+
+  const toggle = (set: Set<string>, value: string) => {
+    const next = new Set(set);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    return next;
+  };
+
+  const valid = useMemo(
+    () => houses.size >= 3 && categories.size >= 1,
+    [houses, categories],
+  );
+
+  const handleStart = () => {
+    if (!valid) return;
+    // Local-only for now; will be persisted later.
+    // eslint-disable-next-line no-console
+    console.log("setup complete", {
+      houses: [...houses],
+      categories: [...categories],
+      notifications: { emailSignals, smsDrops, weeklyDigest },
+    });
+    navigate({ to: "/dashboard" });
+  };
+
+  return (
+    <PageLayout>
+      <section className="pt-16 md:pt-24">
+        <p className="eyebrow">Setup</p>
+        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">
+          Tell The Get what to watch first.
+        </h1>
+        <p className="mt-4 max-w-xl text-muted-foreground">
+          Follow the houses and categories you care about. We'll use this to surface sharper
+          buy/wait signals and notify you only when the signal is worth your attention.
+        </p>
+      </section>
+
+      <SectionRule />
+
+      {/* Step 1 — Houses */}
+      <section>
+        <StepHeader
+          number="01"
+          title="Houses"
+          hint={`${houses.size} selected${houses.size >= 3 ? "" : " · min 3"}`}
+        />
+        <div className="mt-8 space-y-8">
+          {brandGroups.map((group) => (
+            <div key={group.label}>
+              <p className="eyebrow mb-3">{group.label}</p>
+              <div className="flex flex-wrap gap-2">
+                {group.brands.map((brand) => (
+                  <SelectableChip
+                    key={brand}
+                    label={brand}
+                    selected={houses.has(brand)}
+                    onToggle={() => setHouses((s) => toggle(s, brand))}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-6 text-xs text-muted-foreground">You can change this later.</p>
+      </section>
+
+      <SectionRule />
+
+      {/* Step 2 — Categories */}
+      <section>
+        <StepHeader
+          number="02"
+          title="Categories"
+          hint={`${categories.size} selected${categories.size >= 1 ? "" : " · min 1"}`}
+        />
+        <div className="mt-8 flex flex-wrap gap-2">
+          {setupCategories.map((cat) => (
+            <SelectableChip
+              key={cat}
+              label={cat}
+              selected={categories.has(cat)}
+              onToggle={() => setCategories((s) => toggle(s, cat))}
+            />
+          ))}
+        </div>
+      </section>
+
+      <SectionRule />
+
+      {/* Step 3 — Notifications */}
+      <section>
+        <StepHeader number="03" title="Notifications" />
+        <div className="mt-8 grid grid-cols-1 gap-3">
+          <NotificationCard
+            title="Email signals"
+            description="A quiet note when a house you follow shifts its read."
+            checked={emailSignals}
+            onCheckedChange={setEmailSignals}
+          />
+          <NotificationCard
+            title="SMS urgent drops"
+            description="Only for high-confidence price or availability signals."
+            checked={smsDrops}
+            onCheckedChange={setSmsDrops}
+          />
+          <NotificationCard
+            title="Weekly digest"
+            description="A Sunday summary of the market's posture across your houses."
+            checked={weeklyDigest}
+            onCheckedChange={setWeeklyDigest}
+          />
+        </div>
+        <p className="mt-6 text-xs text-muted-foreground">
+          You can edit notification preferences anytime.
+        </p>
+      </section>
+
+      <SectionRule />
+
+      <div className="flex flex-col items-stretch gap-3 pb-8 md:flex-row md:items-center md:justify-between">
+        <p className="text-xs text-muted-foreground">
+          {valid ? "Ready when you are." : "Select at least 3 houses and 1 category to continue."}
+        </p>
+        <Button
+          onClick={handleStart}
+          disabled={!valid}
+          className="h-12 rounded-none px-8 text-[12px] uppercase tracking-[0.18em]"
+        >
+          Start watching
+        </Button>
+      </div>
+    </PageLayout>
+  );
+}
