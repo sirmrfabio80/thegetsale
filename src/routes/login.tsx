@@ -24,8 +24,9 @@ function LoginPage() {
   return (
     <MarketingLayout>
       <GoogleAuthCard
+        mode="signin"
         heading="Sign in."
-        supporting="Continue with Google to pick up where you left off."
+        supporting="Continue with Google, Apple, or email to pick up where you left off."
         footer={
           <p className="text-sm text-muted-foreground">
             New here?{" "}
