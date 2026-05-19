@@ -5,7 +5,7 @@ import { getBrand } from "@/data/brands";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand } from "@/data/types";
-import { Lock } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/brand/$id")({
   loader: ({ params }) => {
@@ -51,11 +51,17 @@ function BrandPage() {
 }
 
 function AuthenticatedBrand({ brand }: { brand: Brand }) {
+  const watchedPieces = getWatchedPieces(brand);
+
   return (
     <PageLayout>
       <div className="pt-12 md:pt-16">
-        <Link to="/dashboard" className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground">
-          ← All signals
+        <Link
+          to="/dashboard"
+          className="inline-flex h-9 items-center gap-2 border border-border px-4 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          Back to dashboard
         </Link>
       </div>
 
@@ -72,14 +78,80 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       <SectionRule label="Why this signal" />
       <WhySignalPanel factors={brand.factors} />
 
+      <SectionRule label="Pieces you're watching" />
+      <ul className="grid grid-cols-1 gap-px bg-border md:grid-cols-2">
+        {watchedPieces.map((piece) => (
+          <li
+            key={piece.name}
+            className="flex items-start justify-between gap-6 bg-background p-5"
+          >
+            <div className="min-w-0">
+              <p className="truncate font-serif text-lg leading-tight text-foreground">
+                {piece.name}
+              </p>
+              <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                {piece.detail}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="font-serif text-lg leading-tight text-foreground">
+                {piece.price}
+              </p>
+              <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                {piece.status}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+
       <SectionRule label="Sale archive" />
       <SaleTimeline events={brand.history} />
 
-      <p className="mt-6 text-xs text-muted-foreground">
-        Signals are illustrative for this prototype. No real prediction model is connected.
-      </p>
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-8">
+        <p className="max-w-md text-xs text-muted-foreground">
+          Signals are illustrative for this prototype. No real prediction model is connected.
+        </p>
+        <Link
+          to="/dashboard"
+          className="inline-flex h-9 shrink-0 items-center gap-2 border border-border px-4 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          Back to dashboard
+        </Link>
+      </div>
     </PageLayout>
   );
+}
+
+type WatchedPiece = {
+  name: string;
+  detail: string;
+  price: string;
+  status: string;
+};
+
+function getWatchedPieces(brand: Brand): WatchedPiece[] {
+  // Deterministic mock pieces seeded from the brand name so each house
+  // shows a consistent shortlist without a backend.
+  const seed = brand.name.charCodeAt(0) + brand.name.length;
+  const pool: WatchedPiece[] = [
+    { name: "Soft tailored blazer", detail: "Wool · Black", price: "£1,290", status: "In stock" },
+    { name: "Cashmere crewneck", detail: "Knitwear · Camel", price: "£640", status: "Low stock" },
+    { name: "Pleated wide trouser", detail: "Wool · Charcoal", price: "£780", status: "In stock" },
+    { name: "Leather derby", detail: "Footwear · Brown", price: "£890", status: "2 sizes left" },
+    { name: "Silk square scarf", detail: "Accessory · Ivory", price: "£320", status: "In stock" },
+    { name: "Shearling overshirt", detail: "Outerwear · Stone", price: "£2,150", status: "Backorder" },
+    { name: "Cotton poplin shirt", detail: "Shirting · White", price: "£390", status: "In stock" },
+    { name: "Belted trench", detail: "Outerwear · Sand", price: "£1,890", status: "1 left" },
+  ];
+  const start = seed % pool.length;
+  return [
+    pool[start],
+    pool[(start + 3) % pool.length],
+    pool[(start + 5) % pool.length],
+    pool[(start + 6) % pool.length],
+  ];
 }
 
 function PublicBrandPreview({ brand }: { brand: Brand }) {
