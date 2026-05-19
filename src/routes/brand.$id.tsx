@@ -5,6 +5,7 @@ import { getBrand } from "@/data/brands";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand } from "@/data/types";
+import { Lock } from "lucide-react";
 
 export const Route = createFileRoute("/brand/$id")({
   loader: ({ params }) => {
@@ -86,56 +87,124 @@ function PublicBrandPreview({ brand }: { brand: Brand }) {
 
   return (
     <MarketingLayout>
-      <div className="mx-auto w-full max-w-5xl px-5 md:px-10">
+      <article className="mx-auto w-full max-w-5xl px-5 md:px-10">
+        {/* Editorial header */}
         <div className="pt-12 md:pt-16">
-          <Link to="/" className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground">
+          <Link
+            to="/"
+            className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+          >
             ← The Get
           </Link>
         </div>
 
-        <section className="pt-8 md:pt-10">
-          <p className="eyebrow">{brand.category}</p>
-          <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
-          <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
-        </section>
+        <header className="grid grid-cols-1 gap-10 pt-10 md:grid-cols-12 md:gap-12 md:pt-16">
+          <div className="md:col-span-8">
+            <p className="eyebrow">The Get · Dossier</p>
+            <h1 className="mt-4 font-serif text-5xl leading-[1.02] tracking-tight md:text-7xl">
+              {brand.name}
+            </h1>
+            <p className="mt-4 max-w-xl font-serif text-xl italic leading-snug text-foreground/80 md:text-2xl">
+              {brand.tagline}
+            </p>
+          </div>
+          <aside className="md:col-span-4 md:border-l md:border-border md:pl-8">
+            <dl className="space-y-5 text-[13px] leading-relaxed">
+              <div>
+                <dt className="eyebrow text-muted-foreground">House</dt>
+                <dd className="mt-1 text-foreground">{brand.category}</dd>
+              </div>
+              <div>
+                <dt className="eyebrow text-muted-foreground">Cadence</dt>
+                <dd className="mt-1 text-foreground">{brand.cadence}</dd>
+              </div>
+              <div>
+                <dt className="eyebrow text-muted-foreground">Last markdown</dt>
+                <dd className="mt-1 text-foreground">
+                  {brand.lastSaleDays} days ago
+                </dd>
+              </div>
+            </dl>
+          </aside>
+        </header>
 
-        <section className="relative mt-12">
-          <div aria-hidden className="pointer-events-none select-none blur-sm">
-            <RecommendationCard brand={brand} />
-            <SectionRule label="Why this signal" />
-            <WhySignalPanel factors={brand.factors} />
+        <div className="my-14 hairline" />
+
+        {/* Editor's read — teaser */}
+        <section className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-12">
+          <div className="md:col-span-7">
+            <p className="eyebrow">Editor's read</p>
+            <p className="mt-4 font-serif text-2xl leading-snug text-foreground md:text-3xl">
+              We're tracking {brand.name}. The next move is taking shape — and
+              members will see it before the rest of the room.
+            </p>
+            <p className="mt-6 max-w-prose text-sm leading-relaxed text-muted-foreground">
+              Sign in to read the full signal: when to buy, when to wait, the
+              factors behind the call, and the complete sale archive for this
+              house.
+            </p>
           </div>
 
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/40 via-background/80 to-background" />
-
-          <div className="relative mt-10 border border-foreground bg-background p-8 md:p-10">
-            <p className="eyebrow">Members only</p>
-            <h2 className="mt-3 font-serif text-3xl leading-tight md:text-4xl">
-              Sign in to read this signal.
-            </h2>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              See the timing call for {brand.name}, the factors behind it, and the full sale archive. Free while we're in
-              preview.
+          {/* Redacted stat tiles */}
+          <div className="md:col-span-5">
+            <ul className="grid grid-cols-3 gap-px bg-border">
+              {[
+                { label: "Signal" },
+                { label: "Window" },
+                { label: "Depth" },
+              ].map((tile) => (
+                <li
+                  key={tile.label}
+                  className="flex flex-col items-start justify-between bg-background p-5"
+                >
+                  <span className="eyebrow text-muted-foreground">
+                    {tile.label}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="mt-6 font-serif text-3xl leading-none tracking-tight text-foreground/15 select-none"
+                  >
+                    ——
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <Lock className="h-3 w-3" aria-hidden /> Members only
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+          </div>
+        </section>
+
+        {/* Sign-in invitation */}
+        <section className="mt-20 border-t border-border pt-16 pb-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="eyebrow">An invitation</p>
+            <p className="mt-5 font-serif text-3xl leading-snug text-foreground md:text-4xl">
+              "The shopping gets quieter once you can hear the tempo."
+            </p>
+            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+              Join The Get to follow {brand.name} and the other houses you care
+              about. Free while we're in preview.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/signup"
                 search={signupSearch}
-                className="inline-flex h-11 items-center border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+                className="inline-flex h-11 items-center border border-foreground bg-foreground px-6 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
               >
                 Create your signal
               </Link>
               <Link
                 to="/login"
                 search={signupSearch}
-                className="inline-flex h-11 items-center border border-border px-5 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground"
+                className="inline-flex h-11 items-center border border-border px-6 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground"
               >
                 Sign in
               </Link>
             </div>
           </div>
         </section>
-      </div>
+      </article>
     </MarketingLayout>
   );
 }
