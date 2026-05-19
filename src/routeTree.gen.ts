@@ -9,99 +9,84 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WatchlistRouteImport } from './routes/watchlist'
-import { Route as SetupRouteImport } from './routes/setup'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BrandIdRouteImport } from './routes/brand.$id'
+import { Route as AuthenticatedWatchlistRouteImport } from './routes/_authenticated/watchlist'
+import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBrandIdRouteImport } from './routes/_authenticated/brand.$id'
 
-const WatchlistRoute = WatchlistRouteImport.update({
-  id: '/watchlist',
-  path: '/watchlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupRoute = SetupRouteImport.update({
-  id: '/setup',
-  path: '/setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BrandIdRoute = BrandIdRouteImport.update({
-  id: '/brand/$id',
+const AuthenticatedWatchlistRoute = AuthenticatedWatchlistRouteImport.update({
+  id: '/_authenticated/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSetupRoute = AuthenticatedSetupRouteImport.update({
+  id: '/_authenticated/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/_authenticated/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBrandIdRoute = AuthenticatedBrandIdRouteImport.update({
+  id: '/_authenticated/brand/$id',
   path: '/brand/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/setup': typeof SetupRoute
-  '/watchlist': typeof WatchlistRoute
-  '/brand/$id': typeof BrandIdRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/setup': typeof AuthenticatedSetupRoute
+  '/watchlist': typeof AuthenticatedWatchlistRoute
+  '/brand/$id': typeof AuthenticatedBrandIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/setup': typeof SetupRoute
-  '/watchlist': typeof WatchlistRoute
-  '/brand/$id': typeof BrandIdRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/setup': typeof AuthenticatedSetupRoute
+  '/watchlist': typeof AuthenticatedWatchlistRoute
+  '/brand/$id': typeof AuthenticatedBrandIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/setup': typeof SetupRoute
-  '/watchlist': typeof WatchlistRoute
-  '/brand/$id': typeof BrandIdRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/setup': typeof AuthenticatedSetupRoute
+  '/_authenticated/watchlist': typeof AuthenticatedWatchlistRoute
+  '/_authenticated/brand/$id': typeof AuthenticatedBrandIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/dashboard' | '/setup' | '/watchlist' | '/brand/$id'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/dashboard' | '/setup' | '/watchlist' | '/brand/$id'
-  id: '__root__' | '/' | '/dashboard' | '/setup' | '/watchlist' | '/brand/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/setup'
+    | '/_authenticated/watchlist'
+    | '/_authenticated/brand/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
-  SetupRoute: typeof SetupRoute
-  WatchlistRoute: typeof WatchlistRoute
-  BrandIdRoute: typeof BrandIdRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
+  AuthenticatedWatchlistRoute: typeof AuthenticatedWatchlistRoute
+  AuthenticatedBrandIdRoute: typeof AuthenticatedBrandIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/watchlist': {
-      id: '/watchlist'
-      path: '/watchlist'
-      fullPath: '/watchlist'
-      preLoaderRoute: typeof WatchlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setup': {
-      id: '/setup'
-      path: '/setup'
-      fullPath: '/setup'
-      preLoaderRoute: typeof SetupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -109,11 +94,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/brand/$id': {
-      id: '/brand/$id'
+    '/_authenticated/watchlist': {
+      id: '/_authenticated/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof AuthenticatedWatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/setup': {
+      id: '/_authenticated/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof AuthenticatedSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/brand/$id': {
+      id: '/_authenticated/brand/$id'
       path: '/brand/$id'
       fullPath: '/brand/$id'
-      preLoaderRoute: typeof BrandIdRouteImport
+      preLoaderRoute: typeof AuthenticatedBrandIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -121,11 +127,21 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
-  SetupRoute: SetupRoute,
-  WatchlistRoute: WatchlistRoute,
-  BrandIdRoute: BrandIdRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedSetupRoute: AuthenticatedSetupRoute,
+  AuthenticatedWatchlistRoute: AuthenticatedWatchlistRoute,
+  AuthenticatedBrandIdRoute: AuthenticatedBrandIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
