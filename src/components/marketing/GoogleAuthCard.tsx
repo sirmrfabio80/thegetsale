@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { signInWithApple, signInWithGoogle } from "@/lib/auth";
+import { useNavigate } from "@tanstack/react-router";
+import { signInWithApple, signInWithGoogle, type OAuthResult } from "@/lib/auth";
 
 type Props = {
   heading: string;
@@ -18,16 +19,29 @@ export function GoogleAuthCard({
 }: Props) {
   const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const run = async (
     provider: "google" | "apple",
-    fn: () => Promise<{ error?: Error }>,
+    fn: () => Promise<OAuthResult>,
   ) => {
     setError(null);
     setPending(provider);
-    const { error } = await fn();
-    if (error) {
-      setError(error.message);
+    try {
+      const result = await fn();
+      if (result.error) {
+        setError(result.error.message || "Couldn't start sign-in. Please try again.");
+        setPending(null);
+        return;
+      }
+      if (result.authenticated) {
+        // Already signed in via the broker — forward through the callback router.
+        navigate({ to: "/auth/callback" });
+        return;
+      }
+      // result.redirected === true: browser is navigating to the provider; keep spinner.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       setPending(null);
     }
   };
