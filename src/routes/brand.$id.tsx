@@ -6,6 +6,12 @@ import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand } from "@/data/types";
 import { ArrowLeft, Lock } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/brand/$id")({
   loader: ({ params }) => {
