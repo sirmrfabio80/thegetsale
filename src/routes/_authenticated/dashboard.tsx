@@ -87,11 +87,13 @@ function Dashboard() {
       <div className="mt-10 flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         {hasSetup ? (
           <p>
-            Personalised from your setup · {houseCount} {houseCount === 1 ? "house" : "houses"} · {catCount} {catCount === 1 ? "category" : "categories"}
+            Personalised · {houseCount} {houseCount === 1 ? "house" : "houses"} · {catCount} {catCount === 1 ? "category" : "categories"}
+            {styles.length > 0 ? ` · Tuned to ${styles.slice(0, 2).join(", ")}${styles.length > 2 ? "…" : ""}` : ""}
           </p>
         ) : (
           <p>Personalise this feed</p>
         )}
+
         <Link to="/setup" className="underline-offset-4 hover:text-foreground hover:underline">
           {hasSetup ? "Edit" : "Set up signals"}
         </Link>
