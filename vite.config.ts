@@ -12,4 +12,12 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    optimizeDeps: {
+      include: ["sonner", "class-variance-authority", "clsx", "tailwind-merge"],
+    },
+    ssr: {
+      noExternal: ["sonner", "class-variance-authority"],
+    },
+  },
 });
