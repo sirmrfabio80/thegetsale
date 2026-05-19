@@ -6,6 +6,12 @@ import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand } from "@/data/types";
 import { ArrowLeft, Lock } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/brand/$id")({
   loader: ({ params }) => {
@@ -244,6 +250,83 @@ function PublicBrandPreview({ brand }: { brand: Brand }) {
             <p className="mt-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
               <Lock className="h-3 w-3" aria-hidden /> Members only
             </p>
+          </div>
+        </section>
+
+        {/* What you'll see after sign-in */}
+        <section className="mt-20 border-t border-border pt-16">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-12">
+            <div className="md:col-span-4">
+              <p className="eyebrow">Members preview</p>
+              <h2 className="mt-4 font-serif text-3xl leading-snug md:text-4xl">
+                What you'll see after sign-in.
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                A closer look at the dossier we keep on {brand.name} — and
+                every house you choose to follow.
+              </p>
+            </div>
+
+            <div className="md:col-span-8">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="signal" className="border-border">
+                  <AccordionTrigger className="text-left font-serif text-lg hover:no-underline md:text-xl">
+                    The signal — buy, hold, or wait
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                    A clear recommendation with a confidence score, the
+                    expected discount window, and how deep the markdown is
+                    likely to go. No guesswork, no scrolling through twenty
+                    tabs.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="why" className="border-border">
+                  <AccordionTrigger className="text-left font-serif text-lg hover:no-underline md:text-xl">
+                    Why we're calling it
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                    The factors behind the read — cadence, inventory
+                    movement, seasonal patterns, and house-specific tells —
+                    written in plain language by the editors who follow
+                    {" "}{brand.name}.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="archive" className="border-border">
+                  <AccordionTrigger className="text-left font-serif text-lg hover:no-underline md:text-xl">
+                    The full sale archive
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                    Every markdown {brand.name} has run, with dates, depths,
+                    and the name of each edit. Useful for spotting the rhythm
+                    before the next one lands.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="watchlist" className="border-border">
+                  <AccordionTrigger className="text-left font-serif text-lg hover:no-underline md:text-xl">
+                    A private watchlist
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                    Follow {brand.name} alongside the other houses you care
+                    about. We'll keep an eye on the tempo so you don't have
+                    to refresh anything.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="pieces" className="border-b-0 border-border">
+                  <AccordionTrigger className="text-left font-serif text-lg hover:no-underline md:text-xl">
+                    The pieces worth watching
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                    A shortlist of items from {brand.name} we think are
+                    likely to move — with prices, stock notes, and a quiet
+                    read on which ones tend to disappear first.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </div>
         </section>
 
