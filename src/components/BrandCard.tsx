@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { Brand } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 
-export function BrandCard({ brand }: { brand: Brand }) {
+export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: boolean }) {
   return (
     <Link
       to="/brand/$id"
@@ -15,7 +15,14 @@ export function BrandCard({ brand }: { brand: Brand }) {
           <h3 className="font-serif text-2xl leading-tight">{brand.name}</h3>
           <p className="mt-1 text-sm text-muted-foreground">{brand.tagline}</p>
         </div>
-        <SignalBadge signal={brand.signal} />
+        <div className="flex flex-col items-end gap-2">
+          <SignalBadge signal={brand.signal} />
+          {forYou && (
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              For you
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="hairline mt-6" />
