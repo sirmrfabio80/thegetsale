@@ -5,7 +5,9 @@ import { getBrand } from "@/data/brands";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand } from "@/data/types";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Bookmark, Lock } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,
