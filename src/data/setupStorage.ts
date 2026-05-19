@@ -1,8 +1,17 @@
 export const SETUP_STORAGE_KEY = "theget.setup.v1";
 
+export type StylePreference =
+  | "Quiet luxury"
+  | "Statement"
+  | "Editorial"
+  | "Heritage"
+  | "Street"
+  | "Contemporary";
+
 export type SetupState = {
   houses: string[];
   categories: string[];
+  styles?: StylePreference[];
   notifications: {
     emailSignals: boolean;
     smsDrops: boolean;
@@ -10,6 +19,7 @@ export type SetupState = {
   };
   completedAt?: string;
 };
+
 
 export function loadSetup(): SetupState | null {
   if (typeof window === "undefined") return null;
