@@ -13,12 +13,10 @@ export function MarketingNav() {
         </Link>
 
         <nav className="flex items-center gap-2 md:gap-3">
-          {auth.isAuthenticated ? (
+          {auth.status === "authenticated" ? (
             <>
               <button
-                onClick={() => {
-                  signOut();
-                }}
+                onClick={() => signOut()}
                 className="hidden h-11 items-center px-3 text-[12px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
               >
                 Sign out

@@ -1,45 +1,71 @@
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
-const STORAGE_KEY = "theget.auth.v1";
-const EVENT = "theget:auth";
+export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
-export type AuthState = { isAuthenticated: boolean; email: string | null };
+export type AuthState = {
+  status: AuthStatus;
+  user: User | null;
+  email: string | null;
+  displayName: string | null;
+};
 
-export function getAuth(): AuthState {
-  if (typeof window === "undefined") return { isAuthenticated: false, email: null };
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { isAuthenticated: false, email: null };
-    const parsed = JSON.parse(raw) as { email?: string };
-    if (!parsed?.email) return { isAuthenticated: false, email: null };
-    return { isAuthenticated: true, email: parsed.email };
-  } catch {
-    return { isAuthenticated: false, email: null };
-  }
+function deriveDisplayName(user: User | null): string | null {
+  if (!user) return null;
+  const meta = user.user_metadata ?? {};
+  return (meta.full_name as string | undefined) ?? (meta.name as string | undefined) ?? user.email ?? null;
 }
 
-export function signIn(email: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ email }));
-  window.dispatchEvent(new Event(EVENT));
-}
-
-export function signOut() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(STORAGE_KEY);
-  window.dispatchEvent(new Event(EVENT));
+function fromUser(user: User | null): AuthState {
+  if (!user) return { status: "unauthenticated", user: null, email: null, displayName: null };
+  return {
+    status: "authenticated",
+    user,
+    email: user.email ?? null,
+    displayName: deriveDisplayName(user),
+  };
 }
 
 export function useAuth(): AuthState {
-  const [state, setState] = useState<AuthState>(() => getAuth());
+  const [state, setState] = useState<AuthState>({
+    status: "loading",
+    user: null,
+    email: null,
+    displayName: null,
+  });
+
   useEffect(() => {
-    const update = () => setState(getAuth());
-    window.addEventListener(EVENT, update);
-    window.addEventListener("storage", update);
+    let active = true;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setState(fromUser(session?.user ?? null));
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
+      setState(fromUser(session?.user ?? null));
+    });
+
     return () => {
-      window.removeEventListener(EVENT, update);
-      window.removeEventListener("storage", update);
+      active = false;
+      subscription.unsubscribe();
     };
   }, []);
+
   return state;
+}
+
+export async function signInWithGoogle(): Promise<{ error?: Error }> {
+  const result = await lovable.auth.signInWithOAuth("google", {
+    redirect_uri: `${window.location.origin}/auth/callback`,
+  });
+  if (result.error) return { error: result.error instanceof Error ? result.error : new Error(String(result.error)) };
+  return {};
+}
+
+export async function signOut() {
+  await supabase.auth.signOut();
 }

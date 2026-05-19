@@ -1,6 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useAuth, signOut } from "@/lib/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
@@ -23,13 +31,27 @@ function TopNav() {
         <nav className="flex items-center gap-1 text-[12px]">
           <NavLink to="/dashboard">Signals</NavLink>
           <NavLink to="/watchlist">Watchlist</NavLink>
-          {auth.isAuthenticated && (
-            <button
-              onClick={() => signOut()}
-              className="ml-2 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Sign out
-            </button>
+          {auth.status === "authenticated" && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
+                <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] uppercase text-background">
+                  {(auth.displayName ?? auth.email ?? "?").slice(0, 1)}
+                </span>
+                <span className="hidden max-w-[160px] truncate normal-case tracking-normal sm:inline">
+                  {auth.displayName ?? auth.email}
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[220px]">
+                <DropdownMenuLabel className="text-[11px] font-normal uppercase tracking-[0.18em] text-muted-foreground">
+                  Signed in as
+                </DropdownMenuLabel>
+                <DropdownMenuLabel className="pt-0 text-sm font-normal text-foreground">
+                  {auth.email}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </nav>
       </div>

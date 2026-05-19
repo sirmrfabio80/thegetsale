@@ -1,25 +1,44 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
+import type { User } from "@supabase/supabase-js";
 import { routeTree } from "./routeTree.gen";
-import { getAuth } from "./lib/auth";
+import { supabase } from "./integrations/supabase/client";
+
+export type RouterAuth = {
+  status: "loading" | "authenticated" | "unauthenticated";
+  user: User | null;
+};
 
 export const getRouter = () => {
   const queryClient = new QueryClient();
 
+  const initialAuth: RouterAuth = { status: "loading", user: null };
+
   const router = createRouter({
     routeTree,
-    context: { queryClient, auth: getAuth() },
+    context: { queryClient, auth: initialAuth },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
   });
 
   if (typeof window !== "undefined") {
-    const refresh = () => {
-      router.update({ context: { queryClient, auth: getAuth() } });
+    const apply = (user: User | null) => {
+      router.update({
+        context: {
+          queryClient,
+          auth: { status: user ? "authenticated" : "unauthenticated", user },
+        },
+      });
       router.invalidate();
     };
-    window.addEventListener("theget:auth", refresh);
-    window.addEventListener("storage", refresh);
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      apply(session?.user ?? null);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      apply(session?.user ?? null);
+    });
   }
 
   return router;
