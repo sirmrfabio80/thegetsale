@@ -5,6 +5,7 @@ import { getBrand } from "@/data/brands";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand } from "@/data/types";
+import { Lock } from "lucide-react";
 
 export const Route = createFileRoute("/brand/$id")({
   loader: ({ params }) => {
