@@ -31,6 +31,7 @@ function Dashboard() {
   const [catCount, setCatCount] = useState(0);
   const [hasSetup, setHasSetup] = useState(false);
   const [onlyMine, setOnlyMine] = useState(false);
+  const [styles, setStyles] = useState<StylePreference[]>([]);
 
   useEffect(() => {
     const s = loadSetup();
@@ -40,7 +41,9 @@ function Dashboard() {
     setMappedCats(mapSetupCategories(s.categories));
     setHouseCount(s.houses.length);
     setCatCount(s.categories.length);
+    setStyles((s.styles ?? []) as StylePreference[]);
   }, []);
+
 
   const matchedIds = useMemo(() => {
     const ids = new Set<string>();
