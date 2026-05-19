@@ -58,20 +58,30 @@ export function useAuth(): AuthState {
   return state;
 }
 
-export async function signInWithGoogle(): Promise<{ error?: Error }> {
+export type OAuthResult = { error?: Error; redirected?: boolean; authenticated?: boolean };
+
+export async function signInWithGoogle(): Promise<OAuthResult> {
   return signInWithProvider("google");
 }
 
-export async function signInWithApple(): Promise<{ error?: Error }> {
+export async function signInWithApple(): Promise<OAuthResult> {
   return signInWithProvider("apple");
 }
 
-async function signInWithProvider(provider: "google" | "apple"): Promise<{ error?: Error }> {
-  const result = await lovable.auth.signInWithOAuth(provider, {
-    redirect_uri: `${window.location.origin}/auth/callback`,
-  });
-  if (result.error) return { error: result.error instanceof Error ? result.error : new Error(String(result.error)) };
-  return {};
+async function signInWithProvider(provider: "google" | "apple"): Promise<OAuthResult> {
+  try {
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: `${window.location.origin}/auth/callback`,
+    });
+    if (result.error) {
+      return { error: result.error instanceof Error ? result.error : new Error(String(result.error)) };
+    }
+    if (result.redirected) return { redirected: true };
+    // Tokens received and session already set — caller should navigate.
+    return { authenticated: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e : new Error(String(e)) };
+  }
 }
 
 
