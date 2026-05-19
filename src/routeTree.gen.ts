@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BrandIdRouteImport } from './routes/brand.$id'
@@ -17,6 +18,11 @@ import { Route as BrandIdRouteImport } from './routes/brand.$id'
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
   path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -38,12 +44,14 @@ const BrandIdRoute = BrandIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/setup': typeof SetupRoute
   '/watchlist': typeof WatchlistRoute
   '/brand/$id': typeof BrandIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/setup': typeof SetupRoute
   '/watchlist': typeof WatchlistRoute
   '/brand/$id': typeof BrandIdRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/setup': typeof SetupRoute
   '/watchlist': typeof WatchlistRoute
   '/brand/$id': typeof BrandIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/watchlist' | '/brand/$id'
+  fullPaths: '/' | '/dashboard' | '/setup' | '/watchlist' | '/brand/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/watchlist' | '/brand/$id'
-  id: '__root__' | '/' | '/dashboard' | '/watchlist' | '/brand/$id'
+  to: '/' | '/dashboard' | '/setup' | '/watchlist' | '/brand/$id'
+  id: '__root__' | '/' | '/dashboard' | '/setup' | '/watchlist' | '/brand/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  SetupRoute: typeof SetupRoute
   WatchlistRoute: typeof WatchlistRoute
   BrandIdRoute: typeof BrandIdRoute
 }
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/watchlist'
       fullPath: '/watchlist'
       preLoaderRoute: typeof WatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -105,9 +122,20 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  SetupRoute: SetupRoute,
   WatchlistRoute: WatchlistRoute,
   BrandIdRoute: BrandIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
