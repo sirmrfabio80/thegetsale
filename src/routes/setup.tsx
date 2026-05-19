@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { SelectableChip } from "@/components/setup/SelectableChip";
 import { NotificationCard } from "@/components/setup/NotificationCard";
+import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
@@ -77,6 +78,11 @@ function SetupPage() {
     navigate({ to: "/dashboard" });
   };
 
+  const scrollToStep = (id: string) => {
+    if (typeof document === "undefined") return;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <PageLayout>
       <section className="pt-16 md:pt-24">
@@ -93,7 +99,7 @@ function SetupPage() {
       <SectionRule />
 
       {/* Step 1 — Houses */}
-      <section>
+      <section id="step-houses">
         <StepHeader
           number="01"
           title="Houses"
@@ -122,7 +128,7 @@ function SetupPage() {
       <SectionRule />
 
       {/* Step 2 — Categories */}
-      <section>
+      <section id="step-categories">
         <StepHeader
           number="02"
           title="Categories"
@@ -143,7 +149,7 @@ function SetupPage() {
       <SectionRule />
 
       {/* Step 3 — Notifications */}
-      <section>
+      <section id="step-notifications">
         <StepHeader number="03" title="Notifications" />
         <div className="mt-8 grid grid-cols-1 gap-3">
           <NotificationCard
@@ -168,6 +174,71 @@ function SetupPage() {
         <p className="mt-6 text-xs text-muted-foreground">
           You can edit notification preferences anytime.
         </p>
+      </section>
+
+      <SectionRule />
+
+      {/* Step 4 — Review */}
+      <section>
+        <StepHeader number="04" title="Review" />
+        <div className="mt-8">
+          <ReviewRow title="Houses" count={houses.size} onEdit={() => scrollToStep("step-houses")}>
+            {houses.size === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                None selected — pick at least three.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {[...houses].map((h) => (
+                  <span
+                    key={h}
+                    className="border border-border px-3 py-1 text-xs text-foreground"
+                  >
+                    {h}
+                  </span>
+                ))}
+              </div>
+            )}
+          </ReviewRow>
+
+          <ReviewRow
+            title="Categories"
+            count={categories.size}
+            onEdit={() => scrollToStep("step-categories")}
+          >
+            {categories.size === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                None selected — pick at least one.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {[...categories].map((c) => (
+                  <span
+                    key={c}
+                    className="border border-border px-3 py-1 text-xs text-foreground"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            )}
+          </ReviewRow>
+
+          <ReviewRow title="Notifications" onEdit={() => scrollToStep("step-notifications")}>
+            <dl className="space-y-2 text-sm">
+              {[
+                { label: "Email signals", on: emailSignals },
+                { label: "SMS urgent drops", on: smsDrops },
+                { label: "Weekly digest", on: weeklyDigest },
+              ].map((row) => (
+                <div key={row.label} className="flex items-baseline justify-between">
+                  <dt className="text-foreground">{row.label}</dt>
+                  <dd className="text-muted-foreground">{row.on ? "On" : "Off"}</dd>
+                </div>
+              ))}
+            </dl>
+          </ReviewRow>
+        </div>
       </section>
 
       <SectionRule />

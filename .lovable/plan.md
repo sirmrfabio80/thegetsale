@@ -1,56 +1,52 @@
-## Persist setup selections to localStorage
+## Add a review step to `/setup`
 
-Save the user's house, category, and notification choices so a refresh or revisit of `/setup` restores their progress. Scoped to the setup flow only — no changes to dashboard, watchlist, or brand detail.
+Insert a calm, editorial "04 — Review" section between Notifications and the "Start watching" CTA. It mirrors back the user's choices and offers one-click jumps back to each step for edits. No new route, no wizard chrome — keeps the single-page scroll flow.
 
-### Storage shape
+### Layout
 
-One key, one JSON blob — easy to evolve, easy to clear.
+```
+01 Houses
+02 Categories
+03 Notifications
+04 Review        <-- new
+[ Start watching ]
+```
 
-- Key: `theget.setup.v1`
-- Value:
-  ```ts
-  {
-    houses: string[];
-    categories: string[];
-    notifications: {
-      emailSignals: boolean;
-      smsDrops: boolean;
-      weeklyDigest: boolean;
-    };
-    completedAt?: string; // ISO, set when "Start watching" is pressed
-  }
-  ```
+### Section structure
 
-Versioned key (`v1`) so we can change the schema later without crashing existing browsers — a parse failure or version mismatch falls back to defaults silently.
+`StepHeader number="04" title="Review"` followed by three review blocks separated by hairline rules:
 
-### New helper
+- **Houses** — count + chip list of selected house names. Right-aligned "Edit" link.
+- **Categories** — count + chip list of selected categories. Right-aligned "Edit" link.
+- **Notifications** — three lines, each label with its state ("On" / "Off") in muted ink. Right-aligned "Edit" link.
 
-`src/data/setupStorage.ts`
-- `loadSetup(): SetupState | null` — SSR-safe (checks `typeof window`), wraps `JSON.parse` in try/catch, returns `null` on any failure.
-- `saveSetup(state: SetupState): void` — SSR-safe, swallows quota/serialization errors.
-- `clearSetup(): void` — utility for future "reset" UX (not wired now).
-- Exports the `SETUP_STORAGE_KEY` constant and the `SetupState` type.
+If a block is empty (e.g. no categories yet), show a muted hint like "None selected — pick at least one." instead of empty space.
 
-### Wiring in `src/routes/setup.tsx`
+Empty selections still let the user scroll the review; the bottom CTA remains disabled by the existing `valid` rule (≥3 houses, ≥1 category).
 
-- Initialize each `useState` with a lazy initializer that reads from `loadSetup()`. SSR returns defaults; the client hydrates from storage on mount via a single `useEffect` that calls `setHouses` / `setCategories` / setters with stored values if present. This avoids hydration mismatches (server HTML always renders defaults, client rehydrates after mount).
-- A single `useEffect` watching `[houses, categories, emailSignals, smsDrops, weeklyDigest]` calls `saveSetup(...)` so every toggle is persisted immediately.
-- `handleStart` writes one final save with `completedAt: new Date().toISOString()` before navigating to `/dashboard`.
+### "Edit" interaction
 
-### Why this approach
+Each block's Edit control scrolls smoothly to the matching section. Implementation:
 
-- Single effect for writes keeps logic in one place — no scattered `setX` + `save` pairs to forget.
-- Lazy default + post-mount hydration is the safest SSR pattern for TanStack Start; reading localStorage during render would crash SSR.
-- One key keeps `localStorage` tidy and makes a future migration to Supabase a single read.
+- Add stable IDs to existing sections: `id="step-houses"`, `id="step-categories"`, `id="step-notifications"`.
+- Edit buttons are plain `<button>`s (not anchors — avoids history entries) that call `document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })`.
+- Style: small uppercase tracked label matching the existing eyebrow treatment, with an underline on hover.
 
-### Out of scope
+### New small component
 
-- No "reset setup" button (helper exists for future use).
-- No cross-tab sync via `storage` events.
-- No Supabase persistence — local only, as before.
-- No migration of any pre-existing key (none exists yet).
+`src/components/setup/ReviewRow.tsx` — bordered-top row with title, optional count, an Edit button, and children for the value display. Keeps `setup.tsx` readable and consistent with the other small setup components.
 
 ### Files
 
-- Add: `src/data/setupStorage.ts`
-- Edit: `src/routes/setup.tsx` (hydration effect + persistence effect + completion write)
+- Add: `src/components/setup/ReviewRow.tsx`
+- Edit: `src/routes/setup.tsx`
+  - Add `id`s to the three step sections.
+  - Insert Step 04 Review section + `SectionRule` above the CTA row.
+  - Reuse existing state — no new state, no storage changes.
+
+### Out of scope
+
+- No collapsing/hiding of earlier steps — the page stays one continuous scroll.
+- No edit-in-place modals.
+- No changes to validation rules or persistence (already handled).
+- No changes to dashboard/watchlist/brand detail.
