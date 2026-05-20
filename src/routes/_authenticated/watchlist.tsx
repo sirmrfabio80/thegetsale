@@ -6,7 +6,7 @@ import { useWatchlist, watchlistStore } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
 import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
-import { loadSetup, type Department } from "@/data/setupStorage";
+import { loadSetup, saveSetup, type Department } from "@/data/setupStorage";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
