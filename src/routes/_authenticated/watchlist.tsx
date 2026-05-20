@@ -58,6 +58,12 @@ function WatchlistPage() {
         : withBrand.filter((x) => departments.has(brandDepartment(x.brand)));
     const rank: Record<string, number> = { soon: 0, buy: 1, hold: 2, low: 3 };
     const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "confidence") {
+        return b.brand.confidence - a.brand.confidence;
+      }
+      if (sortBy === "window") {
+        return a.brand.windowDays - b.brand.windowDays;
+      }
       const r = (rank[a.brand.signal] ?? 99) - (rank[b.brand.signal] ?? 99);
       if (r !== 0) return r;
       const c = b.brand.confidence - a.brand.confidence;
@@ -65,7 +71,7 @@ function WatchlistPage() {
       return a.brand.windowDays - b.brand.windowDays;
     });
     return { visible: sorted.map((x) => x.it), hiddenCount: items.length - filtered.length };
-  }, [items, departments]);
+  }, [items, departments, sortBy]);
 
   const deptLabel = [...departments].join(", ");
 
