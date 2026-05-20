@@ -5,7 +5,7 @@ import { brands } from "@/data/brands";
 import { BrandCard } from "@/components/BrandCard";
 import type { Category } from "@/data/types";
 import { cn } from "@/lib/utils";
-import { loadSetup, DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
+import { loadSetup, saveSetup, DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
 import { mapSetupCategories, matchesSelection } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
 import type { Brand } from "@/data/types";
@@ -52,6 +52,18 @@ function Dashboard() {
     setStyles((s.styles ?? []) as StylePreference[]);
     setDepartments(new Set((s.departments ?? []) as Department[]));
   }, []);
+
+  // Persist department filter changes back to setup so the Edit flow
+  // preselects them in the setup page.
+  useEffect(() => {
+    if (!hasSetup) return;
+    const s = loadSetup();
+    if (!s) return;
+    const current = (s.departments ?? []) as Department[];
+    const next = [...departments];
+    if (current.length === next.length && current.every((d) => departments.has(d))) return;
+    saveSetup({ ...s, departments: next });
+  }, [hasSetup, departments]);
 
 
   const matchedIds = useMemo(() => {
