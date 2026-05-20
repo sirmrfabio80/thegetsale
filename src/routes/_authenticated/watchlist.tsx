@@ -208,7 +208,7 @@ function WatchlistPage() {
         <div className="border border-dashed border-border px-8 py-20 text-center">
           <p className="font-serif text-2xl">Nothing on watch yet.</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Start with today's signals — add a house you're considering.
+            Start with today's signals — add a house in Womenswear, Menswear or Unisex you're considering.
           </p>
           <Link
             to="/dashboard"
@@ -219,9 +219,10 @@ function WatchlistPage() {
         </div>
       ) : visible.length === 0 ? (
         <div className="border border-dashed border-border px-8 py-20 text-center">
-          <p className="font-serif text-2xl">No saved brands match your departments.</p>
+          <p className="font-serif text-2xl">No saved brands in {deptLabel}.</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} hidden by your current selection.
+            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} on watch in other departments
+            {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
           </p>
           <Link
             to="/setup"
