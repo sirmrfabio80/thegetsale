@@ -7,7 +7,13 @@ import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
-import { loadSetup, saveSetup, type StylePreference } from "@/data/setupStorage";
+import {
+  loadSetup,
+  saveSetup,
+  DEPARTMENT_OPTIONS,
+  type Department,
+  type StylePreference,
+} from "@/data/setupStorage";
 import { STYLE_OPTIONS } from "@/data/styles";
 
 
