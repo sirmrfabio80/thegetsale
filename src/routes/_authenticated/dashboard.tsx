@@ -39,6 +39,7 @@ function Dashboard() {
   const [hasSetup, setHasSetup] = useState(false);
   const [onlyMine, setOnlyMine] = useState(false);
   const [styles, setStyles] = useState<StylePreference[]>([]);
+  const [departments, setDepartments] = useState<Set<Department>>(new Set());
 
   useEffect(() => {
     const s = loadSetup();
@@ -49,6 +50,7 @@ function Dashboard() {
     setHouseCount(s.houses.length);
     setCatCount(s.categories.length);
     setStyles((s.styles ?? []) as StylePreference[]);
+    setDepartments(new Set((s.departments ?? []) as Department[]));
   }, []);
 
 
