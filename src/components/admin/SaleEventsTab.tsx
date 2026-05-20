@@ -649,6 +649,18 @@ export function SaleEventsTab() {
         }}
       />
 
+      <SaleEventDetailsDrawer
+        event={viewing}
+        open={!!viewing}
+        onOpenChange={(o) => !o && setViewing(null)}
+        onEdit={(ev) => {
+          setViewing(null);
+          setEditing(ev);
+          setDialogOpen(true);
+        }}
+      />
+
+
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
