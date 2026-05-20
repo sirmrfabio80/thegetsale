@@ -122,7 +122,10 @@ function SetupPage() {
           number="01"
           title="Department"
           hint={`${departments.size} selected${departments.size >= 1 ? "" : " · min 1"}`}
+          onReset={() => setDepartments(new Set())}
+          canReset={departments.size > 0}
         />
+
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Tell us which collections to watch. You can pick more than one.
         </p>
@@ -163,7 +166,10 @@ function SetupPage() {
           number="02"
           title="Houses"
           hint={`${houses.size} selected${houses.size >= 3 ? "" : " · min 3"}`}
+          onReset={() => setHouses(new Set())}
+          canReset={houses.size > 0}
         />
+
         <div className="mt-8 space-y-8">
           {brandGroups.map((group) => (
             <div key={group.label}>
@@ -192,7 +198,10 @@ function SetupPage() {
           number="03"
           title="Categories"
           hint={`${categories.size} selected${categories.size >= 1 ? "" : " · min 1"}`}
+          onReset={() => setCategories(new Set())}
+          canReset={categories.size > 0}
         />
+
         <div className="mt-8 flex flex-wrap gap-2">
           {setupCategories.map((cat) => (
             <SelectableChip
@@ -213,7 +222,10 @@ function SetupPage() {
           number="04"
           title="Style"
           hint={`${styles.size} selected · optional`}
+          onReset={() => setStyles(new Set())}
+          canReset={styles.size > 0}
         />
+
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Pick the aesthetics that feel like you. We'll tune your first dashboard around them.
         </p>
@@ -250,7 +262,17 @@ function SetupPage() {
 
       {/* Step 5 — Notifications */}
       <section id="step-notifications">
-        <StepHeader number="05" title="Notifications" />
+        <StepHeader
+          number="05"
+          title="Notifications"
+          onReset={() => {
+            setEmailSignals(true);
+            setSmsDrops(false);
+            setWeeklyDigest(false);
+          }}
+          canReset={!emailSignals || smsDrops || weeklyDigest}
+        />
+
 
         <div className="mt-8 grid grid-cols-1 gap-3">
           <NotificationCard
