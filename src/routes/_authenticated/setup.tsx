@@ -1,19 +1,25 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { SelectableChip } from "@/components/setup/SelectableChip";
 import { NotificationCard } from "@/components/setup/NotificationCard";
 import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
-import { brandGroups, setupCategories } from "@/data/setupBrands";
 import {
   DEPARTMENT_OPTIONS,
   type Department,
   type StylePreference,
 } from "@/data/setupStorage";
 import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
-import { STYLE_OPTIONS } from "@/data/styles";
+import { listSetupOptions } from "@/lib/setup-options.functions";
+
+const setupOptionsQueryOptions = queryOptions({
+  queryKey: ["setup", "options"] as const,
+  queryFn: () => listSetupOptions(),
+  staleTime: 5 * 60_000,
+});
 
 
 export const Route = createFileRoute("/_authenticated/setup")({
@@ -28,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/setup")({
   }),
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(setupQueryOptions);
+    context.queryClient.ensureQueryData(setupOptionsQueryOptions);
   },
   component: SetupPage,
 });
@@ -36,6 +43,7 @@ function SetupPage() {
   const navigate = useNavigate();
   const { setup, isLoading } = useSetup();
   const { save } = useSetupMutation();
+  const { data: options } = useSuspenseQuery(setupOptionsQueryOptions);
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [houses, setHouses] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Set<string>>(new Set());
@@ -176,16 +184,16 @@ function SetupPage() {
         />
 
         <div className="mt-8 space-y-8">
-          {brandGroups.map((group) => (
+          {options.houseGroups.map((group) => (
             <div key={group.label}>
               <p className="eyebrow mb-3">{group.label}</p>
               <div className="flex flex-wrap gap-2">
-                {group.brands.map((brand) => (
+                {group.houses.map((house) => (
                   <SelectableChip
-                    key={brand}
-                    label={brand}
-                    selected={houses.has(brand)}
-                    onToggle={() => setHouses((s) => toggle(s, brand))}
+                    key={house.slug}
+                    label={house.name}
+                    selected={houses.has(house.name)}
+                    onToggle={() => setHouses((s) => toggle(s, house.name))}
                   />
                 ))}
               </div>
@@ -208,12 +216,12 @@ function SetupPage() {
         />
 
         <div className="mt-8 flex flex-wrap gap-2">
-          {setupCategories.map((cat) => (
+          {options.categories.map((cat) => (
             <SelectableChip
-              key={cat}
-              label={cat}
-              selected={categories.has(cat)}
-              onToggle={() => setCategories((s) => toggle(s, cat))}
+              key={cat.slug}
+              label={cat.label}
+              selected={categories.has(cat.label)}
+              onToggle={() => setCategories((s) => toggle(s, cat.label))}
             />
           ))}
         </div>
@@ -235,21 +243,22 @@ function SetupPage() {
           Pick the aesthetics that feel like you. We'll tune your first dashboard around them.
         </p>
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {STYLE_OPTIONS.map((opt) => {
-            const selected = styles.has(opt.value);
+          {options.styles.map((opt) => {
+            const value = opt.label as StylePreference;
+            const selected = styles.has(value);
             return (
               <button
-                key={opt.value}
+                key={opt.slug}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => setStyles((s) => toggle(s, opt.value))}
+                onClick={() => setStyles((s) => toggle(s, value))}
                 className={`border p-4 text-left transition-colors ${
                   selected
                     ? "border-foreground bg-foreground text-background"
                     : "border-border text-foreground hover:border-foreground"
                 }`}
               >
-                <p className="font-serif text-lg">{opt.value}</p>
+                <p className="font-serif text-lg">{opt.label}</p>
                 <p
                   className={`mt-1 text-xs ${
                     selected ? "text-background/70" : "text-muted-foreground"
