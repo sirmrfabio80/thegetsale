@@ -117,11 +117,70 @@ export function SaleEventsTab() {
       toast.error(e instanceof Error ? e.message : "Couldn't delete"),
   });
 
+  const bulkStatusMut = useMutation({
+    mutationFn: (vars: { ids: string[]; status: "draft" | "published" | "hidden" }) =>
+      bulkStatusFn({ data: vars }),
+    onSuccess: (_d, vars) => {
+      toast.success(
+        `${vars.ids.length} sale event${vars.ids.length === 1 ? "" : "s"} set to ${vars.status}`,
+      );
+      qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
+      setSelectedIds(new Set());
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't update selection"),
+  });
+
+  const bulkDeleteMut = useMutation({
+    mutationFn: (ids: string[]) => bulkDeleteFn({ data: { ids } }),
+    onSuccess: (_d, ids) => {
+      toast.success(`${ids.length} sale event${ids.length === 1 ? "" : "s"} deleted`);
+      qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
+      setSelectedIds(new Set());
+      setBulkConfirmDelete(false);
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't delete selection"),
+  });
+
   const brands = brandsQ.data ?? [];
   const rows = listQ.data ?? [];
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
   const hasFilters =
     !!filters.brandId || !!filters.category || !!filters.saleType || !!filters.status;
+
+  const visibleIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const selectedCount = selectedIds.size;
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const someVisibleSelected = visibleIds.some((id) => selectedIds.has(id));
+  const bulkBusy = bulkStatusMut.isPending || bulkDeleteMut.isPending;
+
+  // Drop selections for rows no longer in the visible list (filter changes, deletions)
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set<string>();
+      for (const id of prev) if (visibleIds.includes(id)) next.add(id);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [visibleIds]);
+
+  const toggleOne = (id: string, checked: boolean) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  const toggleAllVisible = (checked: boolean) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) for (const id of visibleIds) next.add(id);
+      else for (const id of visibleIds) next.delete(id);
+      return next;
+    });
 
   return (
     <div className="space-y-6">
