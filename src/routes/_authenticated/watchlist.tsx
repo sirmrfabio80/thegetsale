@@ -310,3 +310,14 @@ function WatchlistPage() {
     </PageLayout>
   );
 }
+
+function sortLabel(sortBy: "signal" | "confidence" | "window") {
+  switch (sortBy) {
+    case "confidence":
+      return "Confidence";
+    case "window":
+      return "Sale window";
+    default:
+      return "Signal strength";
+  }
+}
