@@ -35,15 +35,36 @@ function Dashboard() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
 
   useEffect(() => {
-    const s = loadSetup();
-    if (!s) return;
-    setHasSetup(true);
-    setHouses(new Set(s.houses));
-    setMappedCats(mapSetupCategories(s.categories));
-    setHouseCount(s.houses.length);
-    setCatCount(s.categories.length);
-    setStyles((s.styles ?? []) as StylePreference[]);
-    setDepartments(new Set((s.departments ?? []) as Department[]));
+    const hydrate = () => {
+      const s = loadSetup();
+      if (!s) {
+        setHasSetup(false);
+        return;
+      }
+      setHasSetup(true);
+      setHouses(new Set(s.houses));
+      setMappedCats(mapSetupCategories(s.categories));
+      setHouseCount(s.houses.length);
+      setCatCount(s.categories.length);
+      setStyles((s.styles ?? []) as StylePreference[]);
+      setDepartments(new Set((s.departments ?? []) as Department[]));
+    };
+    hydrate();
+    // Keep filters consistent across tabs via the storage event.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === "theget.setup.v1") hydrate();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") hydrate();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", hydrate);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", hydrate);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   // Persist department filter changes back to setup so the Edit flow
