@@ -1,4 +1,11 @@
 import type { Brand, Category } from "./types";
+import type { Department } from "./setupStorage";
+
+export function brandDepartment(b: Brand): Department {
+  if (b.category === "Womens") return "Womenswear";
+  if (b.category === "Mens") return "Menswear";
+  return "Unisex";
+}
 
 // Maps setup category labels to dashboard Brand categories.
 const SETUP_TO_BRAND: Record<string, Category[]> = {

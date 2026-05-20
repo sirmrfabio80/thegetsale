@@ -5,6 +5,7 @@ import { useWatchlist, watchlistStore } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { brandDepartment } from "@/data/categoryMap";
 
 export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: boolean }) {
   const items = useWatchlist();
@@ -31,7 +32,9 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
       >
         <div className="flex items-start justify-between gap-4 pr-10">
           <div>
-            <p className="eyebrow mb-2">{brand.category}</p>
+            <p className="eyebrow mb-2">
+              {brand.category} <span className="text-muted-foreground/60">·</span> {brandDepartment(brand)}
+            </p>
             <h3 className="font-serif text-2xl leading-tight">{brand.name}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{brand.tagline}</p>
           </div>
