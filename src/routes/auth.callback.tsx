@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadSetup } from "@/data/setupStorage";
-import { safeRedirect } from "@/lib/safeRedirect";
+import { resolveRedirect } from "@/lib/safeRedirect";
 
 export const Route = createFileRoute("/auth/callback")({
   validateSearch: (search: Record<string, unknown>) => ({
