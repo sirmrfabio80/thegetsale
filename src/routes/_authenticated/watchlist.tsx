@@ -24,7 +24,16 @@ function WatchlistPage() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<"signal" | "confidence" | "window">("signal");
+  const [sortBy, setSortBy] = useState<"signal" | "confidence" | "window">(() => {
+    if (typeof window === "undefined") return "signal";
+    const saved = window.localStorage.getItem("theget.watchlist.sort");
+    return saved === "confidence" || saved === "window" ? saved : "signal";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("theget.watchlist.sort", sortBy);
+  }, [sortBy]);
 
   useEffect(() => {
     const sync = () => {
