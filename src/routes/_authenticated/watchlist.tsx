@@ -100,35 +100,19 @@ function WatchlistPage() {
     return () => window.clearTimeout(updateTimer);
   }, [items, departments, sortBy]);
 
+  // Mirror department filter state from the backend-backed setup record so
+  // changes made on the dashboard show up here too.
   const restoringRef = useRef(false);
   useEffect(() => {
-    const sync = () => {
-      const s = loadSetup();
-      const next = new Set((s?.departments ?? []) as Department[]);
-      setDepartments((prev) => {
-        if (prev.size === next.size && [...prev].every((d) => next.has(d))) {
-          return prev;
-        }
-        restoringRef.current = true;
-        return next;
-      });
-    };
-    sync();
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === null || e.key === "theget.setup.v1") sync();
-    };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") sync();
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("focus", sync);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("focus", sync);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, []);
+    const next = new Set((setup?.departments ?? []) as Department[]);
+    setDepartments((prev) => {
+      if (prev.size === next.size && [...prev].every((d) => next.has(d))) {
+        return prev;
+      }
+      restoringRef.current = true;
+      return next;
+    });
+  }, [setup]);
 
   const { visible, hiddenCount } = useMemo(() => {
     const withBrand = items
