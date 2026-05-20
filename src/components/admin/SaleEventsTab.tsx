@@ -346,66 +346,70 @@ export function SaleEventsTab() {
       </div>
 
       {selectedCount > 0 && (
-        <div className="sticky top-0 z-10 flex flex-col gap-3 border border-foreground bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          aria-busy={bulkBusy}
+          className={
+            "sticky top-0 z-10 flex flex-col gap-3 border border-foreground bg-background p-3 transition-opacity sm:flex-row sm:items-center sm:justify-between " +
+            (bulkBusy ? "opacity-80" : "")
+          }
+        >
           <div className="flex items-center gap-3 text-sm">
+            {bulkBusy && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
+            )}
             <span className="font-medium">
-              {selectedCount} selected
+              {bulkBusy
+                ? bulkActionLabel(
+                    bulkStatusMut.isPending
+                      ? bulkStatusMut.variables?.status
+                      : "delete",
+                    selectedCount,
+                  )
+                : `${selectedCount} selected`}
             </span>
             <button
               type="button"
+              disabled={bulkBusy}
               onClick={() => setSelectedIds(new Set())}
-              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:hover:text-muted-foreground"
             >
               Clear
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled={bulkBusy}
-              onClick={() =>
-                bulkStatusMut.mutate({
-                  ids: Array.from(selectedIds),
-                  status: "published",
-                })
-              }
-              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
-            >
-              Publish
-            </button>
-            <button
-              type="button"
-              disabled={bulkBusy}
-              onClick={() =>
-                bulkStatusMut.mutate({
-                  ids: Array.from(selectedIds),
-                  status: "hidden",
-                })
-              }
-              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
-            >
-              Hide
-            </button>
-            <button
-              type="button"
-              disabled={bulkBusy}
-              onClick={() =>
-                bulkStatusMut.mutate({
-                  ids: Array.from(selectedIds),
-                  status: "draft",
-                })
-              }
-              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
-            >
-              Draft
-            </button>
+            {(["published", "hidden", "draft"] as const).map((s) => {
+              const active =
+                bulkStatusMut.isPending && bulkStatusMut.variables?.status === s;
+              const label =
+                s === "published" ? "Publish" : s === "hidden" ? "Hide" : "Draft";
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={bulkBusy}
+                  onClick={() =>
+                    bulkStatusMut.mutate({
+                      ids: Array.from(selectedIds),
+                      status: s,
+                    })
+                  }
+                  className="inline-flex h-9 items-center gap-2 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {active && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
+                  {active ? "Working…" : label}
+                </button>
+              );
+            })}
             <button
               type="button"
               disabled={bulkBusy}
               onClick={() => setBulkConfirmDelete(true)}
-              className="h-9 border border-destructive px-3 text-[11px] uppercase tracking-[0.18em] text-destructive disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-2 border border-destructive px-3 text-[11px] uppercase tracking-[0.18em] text-destructive disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Delete
+              {bulkDeleteMut.isPending && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              )}
+              {bulkDeleteMut.isPending ? "Deleting…" : "Delete"}
             </button>
           </div>
         </div>
