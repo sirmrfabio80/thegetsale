@@ -118,8 +118,8 @@ export function SaleEventsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="grid w-full grid-cols-2 gap-3 md:w-auto md:grid-cols-4">
           <div>
             <label className="eyebrow mb-1 block">Brand</label>
             <Select
@@ -128,7 +128,7 @@ export function SaleEventsTab() {
                 setFilters((f) => ({ ...f, brandId: v === ANY ? undefined : v }))
               }
             >
-              <SelectTrigger className="h-10 w-44 rounded-none">
+              <SelectTrigger className="h-10 w-full rounded-none md:w-44">
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent>
@@ -149,7 +149,7 @@ export function SaleEventsTab() {
                 setFilters((f) => ({ ...f, category: e.target.value || undefined }))
               }
               placeholder="Any"
-              className="h-10 w-44 rounded-none"
+              className="h-10 w-full rounded-none md:w-44"
             />
           </div>
           <div>
@@ -160,7 +160,7 @@ export function SaleEventsTab() {
                 setFilters((f) => ({ ...f, saleType: v === ANY ? undefined : v }))
               }
             >
-              <SelectTrigger className="h-10 w-44 rounded-none">
+              <SelectTrigger className="h-10 w-full rounded-none md:w-44">
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent>
@@ -181,7 +181,7 @@ export function SaleEventsTab() {
                 setFilters((f) => ({ ...f, status: v === ANY ? undefined : v }))
               }
             >
-              <SelectTrigger className="h-10 w-44 rounded-none">
+              <SelectTrigger className="h-10 w-full rounded-none md:w-44">
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent>
@@ -200,7 +200,7 @@ export function SaleEventsTab() {
             setEditing(null);
             setDialogOpen(true);
           }}
-          className="h-11 rounded-none px-5 text-[11px] uppercase tracking-[0.18em]"
+          className="h-11 w-full rounded-none px-5 text-[11px] uppercase tracking-[0.18em] md:w-auto"
         >
           Add sale event
         </Button>
@@ -223,7 +223,95 @@ export function SaleEventsTab() {
         )}
       </div>
 
-      <div className="border border-border">
+      {/* Mobile: card list */}
+      <div className="space-y-3 md:hidden">
+        {listQ.isLoading && (
+          <div className="border border-border py-8 text-center text-sm text-muted-foreground">
+            Loading…
+          </div>
+        )}
+        {!listQ.isLoading && rows.length === 0 && (
+          <div className="border border-border py-8 text-center text-sm text-muted-foreground">
+            No sale events yet.
+          </div>
+        )}
+        {rows.map((r) => (
+          <div key={r.id} className="border border-border p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="font-medium">
+                {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
+              </div>
+              <span
+                className={
+                  "inline-block shrink-0 border px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] " +
+                  statusClass(r.status)
+                }
+              >
+                {r.status}
+              </span>
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {(r.category ?? "—") + " · " + r.saleType.replace("_", " ")}
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+              <span>
+                {fmt(r.startDate)}
+                {" → "}
+                {r.endDate ? fmt(r.endDate) : "—"}
+              </span>
+              <span className="text-muted-foreground">
+                {formatDiscount(r.discountMin, r.discountMax)}
+              </span>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
+              <button
+                type="button"
+                className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground"
+                onClick={() => {
+                  setEditing(r);
+                  setDialogOpen(true);
+                }}
+              >
+                Edit
+              </button>
+              {r.status !== "published" && (
+                <button
+                  type="button"
+                  disabled={pendingStatusId === r.id}
+                  className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+                  onClick={() =>
+                    statusMut.mutate({ id: r.id, status: "published" })
+                  }
+                >
+                  {pendingStatusId === r.id ? "Updating…" : "Publish"}
+                </button>
+              )}
+              {r.status !== "hidden" && (
+                <button
+                  type="button"
+                  disabled={pendingStatusId === r.id}
+                  className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+                  onClick={() =>
+                    statusMut.mutate({ id: r.id, status: "hidden" })
+                  }
+                >
+                  {pendingStatusId === r.id ? "Updating…" : "Hide"}
+                </button>
+              )}
+              <button
+                type="button"
+                className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-destructive ml-auto"
+                onClick={() => setToDelete(r)}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden border border-border md:block">
         <Table>
           <TableHeader>
             <TableRow>
