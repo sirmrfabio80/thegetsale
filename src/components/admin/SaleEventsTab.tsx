@@ -274,6 +274,18 @@ export function SaleEventsTab() {
               >
                 Edit
               </button>
+              {r.status !== "draft" && (
+                <button
+                  type="button"
+                  disabled={pendingStatusId === r.id}
+                  className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+                  onClick={() =>
+                    statusMut.mutate({ id: r.id, status: "draft" })
+                  }
+                >
+                  {pendingStatusId === r.id ? "Updating…" : "Draft"}
+                </button>
+              )}
               {r.status !== "published" && (
                 <button
                   type="button"
