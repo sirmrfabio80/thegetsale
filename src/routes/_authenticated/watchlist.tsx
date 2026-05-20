@@ -105,6 +105,16 @@ function WatchlistPage() {
   );
   const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
 
+  const hiddenSelectedCount = useMemo(() => {
+    if (selected.size === 0) return 0;
+    const visibleSet = new Set(visibleIds);
+    let n = 0;
+    selected.forEach((id) => {
+      if (!visibleSet.has(id)) n += 1;
+    });
+    return n;
+  }, [selected, visibleIds]);
+
   // Drop stale selections if items disappear (filter change, removal, etc.)
   useEffect(() => {
     setSelected((prev) => {
@@ -178,7 +188,7 @@ function WatchlistPage() {
 
       <SectionRule />
 
-      {items.length > 0 && visible.length > 0 && (
+      {items.length > 0 && (visible.length > 0 || selectMode) && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             {selectMode ? (
@@ -191,6 +201,7 @@ function WatchlistPage() {
                 </button>
                 <span>
                   {selected.size} selected
+                  {hiddenSelectedCount > 0 && ` · ${hiddenSelectedCount} hidden by filter`}
                 </span>
               </>
             ) : (
