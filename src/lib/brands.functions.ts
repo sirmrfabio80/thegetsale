@@ -171,7 +171,7 @@ export const getHouseDetail = createServerFn({ method: "POST" })
 
     const eventRows = (events ?? []) as EventRow[];
     const prediction = pickLatestPrediction(((preds ?? []) as PredictionRow[]) || null);
-    const base = toDashboardDTO(brand as BrandRow, eventRows, prediction);
+    const base = toDashboardDTO(brand as unknown as BrandRow, eventRows, prediction);
 
     const history: HouseHistoryItem[] = eventRows.map((e) => ({
       date: e.start_date,
