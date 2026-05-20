@@ -22,8 +22,25 @@ function WatchlistPage() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
 
   useEffect(() => {
-    const s = loadSetup();
-    if (s?.departments?.length) setDepartments(new Set(s.departments as Department[]));
+    const sync = () => {
+      const s = loadSetup();
+      setDepartments(new Set((s?.departments ?? []) as Department[]));
+    };
+    sync();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === "theget.setup.v1") sync();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", sync);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", sync);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const { visible, hiddenCount } = useMemo(() => {
