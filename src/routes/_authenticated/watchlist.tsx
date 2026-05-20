@@ -36,6 +36,18 @@ function WatchlistPage() {
     window.localStorage.setItem("theget.watchlist.sort", sortBy);
   }, [sortBy]);
 
+  // Subtle "Updating list…" flash when the visible order changes.
+  const firstRunRef = useRef(true);
+  useEffect(() => {
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+      return;
+    }
+    setIsUpdating(true);
+    const t = window.setTimeout(() => setIsUpdating(false), 350);
+    return () => window.clearTimeout(t);
+  }, [items, departments, sortBy]);
+
   useEffect(() => {
     const sync = () => {
       const s = loadSetup();
