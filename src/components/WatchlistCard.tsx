@@ -70,11 +70,9 @@ export function WatchlistCard({ item, selectable, selected, onToggleSelect }: Wa
           View signal
         </Link>
         <button
-          onClick={() => {
-            watchlistStore.remove(item.brandId);
-            toast(`${brand.name} removed from watchlist`);
-          }}
-          className="text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => remove(item.brandId, brand.name)}
+          disabled={isPending}
+          className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
         >
           Remove
         </button>
