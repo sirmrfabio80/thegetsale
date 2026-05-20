@@ -44,18 +44,18 @@ function TopNav() {
           {isAdmin && <NavLink to="/admin/sales">Admin</NavLink>}
           {auth.status === "authenticated" && (
             <DropdownMenu>
-              <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border px-2 pr-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
+              <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border pl-1 pr-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
                 <AvatarBlock
                   url={profile?.avatarUrl ?? null}
                   fallback={fallback}
                   size="sm"
                   loading={profileQuery.isLoading}
                 />
-                <span className="hidden w-[140px] truncate text-left normal-case tracking-normal sm:inline">
+                <span className="hidden max-w-[140px] truncate text-left normal-case tracking-normal sm:inline">
                   {profileQuery.isLoading && !triggerLabel ? (
                     <span
                       aria-hidden="true"
-                      className="inline-block h-3 w-24 align-middle bg-muted"
+                      className="inline-block h-3 w-16 align-middle bg-muted"
                     />
                   ) : (
                     triggerLabel
