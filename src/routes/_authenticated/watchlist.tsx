@@ -87,7 +87,7 @@ function WatchlistPage() {
         }
         toastBaselineRef.current = null;
         toastTimerRef.current = null;
-      }, 300);
+      }, BULK_TOGGLE_DEBOUNCE_MS);
     }
     return () => window.clearTimeout(updateTimer);
   }, [items, departments, sortBy]);
