@@ -230,18 +230,6 @@ function SetupPage() {
         </div>
 
         <div className="mt-8 space-y-8">
-          {options.houseGroups
-            .map((group) => ({
-              ...group,
-              houses: group.houses.filter((h) => {
-                const matchesQuery =
-                  !houseQuery ||
-                  h.name.toLowerCase().includes(houseQuery.toLowerCase());
-                const matchesSelected = !housesSelectedOnly || houses.has(h.name);
-                return matchesQuery && matchesSelected;
-              }),
-            }))
-            .filter((group) => group.houses.length > 1)}
           {options.houseGroups.map((group) => {
             const filteredHouses = group.houses.filter((h) => {
               const matchesQuery =
