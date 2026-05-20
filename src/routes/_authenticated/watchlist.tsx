@@ -36,28 +36,48 @@ function WatchlistPage() {
     window.localStorage.setItem("theget.watchlist.sort", sortBy);
   }, [sortBy]);
 
-  // Subtle "Updating list…" flash + toast confirming active sort when
-  // the order changes from items/departments/sort updates.
+  // Subtle "Updating list…" flash + one summary toast per debounce window
+  // describing which departments were toggled and the resulting sort.
   const firstRunRef = useRef(true);
   const sortByRef = useRef(sortBy);
+  const departmentsRef = useRef(departments);
   const toastTimerRef = useRef<number | null>(null);
+  const toastBaselineRef = useRef<Set<Department> | null>(null);
   useEffect(() => {
     if (firstRunRef.current) {
       firstRunRef.current = false;
       sortByRef.current = sortBy;
+      departmentsRef.current = departments;
       return;
     }
     setIsUpdating(true);
     const updateTimer = window.setTimeout(() => setIsUpdating(false), 350);
-    // Debounce the toast so rapid bulk toggles only surface one confirmation.
     const sortChanged = sortByRef.current !== sortBy;
+    const prevDepartments = departmentsRef.current;
     sortByRef.current = sortBy;
+    departmentsRef.current = departments;
     if (!sortChanged) {
+      if (toastBaselineRef.current === null) {
+        toastBaselineRef.current = prevDepartments;
+      }
       if (toastTimerRef.current !== null) {
         window.clearTimeout(toastTimerRef.current);
       }
       toastTimerRef.current = window.setTimeout(() => {
-        toast(`Sorted by ${sortLabel(sortByRef.current)}`);
+        const baseline = toastBaselineRef.current ?? new Set<Department>();
+        const current = departmentsRef.current;
+        const added = [...current].filter((d) => !baseline.has(d));
+        const removed = [...baseline].filter((d) => !current.has(d));
+        const parts: string[] = [];
+        if (added.length) parts.push(`Added ${added.join(", ")}`);
+        if (removed.length) parts.push(`Removed ${removed.join(", ")}`);
+        const description = `Sorted by ${sortLabel(sortByRef.current)}`;
+        if (parts.length) {
+          toast(parts.join(" · "), { description });
+        } else {
+          toast(description);
+        }
+        toastBaselineRef.current = null;
         toastTimerRef.current = null;
       }, 300);
     }
