@@ -473,6 +473,20 @@ export function SaleEventsTab() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={
+                    allVisibleSelected
+                      ? true
+                      : someVisibleSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={(v) => toggleAllVisible(v === true)}
+                  aria-label="Select all visible sale events"
+                  disabled={visibleIds.length === 0}
+                />
+              </TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Type</TableHead>
@@ -486,20 +500,27 @@ export function SaleEventsTab() {
           <TableBody>
             {listQ.isLoading && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!listQ.isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
                   No sale events yet.
                 </TableCell>
               </TableRow>
             )}
             {rows.map((r) => (
-              <TableRow key={r.id}>
+              <TableRow key={r.id} data-state={selectedIds.has(r.id) ? "selected" : undefined}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(r.id)}
+                    onCheckedChange={(v) => toggleOne(r.id, v === true)}
+                    aria-label={`Select ${r.brandName ?? "sale event"}`}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
                   {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
                 </TableCell>
