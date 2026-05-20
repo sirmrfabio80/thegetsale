@@ -166,7 +166,10 @@ function SetupPage() {
           number="02"
           title="Houses"
           hint={`${houses.size} selected${houses.size >= 3 ? "" : " · min 3"}`}
+          onReset={() => setHouses(new Set())}
+          canReset={houses.size > 0}
         />
+
         <div className="mt-8 space-y-8">
           {brandGroups.map((group) => (
             <div key={group.label}>
