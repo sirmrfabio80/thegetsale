@@ -1,10 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
-import { getBrand } from "@/data/brands";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
-import type { Brand } from "@/data/types";
+import type { Brand, Category } from "@/data/types";
 import { ArrowLeft, Bookmark, Lock } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -15,19 +14,63 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { brandDepartment } from "@/data/categoryMap";
+import {
+  getHouseDetail,
+  getPublicHouseDetail,
+  type HouseDetailDTO,
+  type PublicHouseDTO,
+} from "@/lib/brands.functions";
+
+function detailToBrand(h: HouseDetailDTO): Brand {
+  return {
+    id: h.id,
+    name: h.name,
+    category: (h.category as Category) || "Womens",
+    tagline: h.tagline,
+    signal: h.signal,
+    headline: h.headline,
+    confidence: h.confidenceScore,
+    windowDays: h.windowDays ?? 999,
+    lastSaleDays: h.lastSaleDays ?? 0,
+    expectedDepth: h.expectedDepth,
+    cadence: h.cadence ?? "",
+    factors: h.factors,
+    history: h.history,
+  };
+}
 
 export const Route = createFileRoute("/brand/$id")({
-  loader: ({ params }) => {
-    const brand = getBrand(params.id);
-    if (!brand) throw notFound();
-    return { brand };
+  loader: async ({ params, context }) => {
+    const authed = context.auth?.status === "authenticated";
+    if (authed) {
+      const detail = await getHouseDetail({ data: { slug: params.id } });
+      if (!detail) throw notFound();
+      return { kind: "auth" as const, brand: detailToBrand(detail) };
+    }
+    const pub = await getPublicHouseDetail({ data: { slug: params.id } });
+    if (!pub) throw notFound();
+    return { kind: "public" as const, house: pub };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.brand.name ?? "Brand"} — The Get` },
-      { name: "description", content: loaderData?.brand.headline ?? "" },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const name =
+      loaderData?.kind === "auth"
+        ? loaderData.brand.name
+        : loaderData?.kind === "public"
+          ? loaderData.house.name
+          : "Brand";
+    const desc =
+      loaderData?.kind === "auth"
+        ? loaderData.brand.headline
+        : loaderData?.kind === "public"
+          ? loaderData.house.tagline
+          : "";
+    return {
+      meta: [
+        { title: `${name} — The Get` },
+        { name: "description", content: desc },
+      ],
+    };
+  },
   errorComponent: ({ error, reset }) => (
     <PageLayout>
       <div className="py-24 text-center">
@@ -49,14 +92,9 @@ export const Route = createFileRoute("/brand/$id")({
 });
 
 function BrandPage() {
-  const { brand } = Route.useLoaderData();
-  const { auth } = Route.useRouteContext();
-
-  if (auth.status === "authenticated") {
-    return <AuthenticatedBrand brand={brand} />;
-  }
-
-  return <PublicBrandPreview brand={brand} />;
+  const data = Route.useLoaderData();
+  if (data.kind === "auth") return <AuthenticatedBrand brand={data.brand} />;
+  return <PublicBrandPreview house={data.house} />;
 }
 
 function AuthenticatedBrand({ brand }: { brand: Brand }) {
