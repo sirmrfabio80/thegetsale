@@ -34,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/setup")({
   }),
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(setupQueryOptions);
+    context.queryClient.ensureQueryData(setupOptionsQueryOptions);
   },
   component: SetupPage,
 });
@@ -42,6 +43,7 @@ function SetupPage() {
   const navigate = useNavigate();
   const { setup, isLoading } = useSetup();
   const { save } = useSetupMutation();
+  const { data: options } = useSuspenseQuery(setupOptionsQueryOptions);
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [houses, setHouses] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Set<string>>(new Set());
