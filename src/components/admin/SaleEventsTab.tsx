@@ -359,5 +359,3 @@ function statusClass(status: string) {
       return "border-border text-muted-foreground";
   }
 }
-// Re-export the type-only enums used here
-export { createSaleEvent, updateSaleEvent };
