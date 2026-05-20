@@ -203,7 +203,14 @@ function getWatchedPieces(brand: Brand): WatchedPiece[] {
   ];
 }
 
-function PublicBrandPreview({ brand }: { brand: Brand }) {
+function publicDepartment(category: string): "Womenswear" | "Menswear" | "Unisex" {
+  if (category === "Womens") return "Womenswear";
+  if (category === "Mens") return "Menswear";
+  return "Unisex";
+}
+
+function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
+  const brand = house;
   const signupSearch = { redirect: `/brand/${brand.id}` };
   const watchlistSearch = { redirect: "/watchlist" };
   const navigate = useNavigate();
@@ -263,16 +270,16 @@ function PublicBrandPreview({ brand }: { brand: Brand }) {
               </div>
               <div>
                 <dt className="eyebrow text-muted-foreground">Department</dt>
-                <dd className="mt-1 text-foreground">{brandDepartment(brand)}</dd>
+                <dd className="mt-1 text-foreground">{publicDepartment(brand.category)}</dd>
               </div>
               <div>
                 <dt className="eyebrow text-muted-foreground">Cadence</dt>
-                <dd className="mt-1 text-foreground">{brand.cadence}</dd>
+                <dd className="mt-1 text-foreground">{brand.cadence ?? "—"}</dd>
               </div>
               <div>
                 <dt className="eyebrow text-muted-foreground">Last markdown</dt>
                 <dd className="mt-1 text-foreground">
-                  {brand.lastSaleDays} days ago
+                  {brand.lastSaleDays != null ? `${brand.lastSaleDays} days ago` : "—"}
                 </dd>
               </div>
             </dl>
