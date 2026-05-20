@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
-import { useWatchlist } from "@/data/store";
+import { useWatchlist, watchlistStore } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
 import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
 import { loadSetup, type Department } from "@/data/setupStorage";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
   head: () => ({
