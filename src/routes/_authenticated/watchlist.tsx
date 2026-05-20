@@ -9,6 +9,10 @@ import { brandDepartment } from "@/data/categoryMap";
 import { loadSetup, saveSetup, type Department } from "@/data/setupStorage";
 import { cn } from "@/lib/utils";
 
+// Single source of truth so the "Updating list…" flash and the summary
+// toast always settle together after a bulk department toggle.
+const BULK_TOGGLE_DEBOUNCE_MS = 300;
+
 export const Route = createFileRoute("/_authenticated/watchlist")({
   head: () => ({
     meta: [
