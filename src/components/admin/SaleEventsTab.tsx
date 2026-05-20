@@ -188,6 +188,31 @@ export function SaleEventsTab() {
       return next;
     });
 
+  // Reset mobile pagination when filter results change
+  useEffect(() => {
+    setMobileLimit(MOBILE_PAGE_SIZE);
+  }, [filters, rows.length]);
+
+  const mobileRows = useMemo(() => rows.slice(0, mobileLimit), [rows, mobileLimit]);
+  const hasMoreMobile = mobileLimit < rows.length;
+
+  // IntersectionObserver to load more cards as the sentinel scrolls into view
+  useEffect(() => {
+    if (!hasMoreMobile) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setMobileLimit((n) => Math.min(n + MOBILE_PAGE_SIZE, rows.length));
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMoreMobile, rows.length]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-end md:justify-between">
