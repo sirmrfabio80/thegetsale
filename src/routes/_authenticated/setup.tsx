@@ -222,7 +222,10 @@ function SetupPage() {
           number="04"
           title="Style"
           hint={`${styles.size} selected · optional`}
+          onReset={() => setStyles(new Set())}
+          canReset={styles.size > 0}
         />
+
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Pick the aesthetics that feel like you. We'll tune your first dashboard around them.
         </p>
