@@ -20,11 +20,14 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
       { name: "description", content: "The pieces you're waiting on, watched quietly." },
     ],
   }),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(watchlistQueryOptions),
   component: WatchlistPage,
 });
 
 function WatchlistPage() {
   const items = useWatchlist();
+  const { removeMany } = useWatchlistMutations();
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
