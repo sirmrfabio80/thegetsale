@@ -1,5 +1,5 @@
 import type { Brand } from "@/data/types";
-import { SignalBadge } from "./SignalBadge";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useWatchlist, watchlistStore } from "@/data/store";
