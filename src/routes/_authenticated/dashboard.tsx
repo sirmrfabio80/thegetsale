@@ -118,7 +118,38 @@ function Dashboard() {
         </Link>
       </div>
 
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Department</span>
+        {DEPARTMENT_OPTIONS.map(({ value }) => {
+          const active = departments.has(value);
+          return (
+            <button
+              key={value}
+              onClick={() => toggleDepartment(value)}
+              aria-pressed={active}
+              className={cn(
+                "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
+                active
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+              )}
+            >
+              {value}
+            </button>
+          );
+        })}
+        {departments.size > 0 && (
+          <button
+            onClick={() => setDepartments(new Set())}
+            className="px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
