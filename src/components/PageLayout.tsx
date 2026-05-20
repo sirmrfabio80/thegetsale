@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useAuth, signOut } from "@/lib/auth";
 import { useProfile } from "@/hooks/use-profile";
+import { useIsAdmin } from "@/hooks/use-is-admin";
 import { AvatarBlock } from "@/components/profile/AvatarBlock";
 import {
   DropdownMenu,
@@ -25,7 +26,9 @@ export function PageLayout({ children }: { children: ReactNode }) {
 function TopNav() {
   const auth = useAuth();
   const profileQuery = useProfile();
+  const adminQuery = useIsAdmin();
   const profile = profileQuery.data;
+  const isAdmin = adminQuery.data?.isAdmin ?? false;
   const fallback = profile?.displayName ?? profile?.email ?? auth.displayName ?? auth.email ?? "?";
   const triggerLabel = profile?.displayName ?? profile?.email ?? auth.displayName ?? auth.email ?? "";
 
@@ -38,6 +41,7 @@ function TopNav() {
         <nav className="flex items-center gap-1 text-[12px]">
           <NavLink to="/dashboard">Signals</NavLink>
           <NavLink to="/watchlist">Watchlist</NavLink>
+          {isAdmin && <NavLink to="/admin/sales">Admin</NavLink>}
           {auth.status === "authenticated" && (
             <DropdownMenu>
               <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border px-2 pr-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
