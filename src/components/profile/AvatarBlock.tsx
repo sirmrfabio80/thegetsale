@@ -67,6 +67,7 @@ export function AvatarBlock({
       </span>
       {showImage && (
         <img
+          ref={imgRef}
           src={url}
           alt=""
           decoding="async"
