@@ -1,14 +1,37 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
-import { brands } from "@/data/brands";
 import { BrandCard } from "@/components/BrandCard";
-import type { Category } from "@/data/types";
+import type { Brand, Category } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { loadSetup, saveSetup, DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
 import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
+import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 
+const housesQueryOptions = queryOptions({
+  queryKey: ["houses", "dashboard"],
+  queryFn: () => listHousesForDashboard(),
+});
+
+function toBrand(h: HouseDashboardDTO): Brand {
+  return {
+    id: h.id,
+    name: h.name,
+    category: (h.category as Category) || "Womens",
+    tagline: h.tagline,
+    signal: h.signal,
+    headline: h.headline,
+    confidence: h.confidenceScore,
+    windowDays: h.windowDays ?? 999,
+    lastSaleDays: h.lastSaleDays ?? 0,
+    expectedDepth: h.expectedDepth,
+    cadence: h.cadence ?? "",
+    factors: [],
+    history: [],
+  };
+}
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -17,6 +40,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { name: "description", content: "Today's quiet read on the brands worth watching." },
     ],
   }),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(housesQueryOptions),
   component: Dashboard,
 });
 
