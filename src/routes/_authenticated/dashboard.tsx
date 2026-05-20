@@ -45,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(housesQueryOptions);
     context.queryClient.ensureQueryData(watchlistQueryOptions);
+    context.queryClient.ensureQueryData(setupQueryOptions);
   },
   component: Dashboard,
 });
