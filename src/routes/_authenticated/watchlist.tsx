@@ -24,6 +24,7 @@ function WatchlistPage() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isUpdating, setIsUpdating] = useState(false);
   const [sortBy, setSortBy] = useState<"signal" | "confidence" | "window">(() => {
     if (typeof window === "undefined") return "signal";
     const saved = window.localStorage.getItem("theget.watchlist.sort");
