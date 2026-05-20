@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -358,9 +359,31 @@ export function SaleEventsTab() {
       {/* Mobile: card list */}
       <div className="space-y-3 md:hidden">
         {listQ.isLoading && (
-          <div className="border border-border py-8 text-center text-sm text-muted-foreground">
-            Loading…
-          </div>
+          <>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="border border-border p-4" aria-hidden>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="mt-0.5 h-4 w-4" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <Skeleton className="mt-2 h-3 w-40" />
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
+                  <Skeleton className="h-10 w-14" />
+                  <Skeleton className="h-10 w-16" />
+                  <Skeleton className="h-10 w-14" />
+                  <Skeleton className="ml-auto h-10 w-16" />
+                </div>
+              </div>
+            ))}
+            <span className="sr-only">Loading sale events…</span>
+          </>
         )}
         {!listQ.isLoading && rows.length === 0 && (
           <div className="border border-border py-8 text-center text-sm text-muted-foreground">
