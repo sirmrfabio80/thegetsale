@@ -8,12 +8,11 @@ import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
 import {
-  loadSetup,
-  saveSetup,
   DEPARTMENT_OPTIONS,
   type Department,
   type StylePreference,
 } from "@/data/setupStorage";
+import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
 import { STYLE_OPTIONS } from "@/data/styles";
 
 
@@ -27,11 +26,16 @@ export const Route = createFileRoute("/_authenticated/setup")({
       },
     ],
   }),
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(setupQueryOptions);
+  },
   component: SetupPage,
 });
 
 function SetupPage() {
   const navigate = useNavigate();
+  const { setup, isLoading } = useSetup();
+  const { save } = useSetupMutation();
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [houses, setHouses] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Set<string>>(new Set());
@@ -42,33 +46,34 @@ function SetupPage() {
   const [weeklyDigest, setWeeklyDigest] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage after mount (SSR-safe).
+  // Hydrate from the backend record once it arrives.
   useEffect(() => {
-    const stored = loadSetup();
-    if (stored) {
-      setDepartments(new Set((stored.departments ?? []) as Department[]));
-      setHouses(new Set(stored.houses));
-      setCategories(new Set(stored.categories));
-      setStyles(new Set((stored.styles ?? []) as StylePreference[]));
-      setEmailSignals(stored.notifications.emailSignals);
-      setSmsDrops(stored.notifications.smsDrops);
-      setWeeklyDigest(stored.notifications.weeklyDigest);
+    if (isLoading || hydrated) return;
+    if (setup) {
+      setDepartments(new Set((setup.departments ?? []) as Department[]));
+      setHouses(new Set(setup.houses));
+      setCategories(new Set(setup.categories));
+      setStyles(new Set((setup.styles ?? []) as StylePreference[]));
+      setEmailSignals(setup.notifications.emailSignals);
+      setSmsDrops(setup.notifications.smsDrops);
+      setWeeklyDigest(setup.notifications.weeklyDigest);
     }
     setHydrated(true);
-  }, []);
+  }, [isLoading, setup, hydrated]);
 
-  // Persist on every change, but only after hydration so initial defaults
-  // don't overwrite stored state.
+  // Persist on every change after hydration. The mutation debounces optimistic
+  // cache updates and the upsert is cheap; users rarely toggle dozens of chips
+  // per second.
   useEffect(() => {
     if (!hydrated) return;
-    saveSetup({
+    save({
       departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
     });
-  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
+  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest, save]);
 
   const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
@@ -84,13 +89,13 @@ function SetupPage() {
 
   const handleStart = () => {
     if (!valid) return;
-    saveSetup({
+    save({
       departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
-      completedAt: new Date().toISOString(),
+      markCompleted: true,
     });
     navigate({ to: "/dashboard" });
   };

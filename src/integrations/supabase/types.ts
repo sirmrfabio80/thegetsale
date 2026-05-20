@@ -270,6 +270,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_setup: {
+        Row: {
+          categories: string[]
+          completed_at: string | null
+          created_at: string
+          departments: string[]
+          email_signals: boolean
+          houses: string[]
+          sms_drops: boolean
+          styles: string[]
+          updated_at: string
+          user_id: string
+          weekly_digest: boolean
+        }
+        Insert: {
+          categories?: string[]
+          completed_at?: string | null
+          created_at?: string
+          departments?: string[]
+          email_signals?: boolean
+          houses?: string[]
+          sms_drops?: boolean
+          styles?: string[]
+          updated_at?: string
+          user_id: string
+          weekly_digest?: boolean
+        }
+        Update: {
+          categories?: string[]
+          completed_at?: string | null
+          created_at?: string
+          departments?: string[]
+          email_signals?: boolean
+          houses?: string[]
+          sms_drops?: boolean
+          styles?: string[]
+          updated_at?: string
+          user_id?: string
+          weekly_digest?: boolean
+        }
+        Relationships: []
+      }
       user_watchlist: {
         Row: {
           added_at: string

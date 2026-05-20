@@ -6,7 +6,8 @@ import { useWatchlist, useWatchlistMutations, watchlistQueryOptions } from "@/da
 import { WatchlistCard } from "@/components/WatchlistCard";
 import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
-import { loadSetup, saveSetup, type Department } from "@/data/setupStorage";
+import { type Department } from "@/data/setupStorage";
+import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
 import { cn } from "@/lib/utils";
 
 // Single source of truth so the "Updating list…" flash and the summary
@@ -20,14 +21,18 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
       { name: "description", content: "The pieces you're waiting on, watched quietly." },
     ],
   }),
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(watchlistQueryOptions),
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(watchlistQueryOptions);
+    context.queryClient.ensureQueryData(setupQueryOptions);
+  },
   component: WatchlistPage,
 });
 
 function WatchlistPage() {
   const items = useWatchlist();
   const { removeMany } = useWatchlistMutations();
+  const { setup } = useSetup();
+  const { save: saveSetupMutation } = useSetupMutation();
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -95,35 +100,19 @@ function WatchlistPage() {
     return () => window.clearTimeout(updateTimer);
   }, [items, departments, sortBy]);
 
+  // Mirror department filter state from the backend-backed setup record so
+  // changes made on the dashboard show up here too.
   const restoringRef = useRef(false);
   useEffect(() => {
-    const sync = () => {
-      const s = loadSetup();
-      const next = new Set((s?.departments ?? []) as Department[]);
-      setDepartments((prev) => {
-        if (prev.size === next.size && [...prev].every((d) => next.has(d))) {
-          return prev;
-        }
-        restoringRef.current = true;
-        return next;
-      });
-    };
-    sync();
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === null || e.key === "theget.setup.v1") sync();
-    };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") sync();
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("focus", sync);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("focus", sync);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, []);
+    const next = new Set((setup?.departments ?? []) as Department[]);
+    setDepartments((prev) => {
+      if (prev.size === next.size && [...prev].every((d) => next.has(d))) {
+        return prev;
+      }
+      restoringRef.current = true;
+      return next;
+    });
+  }, [setup]);
 
   const { visible, hiddenCount } = useMemo(() => {
     const withBrand = items
@@ -221,8 +210,7 @@ function WatchlistPage() {
 
   const clearDepartmentFilters = () => {
     setDepartments(new Set());
-    const s = loadSetup();
-    if (s) saveSetup({ ...s, departments: [] });
+    saveSetupMutation({ departments: [] });
     toast("Department filters cleared");
   };
 
@@ -236,8 +224,7 @@ function WatchlistPage() {
         window.clearTimeout(saveTimerRef.current);
       }
       saveTimerRef.current = window.setTimeout(() => {
-        const s = loadSetup();
-        if (s) saveSetup({ ...s, departments: [...next] });
+        saveSetupMutation({ departments: [...next] });
         saveTimerRef.current = null;
       }, 250);
       return next;
