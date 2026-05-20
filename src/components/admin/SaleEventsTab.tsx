@@ -41,7 +41,7 @@ import {
   SALE_STATUSES,
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
-import { SaleEventDialog } from "./SaleEventDialog";
+import { SaleEventDrawer } from "./SaleEventDrawer";
 
 type Filters = {
   brandId?: string;
@@ -58,6 +58,7 @@ export function SaleEventsTab() {
   const [editing, setEditing] = useState<SaleEventDTO | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<SaleEventDTO | null>(null);
+  const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
@@ -86,11 +87,16 @@ export function SaleEventsTab() {
   const statusMut = useMutation({
     mutationFn: (vars: { id: string; status: "draft" | "published" | "hidden" }) =>
       setStatusFn({ data: vars }),
+    onMutate: (vars) => {
+      setPendingStatusId(vars.id);
+    },
     onSuccess: () => {
       toast.success("Status updated");
       qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update status"),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't update status"),
+    onSettled: () => setPendingStatusId(null),
   });
 
   const deleteMut = useMutation({
@@ -100,12 +106,15 @@ export function SaleEventsTab() {
       qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
       setToDelete(null);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't delete"),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't delete"),
   });
 
   const brands = brandsQ.data ?? [];
   const rows = listQ.data ?? [];
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
+  const hasFilters =
+    !!filters.brandId || !!filters.category || !!filters.saleType || !!filters.status;
 
   return (
     <div className="space-y-6">
@@ -197,6 +206,23 @@ export function SaleEventsTab() {
         </Button>
       </div>
 
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          {listQ.isLoading
+            ? "Loading…"
+            : `${rows.length} sale event${rows.length === 1 ? "" : "s"}`}
+        </span>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => setFilters({})}
+            className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
       <div className="border border-border">
         <Table>
           <TableHeader>
@@ -265,25 +291,25 @@ export function SaleEventsTab() {
                     {r.status !== "published" && (
                       <button
                         type="button"
-                        disabled={statusMut.isPending}
+                        disabled={pendingStatusId === r.id}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50"
                         onClick={() =>
                           statusMut.mutate({ id: r.id, status: "published" })
                         }
                       >
-                        Publish
+                        {pendingStatusId === r.id ? "Updating…" : "Publish"}
                       </button>
                     )}
                     {r.status !== "hidden" && (
                       <button
                         type="button"
-                        disabled={statusMut.isPending}
+                        disabled={pendingStatusId === r.id}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50"
                         onClick={() =>
                           statusMut.mutate({ id: r.id, status: "hidden" })
                         }
                       >
-                        Hide
+                        {pendingStatusId === r.id ? "Updating…" : "Hide"}
                       </button>
                     )}
                     <button
@@ -301,7 +327,7 @@ export function SaleEventsTab() {
         </Table>
       </div>
 
-      <SaleEventDialog
+      <SaleEventDrawer
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         brands={brands}
