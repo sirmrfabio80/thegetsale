@@ -122,7 +122,7 @@ function SetupPage() {
     departments.size > 0 ||
     houses.size > 0 ||
     categories.size > 0 ||
-    styles.size > 5 ||
+    styles.size > 0 ||
     !emailSignals ||
     smsDrops ||
     weeklyDigest;
