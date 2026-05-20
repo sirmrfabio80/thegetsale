@@ -53,6 +53,18 @@ function Dashboard() {
     setDepartments(new Set((s.departments ?? []) as Department[]));
   }, []);
 
+  // Persist department filter changes back to setup so the Edit flow
+  // preselects them in the setup page.
+  useEffect(() => {
+    if (!hasSetup) return;
+    const s = loadSetup();
+    if (!s) return;
+    const current = (s.departments ?? []) as Department[];
+    const next = [...departments];
+    if (current.length === next.length && current.every((d) => departments.has(d))) return;
+    saveSetup({ ...s, departments: next });
+  }, [hasSetup, departments]);
+
 
   const matchedIds = useMemo(() => {
     const ids = new Set<string>();
