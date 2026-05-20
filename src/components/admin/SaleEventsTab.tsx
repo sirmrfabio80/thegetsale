@@ -41,7 +41,7 @@ import {
   SALE_STATUSES,
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
-import { SaleEventDialog } from "./SaleEventDialog";
+import { SaleEventDrawer } from "./SaleEventDrawer";
 
 type Filters = {
   brandId?: string;
@@ -58,6 +58,7 @@ export function SaleEventsTab() {
   const [editing, setEditing] = useState<SaleEventDTO | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<SaleEventDTO | null>(null);
+  const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
@@ -86,11 +87,16 @@ export function SaleEventsTab() {
   const statusMut = useMutation({
     mutationFn: (vars: { id: string; status: "draft" | "published" | "hidden" }) =>
       setStatusFn({ data: vars }),
+    onMutate: (vars) => {
+      setPendingStatusId(vars.id);
+    },
     onSuccess: () => {
       toast.success("Status updated");
       qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update status"),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't update status"),
+    onSettled: () => setPendingStatusId(null),
   });
 
   const deleteMut = useMutation({
@@ -100,12 +106,15 @@ export function SaleEventsTab() {
       qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
       setToDelete(null);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't delete"),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't delete"),
   });
 
   const brands = brandsQ.data ?? [];
   const rows = listQ.data ?? [];
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
+  const hasFilters =
+    !!filters.brandId || !!filters.category || !!filters.saleType || !!filters.status;
 
   return (
     <div className="space-y-6">
