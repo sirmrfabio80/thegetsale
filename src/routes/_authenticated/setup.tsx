@@ -207,10 +207,10 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 3 — Style */}
+      {/* Step 4 — Style */}
       <section id="step-styles">
         <StepHeader
-          number="03"
+          number="04"
           title="Style"
           hint={`${styles.size} selected · optional`}
         />
