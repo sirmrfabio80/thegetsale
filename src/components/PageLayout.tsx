@@ -45,7 +45,12 @@ function TopNav() {
           {auth.status === "authenticated" && (
             <DropdownMenu>
               <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border px-2 pr-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
-                <AvatarBlock url={profile?.avatarUrl ?? null} fallback={fallback} size="sm" />
+                <AvatarBlock
+                  url={profile?.avatarUrl ?? null}
+                  fallback={fallback}
+                  size="sm"
+                  loading={profileQuery.isLoading}
+                />
                 <span className="hidden max-w-[160px] truncate normal-case tracking-normal sm:inline">
                   {triggerLabel}
                 </span>
