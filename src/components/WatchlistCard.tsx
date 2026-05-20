@@ -15,6 +15,7 @@ interface WatchlistCardProps {
 
 export function WatchlistCard({ item, selectable, selected, onToggleSelect }: WatchlistCardProps) {
   const brand = getBrand(item.brandId);
+  const { remove, isPending } = useWatchlistMutations();
   if (!brand) return null;
 
   return (
