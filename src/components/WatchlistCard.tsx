@@ -37,7 +37,7 @@ export function WatchlistCard({ item, selectable, selected, onToggleSelect }: Wa
             />
           )}
           <div className="min-w-0">
-            <p className="eyebrow mb-2">{brand.category}</p>
+            <p className="eyebrow mb-2">{brand.category} · {brandDepartment(brand)}</p>
             <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               Watching since {formatDate(item.addedAt)}
