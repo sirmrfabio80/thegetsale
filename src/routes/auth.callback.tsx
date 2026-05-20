@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadSetup } from "@/data/setupStorage";
+import { safeRedirect } from "@/lib/safeRedirect";
 
 export const Route = createFileRoute("/auth/callback")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -26,8 +27,9 @@ function AuthCallback() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           if (cancelled) return;
-          if (redirectTo) {
-            navigate({ to: redirectTo });
+          // If a redirect was supplied, validate it; otherwise fall back to setup/dashboard.
+          if (redirectTo !== undefined) {
+            navigate({ to: safeRedirect(redirectTo, "/dashboard") });
             return;
           }
           const setup = loadSetup();
