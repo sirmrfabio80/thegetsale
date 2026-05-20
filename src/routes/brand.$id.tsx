@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { RecommendationCard } from "@/components/RecommendationCard";
+import { SignalEditorial } from "@/components/brand/SignalEditorial";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand, Category } from "@/data/types";
 import { ArrowLeft, Bookmark, Lock } from "lucide-react";
@@ -120,7 +121,8 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
         <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
       </section>
 
-      <div className="mt-10">
+      <div className="mt-10 space-y-6">
+        <SignalEditorial brand={brand} />
         <RecommendationCard brand={brand} />
       </div>
 
