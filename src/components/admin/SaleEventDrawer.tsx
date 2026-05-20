@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   Sheet,
   SheetContent,
@@ -49,6 +50,8 @@ type FormState = {
   adminNotes: string;
 };
 
+type FieldName = keyof FormState;
+
 const empty: FormState = {
   brandId: "",
   category: "",
@@ -61,6 +64,52 @@ const empty: FormState = {
   adminNotes: "",
 };
 
+const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+const discountField = z
+  .string()
+  .refine((v) => v === "" || /^\d+$/.test(v), { message: "Whole number 0–90" })
+  .refine(
+    (v) => {
+      if (v === "") return true;
+      const n = Number(v);
+      return n >= 0 && n <= 90;
+    },
+    { message: "Must be between 0 and 90" }
+  );
+
+const saleFormSchema = z
+  .object({
+    brandId: z.string().uuid({ message: "Brand is required" }),
+    saleType: z.enum(SALE_TYPES as unknown as [string, ...string[]]),
+    status: z.enum(SALE_STATUSES as unknown as [string, ...string[]]),
+    category: z.string().max(80, "Keep under 80 characters"),
+    startDate: z.string().regex(dateRe, "Start date is required"),
+    endDate: z
+      .string()
+      .refine((v) => v === "" || dateRe.test(v), { message: "Invalid date" }),
+    discountMin: discountField,
+    discountMax: discountField,
+    adminNotes: z.string().max(2000, "Keep under 2000 characters"),
+  })
+  .superRefine((val, ctx) => {
+    if (val.endDate && val.startDate && val.endDate < val.startDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endDate"],
+        message: "End date can't be before start date",
+      });
+    }
+    if (val.discountMin !== "" && val.discountMax !== "") {
+      if (Number(val.discountMax) < Number(val.discountMin)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["discountMax"],
+          message: "Max can't be lower than min",
+        });
+      }
+    }
+  });
+
 export function SaleEventDrawer({
   open,
   onOpenChange,
@@ -69,7 +118,8 @@ export function SaleEventDrawer({
   onSaved,
 }: Props) {
   const [form, setForm] = useState<FormState>(empty);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -106,35 +156,42 @@ export function SaleEventDrawer({
       toast.success(editing ? "Sale event updated" : "Sale event created");
       onSaved();
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Couldn't save"),
+    onError: (e: unknown) => toast.error(extractServerError(e)),
   });
 
   const validate = (next: FormState) => {
-    const e: Record<string, string> = {};
-    if (!next.brandId) e.brandId = "Brand is required";
-    if (!next.saleType) e.saleType = "Sale type is required";
-    if (!next.startDate) e.startDate = "Start date is required";
-    if (next.endDate && next.endDate < next.startDate)
-      e.endDate = "End date can't be before start date";
-    const min = next.discountMin === "" ? null : Number(next.discountMin);
-    const max = next.discountMax === "" ? null : Number(next.discountMax);
-    if (min != null && (Number.isNaN(min) || min < 0 || min > 90))
-      e.discountMin = "0–90";
-    if (max != null && (Number.isNaN(max) || max < 0 || max > 90))
-      e.discountMax = "0–90";
-    if (min != null && max != null && max < min)
-      e.discountMax = "Max can't be lower than min";
-    return e;
+    const result = saleFormSchema.safeParse(next);
+    if (result.success) return {};
+    const out: Partial<Record<FieldName, string>> = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0] as FieldName | undefined;
+      if (key && !out[key]) out[key] = issue.message;
+    }
+    return out;
+  };
+
+  const setField = <K extends FieldName>(name: K, value: FormState[K]) => {
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const { [name]: _omit, ...rest } = prev;
+      return rest;
+    });
   };
 
   const submit = (status: "draft" | "published" | "hidden") => {
     const next = { ...form, status };
     const e = validate(next);
     setErrors(e);
-    if (Object.keys(e).length) return;
+    if (Object.keys(e).length) {
+      toast.error("Please fix the highlighted fields");
+      bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     saveMut.mutate(status);
   };
+
+  const errorCount = Object.keys(errors).length;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -155,14 +212,29 @@ export function SaleEventDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div ref={bodyRef} className="flex-1 overflow-y-auto p-6">
+          {errorCount > 0 && (
+            <div
+              role="alert"
+              className="mb-4 border border-destructive/60 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+            >
+              {errorCount === 1
+                ? "1 field needs attention before saving."
+                : `${errorCount} fields need attention before saving.`}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Brand *" error={errors.brandId}>
+            <Field id="brandId" label="Brand" required error={errors.brandId}>
               <Select
                 value={form.brandId}
-                onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
+                onValueChange={(v) => setField("brandId", v)}
               >
-                <SelectTrigger className="h-10 rounded-none">
+                <SelectTrigger
+                  id="brandId"
+                  aria-invalid={!!errors.brandId}
+                  className="h-10 rounded-none"
+                >
                   <SelectValue placeholder="Select a brand" />
                 </SelectTrigger>
                 <SelectContent>
@@ -175,14 +247,18 @@ export function SaleEventDrawer({
               </Select>
             </Field>
 
-            <Field label="Sale type *" error={errors.saleType}>
+            <Field id="saleType" label="Sale type" required error={errors.saleType}>
               <Select
                 value={form.saleType}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, saleType: v as FormState["saleType"] }))
+                  setField("saleType", v as FormState["saleType"])
                 }
               >
-                <SelectTrigger className="h-10 rounded-none">
+                <SelectTrigger
+                  id="saleType"
+                  aria-invalid={!!errors.saleType}
+                  className="h-10 rounded-none"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,26 +271,30 @@ export function SaleEventDrawer({
               </Select>
             </Field>
 
-            <Field label="Category">
+            <Field id="category" label="Category" error={errors.category}>
               <Input
+                id="category"
                 value={form.category}
                 maxLength={80}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, category: e.target.value }))
-                }
+                aria-invalid={!!errors.category}
+                onChange={(e) => setField("category", e.target.value)}
                 className="h-10 rounded-none"
                 placeholder="e.g. ready-to-wear"
               />
             </Field>
 
-            <Field label="Status" error={errors.status}>
+            <Field id="status" label="Status" error={errors.status}>
               <Select
                 value={form.status}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, status: v as FormState["status"] }))
+                  setField("status", v as FormState["status"])
                 }
               >
-                <SelectTrigger className="h-10 rounded-none">
+                <SelectTrigger
+                  id="status"
+                  aria-invalid={!!errors.status}
+                  className="h-10 rounded-none"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,62 +307,62 @@ export function SaleEventDrawer({
               </Select>
             </Field>
 
-            <Field label="Start date *" error={errors.startDate}>
+            <Field id="startDate" label="Start date" required error={errors.startDate}>
               <Input
+                id="startDate"
                 type="date"
                 value={form.startDate}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, startDate: e.target.value }))
-                }
+                aria-invalid={!!errors.startDate}
+                onChange={(e) => setField("startDate", e.target.value)}
                 className="h-10 rounded-none"
               />
             </Field>
 
-            <Field label="End date" error={errors.endDate}>
+            <Field id="endDate" label="End date" error={errors.endDate}>
               <Input
+                id="endDate"
                 type="date"
                 value={form.endDate}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, endDate: e.target.value }))
-                }
+                aria-invalid={!!errors.endDate}
+                onChange={(e) => setField("endDate", e.target.value)}
                 className="h-10 rounded-none"
               />
             </Field>
 
-            <Field label="Discount min %" error={errors.discountMin}>
+            <Field id="discountMin" label="Discount min %" error={errors.discountMin}>
               <Input
+                id="discountMin"
                 type="number"
                 min={0}
                 max={90}
                 value={form.discountMin}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, discountMin: e.target.value }))
-                }
+                aria-invalid={!!errors.discountMin}
+                onChange={(e) => setField("discountMin", e.target.value)}
                 className="h-10 rounded-none"
               />
             </Field>
 
-            <Field label="Discount max %" error={errors.discountMax}>
+            <Field id="discountMax" label="Discount max %" error={errors.discountMax}>
               <Input
+                id="discountMax"
                 type="number"
                 min={0}
                 max={90}
                 value={form.discountMax}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, discountMax: e.target.value }))
-                }
+                aria-invalid={!!errors.discountMax}
+                onChange={(e) => setField("discountMax", e.target.value)}
                 className="h-10 rounded-none"
               />
             </Field>
 
             <div className="md:col-span-2">
-              <Field label="Admin notes">
+              <Field id="adminNotes" label="Admin notes" error={errors.adminNotes}>
                 <Textarea
+                  id="adminNotes"
                   value={form.adminNotes}
                   maxLength={2000}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, adminNotes: e.target.value }))
-                  }
+                  aria-invalid={!!errors.adminNotes}
+                  onChange={(e) => setField("adminNotes", e.target.value)}
                   className="min-h-[100px] rounded-none"
                   placeholder="Private notes for the team."
                 />
@@ -335,20 +415,50 @@ function buildPayload(form: FormState) {
   };
 }
 
+function extractServerError(e: unknown): string {
+  const fallback = "Couldn't save sale event.";
+  if (!(e instanceof Error)) return fallback;
+  const msg = e.message?.trim();
+  if (!msg) return fallback;
+  // Server may rethrow zod issues as a JSON string — surface the first message.
+  if (msg.startsWith("[") || msg.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(msg);
+      const first = Array.isArray(parsed) ? parsed[0] : parsed;
+      if (first && typeof first.message === "string") return first.message;
+    } catch {
+      /* ignore */
+    }
+    return fallback;
+  }
+  return msg;
+}
+
 function Field({
+  id,
   label,
   children,
   error,
+  required,
 }: {
+  id?: string;
   label: string;
   children: React.ReactNode;
   error?: string;
+  required?: boolean;
 }) {
   return (
     <div>
-      <label className="eyebrow mb-1 block">{label}</label>
+      <label htmlFor={id} className="eyebrow mb-1 block">
+        {label}
+        {required && <span className="ml-1 text-destructive">*</span>}
+      </label>
       {children}
-      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {error && (
+        <p id={id ? `${id}-error` : undefined} className="mt-1 text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
