@@ -46,6 +46,7 @@ import {
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
 import { SaleEventDrawer } from "./SaleEventDrawer";
+import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
 
 type Filters = {
   brandId?: string;
