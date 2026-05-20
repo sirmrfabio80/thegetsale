@@ -53,6 +53,15 @@ function SetupPage() {
 
   const [smsDrops, setSmsDrops] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
+
+  // Search & quick-filter state for chip pickers
+  const [houseQuery, setHouseQuery] = useState("");
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const [styleQuery, setStyleQuery] = useState("");
+  const [housesSelectedOnly, setHousesSelectedOnly] = useState(false);
+  const [categoriesSelectedOnly, setCategoriesSelectedOnly] = useState(false);
+  const [stylesSelectedOnly, setStylesSelectedOnly] = useState(false);
+
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from the backend record once it arrives.
