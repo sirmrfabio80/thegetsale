@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { RecommendationCard } from "@/components/RecommendationCard";
+import { SignalEditorial } from "@/components/brand/SignalEditorial";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand, Category } from "@/data/types";
 import { ArrowLeft, Bookmark, Lock } from "lucide-react";
