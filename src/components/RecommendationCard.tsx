@@ -31,6 +31,7 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
         <div className="flex flex-wrap gap-3 md:shrink-0">
           <Button
             onClick={onToggle}
+            disabled={isPending}
             variant={isWatched ? "outline" : "default"}
             className="rounded-none"
           >
