@@ -9,6 +9,10 @@ import { brandDepartment } from "@/data/categoryMap";
 import { loadSetup, saveSetup, type Department } from "@/data/setupStorage";
 import { cn } from "@/lib/utils";
 
+// Single source of truth so the "Updating list…" flash and the summary
+// toast always settle together after a bulk department toggle.
+const BULK_TOGGLE_DEBOUNCE_MS = 300;
+
 export const Route = createFileRoute("/_authenticated/watchlist")({
   head: () => ({
     meta: [
@@ -51,7 +55,7 @@ function WatchlistPage() {
       return;
     }
     setIsUpdating(true);
-    const updateTimer = window.setTimeout(() => setIsUpdating(false), 350);
+    const updateTimer = window.setTimeout(() => setIsUpdating(false), BULK_TOGGLE_DEBOUNCE_MS);
     const sortChanged = sortByRef.current !== sortBy;
     const prevDepartments = departmentsRef.current;
     sortByRef.current = sortBy;
@@ -83,7 +87,7 @@ function WatchlistPage() {
         }
         toastBaselineRef.current = null;
         toastTimerRef.current = null;
-      }, 300);
+      }, BULK_TOGGLE_DEBOUNCE_MS);
     }
     return () => window.clearTimeout(updateTimer);
   }, [items, departments, sortBy]);
