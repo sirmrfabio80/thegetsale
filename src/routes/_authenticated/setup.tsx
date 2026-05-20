@@ -122,7 +122,10 @@ function SetupPage() {
           number="01"
           title="Department"
           hint={`${departments.size} selected${departments.size >= 1 ? "" : " · min 1"}`}
+          onReset={() => setDepartments(new Set())}
+          canReset={departments.size > 0}
         />
+
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Tell us which collections to watch. You can pick more than one.
         </p>
