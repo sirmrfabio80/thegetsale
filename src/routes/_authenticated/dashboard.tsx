@@ -9,6 +9,7 @@ import { loadSetup, saveSetup, DEPARTMENT_OPTIONS, type Department, type StylePr
 import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
+import { watchlistQueryOptions } from "@/data/store";
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
