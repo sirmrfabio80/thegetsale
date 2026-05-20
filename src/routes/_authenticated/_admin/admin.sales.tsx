@@ -1,8 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SaleEventsTab } from "@/components/admin/SaleEventsTab";
@@ -67,5 +63,3 @@ function AdminSalesPage() {
   );
 }
 
-// Re-export hooks holders to keep tree-shaking happy if needed
-export { useMemo, useState, useMutation, useQuery, useQueryClient, useServerFn, toast };
