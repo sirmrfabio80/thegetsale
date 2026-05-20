@@ -161,7 +161,10 @@ function ProfilePage() {
       }
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, blob, { upsert: true, contentType: mime, cacheControl: "0" });
+        // 1 year cache — bytes are immutable for a given upload, and the
+        // signed URL itself rotates server-side when the user replaces the
+        // photo, so returning visits hit the cache instead of the network.
+        .upload(path, blob, { upsert: true, contentType: mime, cacheControl: "31536000" });
       if (uploadError) throw uploadError;
 
       const next = await setPath({ data: { path } });
