@@ -870,3 +870,22 @@ function statusClass(status: string) {
       return "border-border text-muted-foreground";
   }
 }
+
+function bulkActionLabel(
+  action: "published" | "hidden" | "draft" | "delete" | undefined,
+  count: number,
+) {
+  const noun = `${count} item${count === 1 ? "" : "s"}`;
+  switch (action) {
+    case "published":
+      return `Publishing ${noun}…`;
+    case "hidden":
+      return `Hiding ${noun}…`;
+    case "draft":
+      return `Moving ${noun} to draft…`;
+    case "delete":
+      return `Deleting ${noun}…`;
+    default:
+      return `Updating ${noun}…`;
+  }
+}
