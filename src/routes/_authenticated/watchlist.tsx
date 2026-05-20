@@ -213,12 +213,27 @@ function WatchlistPage() {
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setSelectMode(true)}
-                className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-              >
-                Select
-              </button>
+              <>
+                <label className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  <span className="hidden sm:inline">Sort</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    className="border border-border bg-transparent px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-foreground focus:border-foreground focus:outline-none"
+                    aria-label="Sort watchlist"
+                  >
+                    <option value="signal">Signal strength</option>
+                    <option value="confidence">Confidence</option>
+                    <option value="window">Sale window</option>
+                  </select>
+                </label>
+                <button
+                  onClick={() => setSelectMode(true)}
+                  className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Select
+                </button>
+              </>
             )}
           </div>
         </div>
