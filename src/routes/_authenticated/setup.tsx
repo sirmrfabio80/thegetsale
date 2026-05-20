@@ -463,7 +463,7 @@ function SetupPage() {
               const ms = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
               return mq && ms;
             });
-            if (visible.length === 1) {
+            if (visible.length === 0) {
               return (
                 <p className="col-span-full text-sm text-muted-foreground">
                   No styles match your filters.
