@@ -48,6 +48,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const FILTERS: Array<"All" | Category> = ["All", "Womens", "Mens", "Accessories", "Footwear", "Jewellery"];
 
 function Dashboard() {
+  const { data: houseDTOs } = useSuspenseQuery(housesQueryOptions);
+  const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
   const [filter, setFilter] = useState<"All" | Category>("All");
   const [q, setQ] = useState("");
   const [houses, setHouses] = useState<Set<string>>(new Set());
