@@ -1,0 +1,168 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function ensureAdmin(supabase: any, userId: string) {
+  const { data, error } = await supabase.rpc("has_role", {
+    _user_id: userId,
+    _role: "admin",
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Forbidden");
+}
+
+export const HOUSE_GROUPS = [
+  "Quiet luxury",
+  "Heritage",
+  "Runway signal",
+  "Contemporary",
+  "Emerging",
+  "Archive / resale",
+] as const;
+
+export const HOUSE_STATUS_FILTERS = ["active", "inactive", "all"] as const;
+
+export type HouseDTO = {
+  id: string;
+  name: string;
+  slug: string;
+  houseGroup: string | null;
+  country: string | null;
+  websiteUrl: string | null;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+const slugRe = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const HouseInput = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Slug is required")
+    .max(80)
+    .regex(slugRe, "Use lowercase letters, numbers and hyphens only"),
+  houseGroup: z.string().trim().max(80).optional().nullable(),
+  country: z.string().trim().max(80).optional().nullable(),
+  websiteUrl: z
+    .string()
+    .trim()
+    .max(300)
+    .url("Must be a valid URL")
+    .optional()
+    .nullable()
+    .or(z.literal("").transform(() => null)),
+  description: z.string().trim().max(2000).optional().nullable(),
+  isActive: z.boolean(),
+});
+
+function mapRow(r: any): HouseDTO {
+  return {
+    id: r.id,
+    name: r.name,
+    slug: r.slug,
+    houseGroup: r.house_group ?? null,
+    country: r.country ?? null,
+    websiteUrl: r.website_url ?? null,
+    description: r.description ?? null,
+    isActive: !!r.is_active,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+export const listHouses = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        search: z.string().trim().max(120).optional().nullable(),
+        group: z.string().trim().max(80).optional().nullable(),
+        status: z.enum(HOUSE_STATUS_FILTERS).optional().nullable(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<HouseDTO[]> => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+
+    let q = supabase.from("brands").select("*").order("name", { ascending: true });
+    if (data.search) q = q.ilike("name", `%${data.search}%`);
+    if (data.group) q = q.eq("house_group", data.group);
+    if (data.status === "active") q = q.eq("is_active", true);
+    else if (data.status === "inactive") q = q.eq("is_active", false);
+
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(mapRow);
+  });
+
+function friendlySaveError(error: any): Error {
+  const msg = error?.message ?? "Couldn't save house";
+  if (error?.code === "23505" || /duplicate key|unique/i.test(msg)) {
+    return new Error("That slug is already in use. Choose another.");
+  }
+  return new Error(msg);
+}
+
+export const createHouse = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => HouseInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+    const { error } = await supabase.from("brands").insert({
+      name: data.name,
+      slug: data.slug.toLowerCase(),
+      house_group: data.houseGroup ?? null,
+      country: data.country ?? null,
+      website_url: data.websiteUrl ?? null,
+      description: data.description ?? null,
+      is_active: data.isActive,
+    });
+    if (error) throw friendlySaveError(error);
+    return { ok: true };
+  });
+
+export const updateHouse = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid() }).and(HouseInput).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+    const { error } = await supabase
+      .from("brands")
+      .update({
+        name: data.name,
+        slug: data.slug.toLowerCase(),
+        house_group: data.houseGroup ?? null,
+        country: data.country ?? null,
+        website_url: data.websiteUrl ?? null,
+        description: data.description ?? null,
+        is_active: data.isActive,
+      })
+      .eq("id", data.id);
+    if (error) throw friendlySaveError(error);
+    return { ok: true };
+  });
+
+export const setHouseActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), isActive: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+    const { error } = await supabase
+      .from("brands")
+      .update({ is_active: data.isActive })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

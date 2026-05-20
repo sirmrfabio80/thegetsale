@@ -16,31 +16,40 @@ export type Database = {
     Tables: {
       brands: {
         Row: {
+          country: string | null
           created_at: string
+          description: string | null
           house_group: string | null
           id: string
           is_active: boolean
           name: string
           slug: string
           updated_at: string
+          website_url: string | null
         }
         Insert: {
+          country?: string | null
           created_at?: string
+          description?: string | null
           house_group?: string | null
           id?: string
           is_active?: boolean
           name: string
           slug: string
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
+          country?: string | null
           created_at?: string
+          description?: string | null
           house_group?: string | null
           id?: string
           is_active?: boolean
           name?: string
           slug?: string
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }

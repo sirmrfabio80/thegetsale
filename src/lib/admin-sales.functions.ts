@@ -83,12 +83,43 @@ export const listBrandOptions = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<BrandOption[]> => {
     const { supabase, userId } = context;
     await ensureAdmin(supabase, userId);
-    const { data, error } = await supabase
+
+    // Active houses available for new sale events
+    const { data: active, error } = await supabase
       .from("brands")
-      .select("id, name")
+      .select("id, name, is_active")
+      .eq("is_active", true)
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []) as BrandOption[];
+
+    // Also include inactive brands already attached to a sale event so
+    // existing rows remain readable in the dropdown.
+    const { data: usedRows } = await supabase
+      .from("sale_events")
+      .select("brand_id");
+    const usedIds = Array.from(
+      new Set((usedRows ?? []).map((r: any) => r.brand_id)),
+    );
+    const activeIds = new Set((active ?? []).map((b: any) => b.id));
+    const missingIds = usedIds.filter((id) => !activeIds.has(id));
+
+    const merged: BrandOption[] = (active ?? []).map((b: any) => ({
+      id: b.id,
+      name: b.name,
+    }));
+
+    if (missingIds.length) {
+      const { data: extras } = await supabase
+        .from("brands")
+        .select("id, name")
+        .in("id", missingIds);
+      for (const b of extras ?? []) {
+        merged.push({ id: (b as any).id, name: `${(b as any).name} (inactive)` });
+      }
+    }
+
+    merged.sort((a, b) => a.name.localeCompare(b.name));
+    return merged;
   });
 
 export const listSaleEvents = createServerFn({ method: "POST" })

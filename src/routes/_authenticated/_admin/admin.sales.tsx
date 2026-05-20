@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HousesTab } from "@/components/admin/HousesTab";
 import { SaleEventsTab } from "@/components/admin/SaleEventsTab";
 import { UsersRolesTab } from "@/components/admin/UsersRolesTab";
 import { SystemTab } from "@/components/admin/SystemTab";
@@ -27,9 +28,15 @@ function AdminSalesPage() {
 
       <SectionRule />
 
-      <Tabs defaultValue="sales" className="w-full">
+      <Tabs defaultValue="houses" className="w-full">
         <div className="-mx-4 mb-6 overflow-x-auto px-4 md:mx-0 md:px-0">
           <TabsList className="inline-flex h-auto w-max flex-nowrap rounded-none border border-border bg-transparent p-1 md:w-auto">
+            <TabsTrigger
+              value="houses"
+              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+            >
+              Houses
+            </TabsTrigger>
             <TabsTrigger
               value="sales"
               className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
@@ -52,6 +59,9 @@ function AdminSalesPage() {
           </TabsList>
         </div>
 
+        <TabsContent value="houses" className="mt-0">
+          <HousesTab />
+        </TabsContent>
         <TabsContent value="sales" className="mt-0">
           <SaleEventsTab />
         </TabsContent>
@@ -65,4 +75,5 @@ function AdminSalesPage() {
     </PageLayout>
   );
 }
+
 
