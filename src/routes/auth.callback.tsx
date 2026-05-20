@@ -29,7 +29,14 @@ function AuthCallback() {
           if (cancelled) return;
           // If a redirect was supplied, validate it; otherwise fall back to setup/dashboard.
           if (redirectTo !== undefined) {
-            navigate({ to: safeRedirect(redirectTo, "/dashboard") });
+            const safe = safeRedirect(redirectTo, "/dashboard");
+            // Prefer typed navigation for known routes so params are validated.
+            const brandMatch = safe.match(/^\/brand\/([^/?#]+)$/);
+            if (brandMatch) {
+              navigate({ to: "/brand/$id", params: { id: brandMatch[1] } });
+            } else {
+              navigate({ to: safe });
+            }
             return;
           }
           const setup = loadSetup();
