@@ -186,10 +186,10 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 2 — Categories */}
+      {/* Step 3 — Categories */}
       <section id="step-categories">
         <StepHeader
-          number="02"
+          number="03"
           title="Categories"
           hint={`${categories.size} selected${categories.size >= 1 ? "" : " · min 1"}`}
         />
