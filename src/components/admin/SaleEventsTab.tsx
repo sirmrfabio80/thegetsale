@@ -62,11 +62,15 @@ export function SaleEventsTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<SaleEventDTO | null>(null);
   const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
   const setStatusFn = useServerFn(setSaleEventStatus);
   const deleteFn = useServerFn(deleteSaleEvent);
+  const bulkStatusFn = useServerFn(bulkSetSaleEventStatus);
+  const bulkDeleteFn = useServerFn(bulkDeleteSaleEvents);
 
   const brandsQ = useQuery({
     queryKey: ["admin", "brands"],
