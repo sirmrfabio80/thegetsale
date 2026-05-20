@@ -14,6 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { brandDepartment } from "@/data/categoryMap";
 
 export const Route = createFileRoute("/brand/$id")({
   loader: ({ params }) => {
