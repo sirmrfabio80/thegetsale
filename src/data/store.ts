@@ -33,6 +33,12 @@ export const watchlistStore = {
     watchlist = watchlist.filter((w) => w.brandId !== brandId);
     emit();
   },
+  removeMany(brandIds: string[]) {
+    if (brandIds.length === 0) return;
+    const set = new Set(brandIds);
+    watchlist = watchlist.filter((w) => !set.has(w.brandId));
+    emit();
+  },
   toggle(brandId: string) {
     if (watchlistStore.has(brandId)) {
       watchlistStore.remove(brandId);
