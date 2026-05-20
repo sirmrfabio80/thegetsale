@@ -226,6 +226,15 @@ function WatchlistPage() {
                 <span>
                   Sorted by <span className="text-foreground">{sortLabel(sortBy)}</span>
                 </span>
+                {isUpdating && (
+                  <span
+                    aria-live="polite"
+                    className="inline-flex items-center gap-1.5 text-foreground/70 transition-opacity"
+                  >
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/60" />
+                    Updating list…
+                  </span>
+                )}
                 {sortBy !== "signal" && (
                   <button
                     onClick={() => setSortBy("signal")}
