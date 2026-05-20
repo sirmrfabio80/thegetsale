@@ -68,6 +68,20 @@ function WatchlistPage() {
 
   const deptLabel = [...departments].join(", ");
 
+  const hiddenDeptLabel = useMemo(() => {
+    if (departments.size === 0) return "";
+    const counts = new Map<Department, number>();
+    for (const it of items) {
+      const brand = getBrand(it.brandId);
+      if (!brand) continue;
+      const d = brandDepartment(brand);
+      if (departments.has(d)) continue;
+      counts.set(d, (counts.get(d) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
+  }, [items, departments]);
+
+
   const visibleIds = useMemo(() => visible.map((v) => v.brandId), [visible]);
   const selectedVisibleCount = useMemo(
     () => visibleIds.filter((id) => selected.has(id)).length,
