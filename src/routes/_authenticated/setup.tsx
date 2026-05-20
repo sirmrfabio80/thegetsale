@@ -159,6 +159,16 @@ function SetupPage() {
           Follow the houses and categories you care about. We'll use this to surface sharper
           buy/wait signals and notify you only when the signal is worth your attention.
         </p>
+        {hasAnySelections && (
+          <button
+            type="button"
+            onClick={handleResetAll}
+            className="mt-6 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-colors"
+          >
+            <RotateCcw className="size-3" />
+            Reset selections
+          </button>
+        )}
       </section>
 
       <SectionRule />
