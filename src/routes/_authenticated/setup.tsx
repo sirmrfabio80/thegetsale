@@ -216,12 +216,12 @@ function SetupPage() {
         />
 
         <div className="mt-8 flex flex-wrap gap-2">
-          {setupCategories.map((cat) => (
+          {options.categories.map((cat) => (
             <SelectableChip
-              key={cat}
-              label={cat}
-              selected={categories.has(cat)}
-              onToggle={() => setCategories((s) => toggle(s, cat))}
+              key={cat.slug}
+              label={cat.label}
+              selected={categories.has(cat.label)}
+              onToggle={() => setCategories((s) => toggle(s, cat.label))}
             />
           ))}
         </div>
