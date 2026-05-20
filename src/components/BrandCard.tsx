@@ -5,6 +5,7 @@ import { useWatchlist, watchlistStore } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { brandDepartment } from "@/data/categoryMap";
 
 export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: boolean }) {
   const items = useWatchlist();
