@@ -28,26 +28,29 @@ function AdminSalesPage() {
       <SectionRule />
 
       <Tabs defaultValue="sales" className="w-full">
-        <TabsList className="mb-6 h-auto rounded-none border border-border bg-transparent p-1">
-          <TabsTrigger
-            value="sales"
-            className="rounded-none px-4 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background"
-          >
-            Sale events
-          </TabsTrigger>
-          <TabsTrigger
-            value="users"
-            className="rounded-none px-4 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background"
-          >
-            Users & roles
-          </TabsTrigger>
-          <TabsTrigger
-            value="system"
-            className="rounded-none px-4 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background"
-          >
-            System
-          </TabsTrigger>
-        </TabsList>
+        <div className="-mx-4 mb-6 overflow-x-auto px-4 md:mx-0 md:px-0">
+          <TabsList className="inline-flex h-auto w-max flex-nowrap rounded-none border border-border bg-transparent p-1 md:w-auto">
+            <TabsTrigger
+              value="sales"
+              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+            >
+              Sale events
+            </TabsTrigger>
+            <TabsTrigger
+              value="users"
+              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+            >
+              <span className="md:hidden">Users</span>
+              <span className="hidden md:inline">Users &amp; roles</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="system"
+              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+            >
+              System
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="sales" className="mt-0">
           <SaleEventsTab />
