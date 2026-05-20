@@ -29,6 +29,7 @@ export const getRouter = () => {
           auth: { status: user ? "authenticated" : "unauthenticated", user },
         },
       });
+      queryClient.invalidateQueries();
       router.invalidate();
     };
 

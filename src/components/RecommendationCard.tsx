@@ -2,20 +2,16 @@ import type { Brand } from "@/data/types";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useWatchlist, watchlistStore } from "@/data/store";
+import { useWatchlist, useWatchlistMutations } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {
   const items = useWatchlist();
   const isWatched = items.some((w) => w.brandId === brand.id);
+  const { add, remove, isPending } = useWatchlistMutations();
 
   const onToggle = () => {
-    if (isWatched) {
-      watchlistStore.remove(brand.id);
-      toast(`${brand.name} removed from watchlist`);
-    } else {
-      watchlistStore.add(brand.id);
-      toast.success(`${brand.name} added to watchlist`);
-    }
+    if (isWatched) remove(brand.id, brand.name);
+    else add(brand.id, brand.name);
   };
 
   return (
@@ -35,6 +31,7 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
         <div className="flex flex-wrap gap-3 md:shrink-0">
           <Button
             onClick={onToggle}
+            disabled={isPending}
             variant={isWatched ? "outline" : "default"}
             className="rounded-none"
           >

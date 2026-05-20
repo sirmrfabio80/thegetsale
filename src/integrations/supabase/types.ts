@@ -270,6 +270,32 @@ export type Database = {
         }
         Relationships: []
       }
+      user_watchlist: {
+        Row: {
+          added_at: string
+          brand_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          brand_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          brand_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_watchlist_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

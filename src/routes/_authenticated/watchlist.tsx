@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
-import { useWatchlist, watchlistStore } from "@/data/store";
+import { useWatchlist, useWatchlistMutations, watchlistQueryOptions } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
 import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
@@ -20,11 +20,14 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
       { name: "description", content: "The pieces you're waiting on, watched quietly." },
     ],
   }),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(watchlistQueryOptions),
   component: WatchlistPage,
 });
 
 function WatchlistPage() {
   const items = useWatchlist();
+  const { removeMany } = useWatchlistMutations();
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -244,8 +247,7 @@ function WatchlistPage() {
   const removeSelected = () => {
     const ids = [...selected];
     if (ids.length === 0) return;
-    watchlistStore.removeMany(ids);
-    toast(`${ids.length} ${ids.length === 1 ? "brand" : "brands"} removed from watchlist`);
+    removeMany(ids);
     exitSelectMode();
   };
 

@@ -2,8 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { WatchlistItem } from "@/data/types";
 import { getBrand } from "@/data/brands";
 import { SignalBadge } from "./SignalBadge";
-import { watchlistStore } from "@/data/store";
-import { toast } from "sonner";
+import { useWatchlistMutations } from "@/data/store";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
 
@@ -16,6 +15,7 @@ interface WatchlistCardProps {
 
 export function WatchlistCard({ item, selectable, selected, onToggleSelect }: WatchlistCardProps) {
   const brand = getBrand(item.brandId);
+  const { remove, isPending } = useWatchlistMutations();
   if (!brand) return null;
 
   return (
@@ -70,11 +70,9 @@ export function WatchlistCard({ item, selectable, selected, onToggleSelect }: Wa
           View signal
         </Link>
         <button
-          onClick={() => {
-            watchlistStore.remove(item.brandId);
-            toast(`${brand.name} removed from watchlist`);
-          }}
-          className="text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => remove(item.brandId, brand.name)}
+          disabled={isPending}
+          className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
         >
           Remove
         </button>
