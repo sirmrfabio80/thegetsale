@@ -105,6 +105,16 @@ function WatchlistPage() {
   );
   const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
 
+  const hiddenSelectedCount = useMemo(() => {
+    if (selected.size === 0) return 0;
+    const visibleSet = new Set(visibleIds);
+    let n = 0;
+    selected.forEach((id) => {
+      if (!visibleSet.has(id)) n += 1;
+    });
+    return n;
+  }, [selected, visibleIds]);
+
   // Drop stale selections if items disappear (filter change, removal, etc.)
   useEffect(() => {
     setSelected((prev) => {
