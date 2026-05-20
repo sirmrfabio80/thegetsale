@@ -243,21 +243,22 @@ function SetupPage() {
           Pick the aesthetics that feel like you. We'll tune your first dashboard around them.
         </p>
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {STYLE_OPTIONS.map((opt) => {
-            const selected = styles.has(opt.value);
+          {options.styles.map((opt) => {
+            const value = opt.label as StylePreference;
+            const selected = styles.has(value);
             return (
               <button
-                key={opt.value}
+                key={opt.slug}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => setStyles((s) => toggle(s, opt.value))}
+                onClick={() => setStyles((s) => toggle(s, value))}
                 className={`border p-4 text-left transition-colors ${
                   selected
                     ? "border-foreground bg-foreground text-background"
                     : "border-border text-foreground hover:border-foreground"
                 }`}
               >
-                <p className="font-serif text-lg">{opt.value}</p>
+                <p className="font-serif text-lg">{opt.label}</p>
                 <p
                   className={`mt-1 text-xs ${
                     selected ? "text-background/70" : "text-muted-foreground"
