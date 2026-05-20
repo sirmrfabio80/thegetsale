@@ -248,9 +248,9 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 4 — Notifications */}
+      {/* Step 5 — Notifications */}
       <section id="step-notifications">
-        <StepHeader number="04" title="Notifications" />
+        <StepHeader number="05" title="Notifications" />
 
         <div className="mt-8 grid grid-cols-1 gap-3">
           <NotificationCard
