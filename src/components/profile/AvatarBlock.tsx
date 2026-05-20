@@ -17,10 +17,14 @@ export function AvatarBlock({
   const letter = (fallback ?? "?").trim().charAt(0).toUpperCase() || "?";
 
   // Track image load state so swapping from letter → photo fades in smoothly
-  // instead of flashing a half-painted <img>.
+  // instead of flashing a half-painted <img>. If the image fails to load
+  // (404, network error, CORS, broken URL), we drop it entirely so the
+  // letter underneath stays visible and the box never renders a broken icon.
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgErrored, setImgErrored] = useState(false);
   useEffect(() => {
     setImgLoaded(false);
+    setImgErrored(false);
   }, [url]);
 
   const frame = `relative inline-flex ${dim} shrink-0 align-middle items-center justify-center overflow-hidden border bg-background`;
@@ -37,23 +41,29 @@ export function AvatarBlock({
     );
   }
 
+  const showImage = !!url && !imgErrored;
+
   return (
     <span
       className={`${frame} border-foreground font-serif text-foreground`}
       aria-hidden={size === "sm"}
     >
-      {/* Letter sits underneath so the box is never empty while the image decodes. */}
-      <span className={url ? "absolute inset-0 flex items-center justify-center" : ""}>
+      {/* Letter sits underneath so the box is never empty while the image
+          decodes — and stays visible if the image fails to load. */}
+      <span className={showImage ? "absolute inset-0 flex items-center justify-center" : ""}>
         {letter}
       </span>
-      {url && (
+      {showImage && (
         <img
           src={url}
           alt=""
           decoding="async"
           loading="lazy"
           onLoad={() => setImgLoaded(true)}
-          onError={() => setImgLoaded(false)}
+          onError={() => {
+            setImgErrored(true);
+            setImgLoaded(false);
+          }}
           className={`relative h-full w-full object-cover transition-opacity duration-300 ${
             imgLoaded ? "opacity-100" : "opacity-0"
           }`}
