@@ -187,12 +187,22 @@ function WatchlistPage() {
     toast("Department filters cleared");
   };
 
+  const saveTimerRef = useRef<number | null>(null);
   const removeDepartment = (d: Department) => {
-    const next = new Set(departments);
-    next.delete(d);
-    setDepartments(next);
-    const s = loadSetup();
-    if (s) saveSetup({ ...s, departments: [...next] });
+    setDepartments((prev) => {
+      if (!prev.has(d)) return prev;
+      const next = new Set(prev);
+      next.delete(d);
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+      saveTimerRef.current = window.setTimeout(() => {
+        const s = loadSetup();
+        if (s) saveSetup({ ...s, departments: [...next] });
+        saveTimerRef.current = null;
+      }, 250);
+      return next;
+    });
   };
 
   const removeSelected = () => {
