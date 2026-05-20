@@ -118,6 +118,30 @@ function SetupPage() {
     navigate({ to: "/dashboard" });
   };
 
+  const hasAnySelections =
+    departments.size > 1 ||
+    houses.size > 0 ||
+    categories.size > 0 ||
+    styles.size > 0 ||
+    !emailSignals ||
+    smsDrops ||
+    weeklyDigest;
+
+  const handleResetAll = () => {
+    setDepartments(new Set());
+    setHouses(new Set());
+    setCategories(new Set());
+    setStyles(new Set());
+    setEmailSignals(true);
+    setSmsDrops(false);
+    setWeeklyDigest(false);
+    setHouseQuery("");
+    setCategoryQuery("");
+    setStyleQuery("");
+    setHousesSelectedOnly(false);
+    setCategoriesSelectedOnly(false);
+    setStylesSelectedOnly(false);
+  };
 
   const scrollToStep = (id: string) => {
     if (typeof document === "undefined") return;
