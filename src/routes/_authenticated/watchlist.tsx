@@ -6,7 +6,8 @@ import { useWatchlist, useWatchlistMutations, watchlistQueryOptions } from "@/da
 import { WatchlistCard } from "@/components/WatchlistCard";
 import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
-import { loadSetup, saveSetup, type Department } from "@/data/setupStorage";
+import { type Department } from "@/data/setupStorage";
+import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
 import { cn } from "@/lib/utils";
 
 // Single source of truth so the "Updating list…" flash and the summary
