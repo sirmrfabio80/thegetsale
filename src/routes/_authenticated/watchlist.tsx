@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
-import { useWatchlist } from "@/data/store";
+import { useWatchlist, watchlistStore } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
 import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
 import { loadSetup, type Department } from "@/data/setupStorage";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
   head: () => ({
@@ -20,6 +22,8 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
 function WatchlistPage() {
   const items = useWatchlist();
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const sync = () => {
@@ -64,6 +68,58 @@ function WatchlistPage() {
 
   const deptLabel = [...departments].join(", ");
 
+  const visibleIds = useMemo(() => visible.map((v) => v.brandId), [visible]);
+  const selectedVisibleCount = useMemo(
+    () => visibleIds.filter((id) => selected.has(id)).length,
+    [visibleIds, selected],
+  );
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+
+  // Drop stale selections if items disappear (filter change, removal, etc.)
+  useEffect(() => {
+    setSelected((prev) => {
+      const next = new Set<string>();
+      const ids = new Set(items.map((i) => i.brandId));
+      prev.forEach((id) => ids.has(id) && next.add(id));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [items]);
+
+  const toggleSelect = (brandId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(brandId)) next.delete(brandId);
+      else next.add(brandId);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        visibleIds.forEach((id) => next.delete(id));
+      } else {
+        visibleIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const removeSelected = () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    watchlistStore.removeMany(ids);
+    toast(`${ids.length} ${ids.length === 1 ? "brand" : "brands"} removed from watchlist`);
+    exitSelectMode();
+  };
+
+
   return (
     <PageLayout>
       <section className="pt-16 md:pt-24">
@@ -91,6 +147,62 @@ function WatchlistPage() {
       )}
 
       <SectionRule />
+
+      {items.length > 0 && visible.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {selectMode ? (
+              <>
+                <button
+                  onClick={toggleSelectAllVisible}
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  {allVisibleSelected ? "Clear all" : "Select all"}
+                </button>
+                <span>
+                  {selected.size} selected
+                </span>
+              </>
+            ) : (
+              <span>
+                {visible.length} {visible.length === 1 ? "brand" : "brands"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {selectMode ? (
+              <>
+                <button
+                  onClick={exitSelectMode}
+                  className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={removeSelected}
+                  disabled={selected.size === 0}
+                  className={cn(
+                    "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
+                    selected.size === 0
+                      ? "cursor-not-allowed border-border text-muted-foreground/60"
+                      : "border-foreground bg-foreground text-background hover:opacity-90",
+                  )}
+                >
+                  Remove{selected.size > 0 ? ` (${selected.size})` : ""}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setSelectMode(true)}
+                className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                Select
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {items.length === 0 ? (
         <div className="border border-dashed border-border px-8 py-20 text-center">
@@ -121,9 +233,16 @@ function WatchlistPage() {
       ) : (
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {visible.map((it) => (
-            <WatchlistCard key={it.brandId} item={it} />
+            <WatchlistCard
+              key={it.brandId}
+              item={it}
+              selectable={selectMode}
+              selected={selected.has(it.brandId)}
+              onToggleSelect={toggleSelect}
+            />
           ))}
         </section>
+
       )}
     </PageLayout>
   );

@@ -4,20 +4,44 @@ import { getBrand } from "@/data/brands";
 import { SignalBadge } from "./SignalBadge";
 import { watchlistStore } from "@/data/store";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-export function WatchlistCard({ item }: { item: WatchlistItem }) {
+interface WatchlistCardProps {
+  item: WatchlistItem;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (brandId: string) => void;
+}
+
+export function WatchlistCard({ item, selectable, selected, onToggleSelect }: WatchlistCardProps) {
   const brand = getBrand(item.brandId);
   if (!brand) return null;
 
   return (
-    <article className="group border border-border bg-card px-5 py-6 transition-all md:hover:border-foreground/20">
+    <article
+      className={cn(
+        "group relative border bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
+        selected ? "border-foreground" : "border-border",
+      )}
+    >
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="eyebrow mb-2">{brand.category}</p>
-          <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Watching since {formatDate(item.addedAt)}
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          {selectable && (
+            <input
+              type="checkbox"
+              checked={!!selected}
+              onChange={() => onToggleSelect?.(item.brandId)}
+              aria-label={`Select ${brand.name}`}
+              className="mt-1 h-4 w-4 cursor-pointer accent-foreground"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="eyebrow mb-2">{brand.category}</p>
+            <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Watching since {formatDate(item.addedAt)}
+            </p>
+          </div>
         </div>
         <SignalBadge signal={brand.signal} />
       </div>
