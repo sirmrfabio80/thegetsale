@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { useWatchlist, watchlistStore } from "@/data/store";
