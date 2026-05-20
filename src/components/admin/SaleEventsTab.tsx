@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -37,6 +38,8 @@ import {
   updateSaleEvent,
   setSaleEventStatus,
   deleteSaleEvent,
+  bulkSetSaleEventStatus,
+  bulkDeleteSaleEvents,
   SALE_TYPES,
   SALE_STATUSES,
   type SaleEventDTO,
@@ -59,11 +62,15 @@ export function SaleEventsTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<SaleEventDTO | null>(null);
   const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
   const setStatusFn = useServerFn(setSaleEventStatus);
   const deleteFn = useServerFn(deleteSaleEvent);
+  const bulkStatusFn = useServerFn(bulkSetSaleEventStatus);
+  const bulkDeleteFn = useServerFn(bulkDeleteSaleEvents);
 
   const brandsQ = useQuery({
     queryKey: ["admin", "brands"],
@@ -110,11 +117,70 @@ export function SaleEventsTab() {
       toast.error(e instanceof Error ? e.message : "Couldn't delete"),
   });
 
+  const bulkStatusMut = useMutation({
+    mutationFn: (vars: { ids: string[]; status: "draft" | "published" | "hidden" }) =>
+      bulkStatusFn({ data: vars }),
+    onSuccess: (_d, vars) => {
+      toast.success(
+        `${vars.ids.length} sale event${vars.ids.length === 1 ? "" : "s"} set to ${vars.status}`,
+      );
+      qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
+      setSelectedIds(new Set());
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't update selection"),
+  });
+
+  const bulkDeleteMut = useMutation({
+    mutationFn: (ids: string[]) => bulkDeleteFn({ data: { ids } }),
+    onSuccess: (_d, ids) => {
+      toast.success(`${ids.length} sale event${ids.length === 1 ? "" : "s"} deleted`);
+      qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
+      setSelectedIds(new Set());
+      setBulkConfirmDelete(false);
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't delete selection"),
+  });
+
   const brands = brandsQ.data ?? [];
   const rows = listQ.data ?? [];
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
   const hasFilters =
     !!filters.brandId || !!filters.category || !!filters.saleType || !!filters.status;
+
+  const visibleIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const selectedCount = selectedIds.size;
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const someVisibleSelected = visibleIds.some((id) => selectedIds.has(id));
+  const bulkBusy = bulkStatusMut.isPending || bulkDeleteMut.isPending;
+
+  // Drop selections for rows no longer in the visible list (filter changes, deletions)
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set<string>();
+      for (const id of prev) if (visibleIds.includes(id)) next.add(id);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [visibleIds]);
+
+  const toggleOne = (id: string, checked: boolean) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  const toggleAllVisible = (checked: boolean) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) for (const id of visibleIds) next.add(id);
+      else for (const id of visibleIds) next.delete(id);
+      return next;
+    });
 
   return (
     <div className="space-y-6">
@@ -223,6 +289,72 @@ export function SaleEventsTab() {
         )}
       </div>
 
+      {selectedCount > 0 && (
+        <div className="sticky top-0 z-10 flex flex-col gap-3 border border-foreground bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 text-sm">
+            <span className="font-medium">
+              {selectedCount} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() =>
+                bulkStatusMut.mutate({
+                  ids: Array.from(selectedIds),
+                  status: "published",
+                })
+              }
+              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+            >
+              Publish
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() =>
+                bulkStatusMut.mutate({
+                  ids: Array.from(selectedIds),
+                  status: "hidden",
+                })
+              }
+              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+            >
+              Hide
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() =>
+                bulkStatusMut.mutate({
+                  ids: Array.from(selectedIds),
+                  status: "draft",
+                })
+              }
+              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+            >
+              Draft
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() => setBulkConfirmDelete(true)}
+              className="h-9 border border-destructive px-3 text-[11px] uppercase tracking-[0.18em] text-destructive disabled:opacity-50"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile: card list */}
       <div className="space-y-3 md:hidden">
         {listQ.isLoading && (
@@ -236,10 +368,24 @@ export function SaleEventsTab() {
           </div>
         )}
         {rows.map((r) => (
-          <div key={r.id} className="border border-border p-4">
+          <div
+            key={r.id}
+            className={
+              "border p-4 " +
+              (selectedIds.has(r.id) ? "border-foreground" : "border-border")
+            }
+          >
             <div className="flex items-start justify-between gap-3">
-              <div className="font-medium">
-                {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedIds.has(r.id)}
+                  onCheckedChange={(v) => toggleOne(r.id, v === true)}
+                  aria-label={`Select ${r.brandName ?? "sale event"}`}
+                  className="mt-0.5"
+                />
+                <div className="font-medium">
+                  {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
+                </div>
               </div>
               <span
                 className={
@@ -327,6 +473,20 @@ export function SaleEventsTab() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={
+                    allVisibleSelected
+                      ? true
+                      : someVisibleSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={(v) => toggleAllVisible(v === true)}
+                  aria-label="Select all visible sale events"
+                  disabled={visibleIds.length === 0}
+                />
+              </TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Type</TableHead>
@@ -340,20 +500,27 @@ export function SaleEventsTab() {
           <TableBody>
             {listQ.isLoading && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!listQ.isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
                   No sale events yet.
                 </TableCell>
               </TableRow>
             )}
             {rows.map((r) => (
-              <TableRow key={r.id}>
+              <TableRow key={r.id} data-state={selectedIds.has(r.id) ? "selected" : undefined}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(r.id)}
+                    onCheckedChange={(v) => toggleOne(r.id, v === true)}
+                    aria-label={`Select ${r.brandName ?? "sale event"}`}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
                   {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
                 </TableCell>
@@ -465,6 +632,28 @@ export function SaleEventsTab() {
               disabled={deleteMut.isPending}
             >
               {deleteMut.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirmDelete} onOpenChange={setBulkConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedCount} sale event{selectedCount === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the selected records permanently. It can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => bulkDeleteMut.mutate(Array.from(selectedIds))}
+              disabled={bulkDeleteMut.isPending || selectedCount === 0}
+            >
+              {bulkDeleteMut.isPending ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
