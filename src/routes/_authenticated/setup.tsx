@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Search, X } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { SelectableChip } from "@/components/setup/SelectableChip";
 import { NotificationCard } from "@/components/setup/NotificationCard";
@@ -118,6 +118,30 @@ function SetupPage() {
     navigate({ to: "/dashboard" });
   };
 
+  const hasAnySelections =
+    departments.size > 0 ||
+    houses.size > 0 ||
+    categories.size > 0 ||
+    styles.size > 0 ||
+    !emailSignals ||
+    smsDrops ||
+    weeklyDigest;
+
+  const handleResetAll = () => {
+    setDepartments(new Set());
+    setHouses(new Set());
+    setCategories(new Set());
+    setStyles(new Set());
+    setEmailSignals(true);
+    setSmsDrops(false);
+    setWeeklyDigest(false);
+    setHouseQuery("");
+    setCategoryQuery("");
+    setStyleQuery("");
+    setHousesSelectedOnly(false);
+    setCategoriesSelectedOnly(false);
+    setStylesSelectedOnly(false);
+  };
 
   const scrollToStep = (id: string) => {
     if (typeof document === "undefined") return;
@@ -135,6 +159,16 @@ function SetupPage() {
           Follow the houses and categories you care about. We'll use this to surface sharper
           buy/wait signals and notify you only when the signal is worth your attention.
         </p>
+        {hasAnySelections && (
+          <button
+            type="button"
+            onClick={handleResetAll}
+            className="mt-6 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-colors"
+          >
+            <RotateCcw className="size-3" />
+            Reset selections
+          </button>
+        )}
       </section>
 
       <SectionRule />
