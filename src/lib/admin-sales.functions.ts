@@ -208,3 +208,40 @@ export const deleteSaleEvent = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const bulkSetSaleEventStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(500),
+        status: z.enum(SALE_STATUSES),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+    const { error } = await supabase
+      .from("sale_events")
+      .update({ status: data.status })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
+
+export const bulkDeleteSaleEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+    const { error } = await supabase
+      .from("sale_events")
+      .delete()
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
