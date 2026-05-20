@@ -24,6 +24,7 @@ function WatchlistPage() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<"signal" | "confidence" | "window">("signal");
 
   useEffect(() => {
     const sync = () => {
