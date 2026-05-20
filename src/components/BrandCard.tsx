@@ -1,26 +1,21 @@
 import { Link } from "@tanstack/react-router";
 import type { Brand } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
-import { useWatchlist, watchlistStore } from "@/data/store";
+import { useWatchlist, useWatchlistMutations } from "@/data/store";
 import { Bookmark } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
 
 export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: boolean }) {
   const items = useWatchlist();
   const isWatched = items.some((w) => w.brandId === brand.id);
+  const { add, remove, isPending } = useWatchlistMutations();
 
   const onToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isWatched) {
-      watchlistStore.remove(brand.id);
-      toast(`${brand.name} removed from watchlist`);
-    } else {
-      watchlistStore.add(brand.id);
-      toast.success(`${brand.name} added to watchlist`);
-    }
+    if (isWatched) remove(brand.id, brand.name);
+    else add(brand.id, brand.name);
   };
 
   return (
