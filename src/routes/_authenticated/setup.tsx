@@ -381,33 +381,97 @@ function SetupPage() {
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Pick the aesthetics that feel like you. We'll tune your first dashboard around them.
         </p>
-        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {options.styles.map((opt) => {
-            const value = opt.label as StylePreference;
-            const selected = styles.has(value);
-            return (
+
+        {/* Filter bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={styleQuery}
+              onChange={(e) => setStyleQuery(e.target.value)}
+              placeholder="Search styles…"
+              className="flex h-10 w-full border border-border bg-transparent pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            {styleQuery && (
               <button
-                key={opt.slug}
                 type="button"
-                aria-pressed={selected}
-                onClick={() => setStyles((s) => toggle(s, value))}
-                className={`border p-4 text-left transition-colors ${
-                  selected
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border text-foreground hover:border-foreground"
-                }`}
+                onClick={() => setStyleQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
               >
-                <p className="font-serif text-lg">{opt.label}</p>
-                <p
-                  className={`mt-1 text-xs ${
-                    selected ? "text-background/70" : "text-muted-foreground"
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setStylesSelectedOnly((v) => !v)}
+            className={`inline-flex h-10 items-center justify-center border px-4 text-xs uppercase tracking-wider transition-colors ${
+              stylesSelectedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+            }`}
+            aria-pressed={stylesSelectedOnly}
+          >
+            Selected only
+          </button>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {options.styles
+            .filter((opt) => {
+              const matchesQuery =
+                !styleQuery ||
+                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
+                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
+              const matchesSelected = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
+              return matchesQuery && matchesSelected;
+            })
+            .map((opt) => {
+              const value = opt.label as StylePreference;
+              const selected = styles.has(value);
+              return (
+                <button
+                  key={opt.slug}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setStyles((s) => toggle(s, value))}
+                  className={`border p-4 text-left transition-colors ${
+                    selected
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-foreground hover:border-foreground"
                   }`}
                 >
-                  {opt.description}
+                  <p className="font-serif text-lg">{opt.label}</p>
+                  <p
+                    className={`mt-1 text-xs ${
+                      selected ? "text-background/70" : "text-muted-foreground"
+                    }`}
+                  >
+                    {opt.description}
+                  </p>
+                </button>
+              );
+            })}
+          {(() => {
+            const visible = options.styles.filter((opt) => {
+              const mq =
+                !styleQuery ||
+                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
+                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
+              const ms = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
+              return mq && ms;
+            });
+            if (visible.length === 1) {
+              return (
+                <p className="col-span-full text-sm text-muted-foreground">
+                  No styles match your filters.
                 </p>
-              </button>
-            );
-          })}
+              );
+            }
+            return null;
+          })()}
         </div>
       </section>
 
