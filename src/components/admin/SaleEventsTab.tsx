@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -67,6 +67,9 @@ export function SaleEventsTab() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
   const [viewing, setViewing] = useState<SaleEventDTO | null>(null);
+  const MOBILE_PAGE_SIZE = 20;
+  const [mobileLimit, setMobileLimit] = useState(MOBILE_PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
@@ -184,6 +187,31 @@ export function SaleEventsTab() {
       else for (const id of visibleIds) next.delete(id);
       return next;
     });
+
+  // Reset mobile pagination when filter results change
+  useEffect(() => {
+    setMobileLimit(MOBILE_PAGE_SIZE);
+  }, [filters, rows.length]);
+
+  const mobileRows = useMemo(() => rows.slice(0, mobileLimit), [rows, mobileLimit]);
+  const hasMoreMobile = mobileLimit < rows.length;
+
+  // IntersectionObserver to load more cards as the sentinel scrolls into view
+  useEffect(() => {
+    if (!hasMoreMobile) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setMobileLimit((n) => Math.min(n + MOBILE_PAGE_SIZE, rows.length));
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMoreMobile, rows.length]);
 
   return (
     <div className="space-y-6">
@@ -392,7 +420,7 @@ export function SaleEventsTab() {
             No sale events yet.
           </div>
         )}
-        {rows.map((r) => (
+        {mobileRows.map((r) => (
           <div
             key={r.id}
             className={
@@ -498,7 +526,31 @@ export function SaleEventsTab() {
             </div>
           </div>
         ))}
+        {hasMoreMobile && (
+          <>
+            <div
+              ref={sentinelRef}
+              aria-hidden
+              className="h-px w-full"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                setMobileLimit((n) => Math.min(n + MOBILE_PAGE_SIZE, rows.length))
+              }
+              className="h-11 w-full border border-border text-[11px] uppercase tracking-[0.18em] text-foreground"
+            >
+              Load more ({rows.length - mobileLimit} remaining)
+            </button>
+          </>
+        )}
+        {!listQ.isLoading && rows.length > 0 && !hasMoreMobile && (
+          <div className="py-2 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            End of list
+          </div>
+        )}
       </div>
+
 
       {/* Desktop: table */}
       <div className="hidden border border-border md:block">
