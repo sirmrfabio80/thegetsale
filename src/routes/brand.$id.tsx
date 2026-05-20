@@ -75,7 +75,9 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       </div>
 
       <section className="pt-8 md:pt-10">
-        <p className="eyebrow">{brand.category}</p>
+        <p className="eyebrow">
+          {brand.category} <span className="text-muted-foreground/60">·</span> {brandDepartment(brand)}
+        </p>
         <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
         <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
       </section>
