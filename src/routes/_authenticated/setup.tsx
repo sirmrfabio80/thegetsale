@@ -78,13 +78,14 @@ function SetupPage() {
   };
 
   const valid = useMemo(
-    () => houses.size >= 3 && categories.size >= 1,
-    [houses, categories],
+    () => departments.size >= 1 && houses.size >= 3 && categories.size >= 1,
+    [departments, houses, categories],
   );
 
   const handleStart = () => {
     if (!valid) return;
     saveSetup({
+      departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
