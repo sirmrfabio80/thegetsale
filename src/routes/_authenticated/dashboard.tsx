@@ -5,9 +5,16 @@ import { brands } from "@/data/brands";
 import { BrandCard } from "@/components/BrandCard";
 import type { Category } from "@/data/types";
 import { cn } from "@/lib/utils";
-import { loadSetup, type StylePreference } from "@/data/setupStorage";
+import { loadSetup, DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
 import { mapSetupCategories, matchesSelection } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
+import type { Brand } from "@/data/types";
+
+function brandDepartment(b: Brand): Department {
+  if (b.category === "Womens") return "Womenswear";
+  if (b.category === "Mens") return "Menswear";
+  return "Unisex";
+}
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -32,6 +39,7 @@ function Dashboard() {
   const [hasSetup, setHasSetup] = useState(false);
   const [onlyMine, setOnlyMine] = useState(false);
   const [styles, setStyles] = useState<StylePreference[]>([]);
+  const [departments, setDepartments] = useState<Set<Department>>(new Set());
 
   useEffect(() => {
     const s = loadSetup();
@@ -42,6 +50,7 @@ function Dashboard() {
     setHouseCount(s.houses.length);
     setCatCount(s.categories.length);
     setStyles((s.styles ?? []) as StylePreference[]);
+    setDepartments(new Set((s.departments ?? []) as Department[]));
   }, []);
 
 
@@ -59,7 +68,8 @@ function Dashboard() {
       const matchCat = filter === "All" || b.category === filter;
       const matchQ = !q || b.name.toLowerCase().includes(q.toLowerCase()) || b.tagline.toLowerCase().includes(q.toLowerCase());
       const matchMine = !onlyMine || matchedIds.has(b.id);
-      return matchCat && matchQ && matchMine;
+      const matchDept = departments.size === 0 || departments.has(brandDepartment(b));
+      return matchCat && matchQ && matchMine && matchDept;
     });
     if (!hasSetup) return base;
     return [...base].sort((a, b) => {
@@ -69,7 +79,16 @@ function Dashboard() {
       // Tie-break by style affinity so the dashboard feels tuned.
       return styleScore(b.tagline, styles) - styleScore(a.tagline, styles);
     });
-  }, [filter, q, onlyMine, matchedIds, hasSetup, styles]);
+  }, [filter, q, onlyMine, matchedIds, hasSetup, styles, departments]);
+
+  const toggleDepartment = (d: Department) => {
+    setDepartments((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
+  };
 
 
   return (
@@ -99,7 +118,38 @@ function Dashboard() {
         </Link>
       </div>
 
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Department</span>
+        {DEPARTMENT_OPTIONS.map(({ value }) => {
+          const active = departments.has(value);
+          return (
+            <button
+              key={value}
+              onClick={() => toggleDepartment(value)}
+              aria-pressed={active}
+              className={cn(
+                "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
+                active
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+              )}
+            >
+              {value}
+            </button>
+          );
+        })}
+        {departments.size > 0 && (
+          <button
+            onClick={() => setDepartments(new Set())}
+            className="px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
