@@ -68,6 +68,20 @@ function WatchlistPage() {
 
   const deptLabel = [...departments].join(", ");
 
+  const hiddenDeptLabel = useMemo(() => {
+    if (departments.size === 0) return "";
+    const counts = new Map<Department, number>();
+    for (const it of items) {
+      const brand = getBrand(it.brandId);
+      if (!brand) continue;
+      const d = brandDepartment(brand);
+      if (departments.has(d)) continue;
+      counts.set(d, (counts.get(d) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
+  }, [items, departments]);
+
+
   const visibleIds = useMemo(() => visible.map((v) => v.brandId), [visible]);
   const selectedVisibleCount = useMemo(
     () => visibleIds.filter((id) => selected.has(id)).length,
@@ -208,7 +222,7 @@ function WatchlistPage() {
         <div className="border border-dashed border-border px-8 py-20 text-center">
           <p className="font-serif text-2xl">Nothing on watch yet.</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Start with today's signals — add a house you're considering.
+            Start with today's signals — add a house in Womenswear, Menswear or Unisex you're considering.
           </p>
           <Link
             to="/dashboard"
@@ -219,9 +233,10 @@ function WatchlistPage() {
         </div>
       ) : visible.length === 0 ? (
         <div className="border border-dashed border-border px-8 py-20 text-center">
-          <p className="font-serif text-2xl">No saved brands match your departments.</p>
+          <p className="font-serif text-2xl">No saved brands in {deptLabel}.</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} hidden by your current selection.
+            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} on watch in other departments
+            {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
           </p>
           <Link
             to="/setup"
