@@ -40,6 +40,7 @@ function WatchlistPage() {
   // the order changes from items/departments/sort updates.
   const firstRunRef = useRef(true);
   const sortByRef = useRef(sortBy);
+  const toastTimerRef = useRef<number | null>(null);
   useEffect(() => {
     if (firstRunRef.current) {
       firstRunRef.current = false;
@@ -47,14 +48,20 @@ function WatchlistPage() {
       return;
     }
     setIsUpdating(true);
-    const t = window.setTimeout(() => setIsUpdating(false), 350);
-    // Only toast when the re-sort was triggered by items/departments
-    // (i.e. the user didn't just pick a new sort option themselves).
-    if (sortByRef.current === sortBy) {
-      toast(`Sorted by ${sortLabel(sortBy)}`);
-    }
+    const updateTimer = window.setTimeout(() => setIsUpdating(false), 350);
+    // Debounce the toast so rapid bulk toggles only surface one confirmation.
+    const sortChanged = sortByRef.current !== sortBy;
     sortByRef.current = sortBy;
-    return () => window.clearTimeout(t);
+    if (!sortChanged) {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+      toastTimerRef.current = window.setTimeout(() => {
+        toast(`Sorted by ${sortLabel(sortByRef.current)}`);
+        toastTimerRef.current = null;
+      }, 300);
+    }
+    return () => window.clearTimeout(updateTimer);
   }, [items, departments, sortBy]);
 
   useEffect(() => {
