@@ -46,6 +46,7 @@ function SetupPage() {
   useEffect(() => {
     const stored = loadSetup();
     if (stored) {
+      setDepartments(new Set((stored.departments ?? []) as Department[]));
       setHouses(new Set(stored.houses));
       setCategories(new Set(stored.categories));
       setStyles(new Set((stored.styles ?? []) as StylePreference[]));
@@ -61,12 +62,13 @@ function SetupPage() {
   useEffect(() => {
     if (!hydrated) return;
     saveSetup({
+      departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
     });
-  }, [hydrated, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
+  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
 
   const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
