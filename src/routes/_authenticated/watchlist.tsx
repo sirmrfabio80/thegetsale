@@ -213,6 +213,14 @@ function WatchlistPage() {
                 <span>
                   Sorted by <span className="text-foreground">{sortLabel(sortBy)}</span>
                 </span>
+                {sortBy !== "signal" && (
+                  <button
+                    onClick={() => setSortBy("signal")}
+                    className="underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    Reset sort
+                  </button>
+                )}
               </>
             )}
           </div>
