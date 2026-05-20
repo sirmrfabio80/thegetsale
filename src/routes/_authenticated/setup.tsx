@@ -119,10 +119,10 @@ function SetupPage() {
   };
 
   const hasAnySelections =
-    departments.size > 1 ||
+    departments.size > 0 ||
     houses.size > 0 ||
     categories.size > 0 ||
-    styles.size > 0 ||
+    styles.size > 5 ||
     !emailSignals ||
     smsDrops ||
     weeklyDigest;
