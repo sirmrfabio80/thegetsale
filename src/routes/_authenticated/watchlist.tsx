@@ -55,7 +55,7 @@ function WatchlistPage() {
       return;
     }
     setIsUpdating(true);
-    const updateTimer = window.setTimeout(() => setIsUpdating(false), 350);
+    const updateTimer = window.setTimeout(() => setIsUpdating(false), BULK_TOGGLE_DEBOUNCE_MS);
     const sortChanged = sortByRef.current !== sortBy;
     const prevDepartments = departmentsRef.current;
     sortByRef.current = sortBy;
