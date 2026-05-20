@@ -32,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/setup")({
 
 function SetupPage() {
   const navigate = useNavigate();
+  const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [houses, setHouses] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [styles, setStyles] = useState<Set<StylePreference>>(new Set());
