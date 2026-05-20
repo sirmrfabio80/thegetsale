@@ -319,18 +319,29 @@ function WatchlistPage() {
           </Link>
         </div>
       ) : visible.length === 0 ? (
-        <div className="border border-dashed border-border px-8 py-20 text-center">
-          <p className="font-serif text-2xl">No saved brands in {deptLabel}.</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} on watch in other departments
+        <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
+          <p className="eyebrow text-muted-foreground">Filtered out</p>
+          <p className="mt-4 font-serif text-3xl leading-tight">
+            Nothing on watch in {deptLabel}.
+          </p>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other departments
             {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
           </p>
-          <Link
-            to="/setup"
-            className="mt-6 inline-block border border-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] hover:bg-foreground hover:text-background"
-          >
-            Adjust departments
-          </Link>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={clearDepartmentFilters}
+              className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+            >
+              Clear filters
+            </button>
+            <Link
+              to="/setup"
+              className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+            >
+              Adjust in setup
+            </Link>
+          </div>
         </div>
       ) : (
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
