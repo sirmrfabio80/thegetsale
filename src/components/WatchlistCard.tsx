@@ -51,6 +51,16 @@ export function WatchlistCard({ item, selectable, selected, onToggleSelect }: Wa
 
       <p className="text-sm leading-relaxed text-foreground/90">{brand.headline}</p>
 
+      <div className="mt-4 border-l-2 border-border pl-3">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          Why this is on top
+        </p>
+        <p className="mt-1 text-[12px] leading-relaxed text-foreground/80">
+          {signalPhrase(brand.signal)} · {brand.confidence}% confidence · {windowPhrase(brand.windowDays)}
+        </p>
+      </div>
+
+
       <div className="mt-5 flex items-center justify-between text-[12px]">
         <Link
           to="/brand/$id"
@@ -78,4 +88,24 @@ function formatDate(iso: string) {
     day: "2-digit",
     month: "short",
   });
+}
+
+function signalPhrase(signal: "soon" | "hold" | "buy" | "low") {
+  switch (signal) {
+    case "soon":
+      return "Sale likely soon";
+    case "buy":
+      return "Worth acting on";
+    case "hold":
+      return "Hold for now";
+    case "low":
+      return "Quiet signal";
+  }
+}
+
+function windowPhrase(days: number) {
+  if (days <= 0) return "Window open now";
+  if (days < 14) return `~${days} days out`;
+  const weeks = Math.round(days / 7);
+  return `~${weeks} ${weeks === 1 ? "week" : "weeks"} out`;
 }
