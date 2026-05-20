@@ -206,6 +206,23 @@ export function SaleEventsTab() {
         </Button>
       </div>
 
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          {listQ.isLoading
+            ? "Loading…"
+            : `${rows.length} sale event${rows.length === 1 ? "" : "s"}`}
+        </span>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => setFilters({})}
+            className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
       <div className="border border-border">
         <Table>
           <TableHeader>
@@ -274,25 +291,25 @@ export function SaleEventsTab() {
                     {r.status !== "published" && (
                       <button
                         type="button"
-                        disabled={statusMut.isPending}
+                        disabled={pendingStatusId === r.id}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50"
                         onClick={() =>
                           statusMut.mutate({ id: r.id, status: "published" })
                         }
                       >
-                        Publish
+                        {pendingStatusId === r.id ? "Updating…" : "Publish"}
                       </button>
                     )}
                     {r.status !== "hidden" && (
                       <button
                         type="button"
-                        disabled={statusMut.isPending}
+                        disabled={pendingStatusId === r.id}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50"
                         onClick={() =>
                           statusMut.mutate({ id: r.id, status: "hidden" })
                         }
                       >
-                        Hide
+                        {pendingStatusId === r.id ? "Updating…" : "Hide"}
                       </button>
                     )}
                     <button
@@ -310,7 +327,7 @@ export function SaleEventsTab() {
         </Table>
       </div>
 
-      <SaleEventDialog
+      <SaleEventDrawer
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         brands={brands}
