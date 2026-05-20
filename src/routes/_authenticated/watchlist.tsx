@@ -202,16 +202,23 @@ function WatchlistPage() {
       </section>
 
       {departments.size > 0 && (
-        <p className="mt-10 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          Filtered by department · {deptLabel}
+        <p className="mt-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span>Filtered by department · {deptLabel}</span>
           {hiddenCount > 0 && (
-            <>
-              {" "}· {hiddenCount} hidden ·{" "}
-              <Link to="/setup" className="underline underline-offset-4 hover:text-foreground">
-                Edit
-              </Link>
-            </>
+            <span aria-hidden className="text-muted-foreground/50">·</span>
           )}
+          {hiddenCount > 0 && <span>{hiddenCount} hidden</span>}
+          <span aria-hidden className="text-muted-foreground/50">·</span>
+          <button
+            onClick={clearDepartmentFilters}
+            className="underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Clear filters
+          </button>
+          <span aria-hidden className="text-muted-foreground/50">·</span>
+          <Link to="/setup" className="underline underline-offset-4 hover:text-foreground">
+            Edit
+          </Link>
         </p>
       )}
 
