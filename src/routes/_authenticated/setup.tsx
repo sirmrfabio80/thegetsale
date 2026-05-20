@@ -198,7 +198,10 @@ function SetupPage() {
           number="03"
           title="Categories"
           hint={`${categories.size} selected${categories.size >= 1 ? "" : " · min 1"}`}
+          onReset={() => setCategories(new Set())}
+          canReset={categories.size > 0}
         />
+
         <div className="mt-8 flex flex-wrap gap-2">
           {setupCategories.map((cat) => (
             <SelectableChip
