@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { loadSetup } from "@/data/setupStorage";
+import { getMySetup } from "@/lib/setup.functions";
 import { resolveRedirect } from "@/lib/safeRedirect";
 
 export const Route = createFileRoute("/auth/callback")({
@@ -38,8 +38,18 @@ function AuthCallback() {
             }
             return;
           }
-          const setup = loadSetup();
-          navigate({ to: setup?.completedAt ? "/dashboard" : "/setup" });
+          // Decide setup vs dashboard from the backend record.
+          let completed = false;
+          try {
+            const setup = await getMySetup();
+            completed = !!setup?.completedAt;
+          } catch {
+            // Network/auth blip — default to setup so we don't dump
+            // a fresh user straight into the dashboard.
+            completed = false;
+          }
+          if (cancelled) return;
+          navigate({ to: completed ? "/dashboard" : "/setup" });
           return;
         }
         await new Promise((r) => setTimeout(r, 200));
