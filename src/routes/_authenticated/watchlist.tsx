@@ -68,6 +68,58 @@ function WatchlistPage() {
 
   const deptLabel = [...departments].join(", ");
 
+  const visibleIds = useMemo(() => visible.map((v) => v.brandId), [visible]);
+  const selectedVisibleCount = useMemo(
+    () => visibleIds.filter((id) => selected.has(id)).length,
+    [visibleIds, selected],
+  );
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+
+  // Drop stale selections if items disappear (filter change, removal, etc.)
+  useEffect(() => {
+    setSelected((prev) => {
+      const next = new Set<string>();
+      const ids = new Set(items.map((i) => i.brandId));
+      prev.forEach((id) => ids.has(id) && next.add(id));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [items]);
+
+  const toggleSelect = (brandId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(brandId)) next.delete(brandId);
+      else next.add(brandId);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        visibleIds.forEach((id) => next.delete(id));
+      } else {
+        visibleIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const removeSelected = () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    watchlistStore.removeMany(ids);
+    toast(`${ids.length} ${ids.length === 1 ? "brand" : "brands"} removed from watchlist`);
+    exitSelectMode();
+  };
+
+
   return (
     <PageLayout>
       <section className="pt-16 md:pt-24">
