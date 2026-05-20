@@ -395,7 +395,7 @@ function SetupPage() {
 
       <div className="flex flex-col items-stretch gap-3 pb-8 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
-          {valid ? "Ready when you are." : "Select at least 3 houses and 1 category to continue."}
+          {valid ? "Ready when you are." : "Pick at least 1 department, 3 houses and 1 category to continue."}
         </p>
         <Button
           onClick={handleStart}
