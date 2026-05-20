@@ -6,15 +6,8 @@ import { BrandCard } from "@/components/BrandCard";
 import type { Category } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { loadSetup, saveSetup, DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
-import { mapSetupCategories, matchesSelection } from "@/data/categoryMap";
+import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
-import type { Brand } from "@/data/types";
-
-function brandDepartment(b: Brand): Department {
-  if (b.category === "Womens") return "Womenswear";
-  if (b.category === "Mens") return "Menswear";
-  return "Unisex";
-}
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
