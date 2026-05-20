@@ -97,16 +97,6 @@ function WatchlistPage() {
     return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
   }, [items, departments]);
 
-  const hiddenSelectedCount = useMemo(() => {
-    if (selected.size === 0) return 0;
-    const visibleSet = new Set(visibleIds);
-    let n = 0;
-    selected.forEach((id) => {
-      if (!visibleSet.has(id)) n += 1;
-    });
-    return n;
-  }, [selected, visibleIds]);
-
 
   const visibleIds = useMemo(() => visible.map((v) => v.brandId), [visible]);
   const selectedVisibleCount = useMemo(
