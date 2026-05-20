@@ -1,59 +1,79 @@
-## Context
+## Goal
 
-On mobile, the `/admin/sales` page has two cramped spots:
+Add a "Houses" admin tab that lets admins create, edit, activate/deactivate and browse fashion houses. Reuse the existing `brands` table (UI calls them Houses; DB keeps `brands`). Keep Sale Events working and let new active houses appear in its brand selector.
 
-1. **Tabs (`admin.sales.tsx`)** — the three `TabsTrigger`s (Sale events, Users & roles, System) sit inside a single `TabsList` row with fixed padding and uppercase letterspacing. On narrow viewports they wrap awkwardly and clip.
-2. **Filters + table (`SaleEventsTab.tsx`)** — filter selects are fixed at `w-44` and the toolbar uses `flex-wrap items-end justify-between`, pushing the "Add sale event" button off-row. The 8-column `<Table>` overflows horizontally with no scroll affordance, and inline row actions ("Edit · Publish · Hide · Delete") collide.
+## Database
 
-Scope: presentation only, two files. No data, server, or filter logic changes.
+The `brands` table already exists with `id, slug, name, house_group, is_active, created_at, updated_at`. Missing fields → one small additive migration:
 
-## Approach
+```sql
+ALTER TABLE public.brands
+  ADD COLUMN description text,
+  ADD COLUMN country text,
+  ADD COLUMN website_url text;
 
-### 1. `admin.sales.tsx` — tabs
+-- updated_at trigger (uses existing public.update_updated_at_column)
+CREATE TRIGGER brands_set_updated_at
+BEFORE UPDATE ON public.brands
+FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-- Wrap `TabsList` in `overflow-x-auto` and let it be full width on mobile (`w-full md:w-auto`), with `flex-nowrap` so triggers scroll horizontally instead of wrapping.
-- Shrink trigger padding on mobile (`px-3 py-2 md:px-4`) and keep current size from `md` up.
-- Shorten "Users & roles" → "Users" on mobile via a `<span className="md:hidden">` / `hidden md:inline` swap to avoid truncation.
-- Reduce h1 top padding on mobile (already `pt-16 md:pt-24` — keep) and ensure the eyebrow + title stay aligned.
+-- Unique slug (case-insensitive)
+CREATE UNIQUE INDEX IF NOT EXISTS brands_slug_unique_lower
+  ON public.brands (lower(slug));
+```
 
-### 2. `SaleEventsTab.tsx` — toolbar & filters
+No `logo_url` in this pass (no existing logo bucket; out of scope per prompt).
 
-- Replace fixed `w-44` on each filter with `w-full` so the 2-col mobile grid (`grid-cols-2`) fills the row cleanly; keep `md:grid-cols-4` for desktop.
-- Make the toolbar stack vertically on mobile: `flex-col items-stretch gap-3 md:flex-row md:items-end md:justify-between`. Filter grid becomes `w-full md:w-auto`. "Add sale event" becomes full-width on mobile (`w-full md:w-auto`).
-- Result count + Clear filters row already wraps fine; keep as is.
+RLS already correct:
+- "Admins manage brands" (ALL) — admin write access.
+- "Authenticated read active brands" (SELECT where `is_active = true OR has_role(admin)`) — dashboard read.
 
-### 3. `SaleEventsTab.tsx` — listing (the critical change)
+No RLS changes needed.
 
-The 8-column table is unusable on a 375px screen. Use a **responsive split**:
+## Server functions
 
-- **Mobile (`md:hidden`)**: render rows as stacked cards. Each card shows:
-  - Top row: brand name (medium weight) + status pill on the right.
-  - Meta line: `category · type` in muted small text.
-  - Date line: `Start → End` (or "Start →" when no end) with discount badge on the right.
-  - Action row at bottom: Edit · Publish/Hide · Delete as tap targets (≥44px), separated by thin border, wrapped with `flex-wrap gap-2`. Use existing button styles but bump height to `h-10` and add horizontal padding so they're tappable.
-  - Wrap each card in `border border-border p-4` with `divide-y` between cards within a single `border` container, or stack `space-y-3` cards.
-- **Desktop (`hidden md:block`)**: keep the existing `<Table>` exactly as is.
+New file `src/lib/admin-houses.functions.ts` (mirrors `admin-sales.functions.ts` style, uses `requireSupabaseAuth` + `ensureAdmin`):
 
-Shared row data (brand name resolution, discount formatting, status class) already lives in helpers — both views reuse them.
+- `listHouses({ search?, group?, status?: 'active'|'inactive'|'all' })` → returns all rows for admin view.
+- `createHouse({ name, slug, houseGroup?, country?, websiteUrl?, description?, isActive })`
+- `updateHouse({ id, ...fields })`
+- `setHouseActive({ id, isActive })`
 
-### 4. Loading / empty states
+Server-side zod validation:
+- `name` required, trim, max 120.
+- `slug` required, `^[a-z0-9]+(?:-[a-z0-9]+)*$`, max 80.
+- `websiteUrl` optional, `z.string().url()`.
+- Unique slug enforced by DB index; surface friendly error on `23505`.
 
-- Mobile cards reuse the same "Loading…" / "No sale events yet." copy, centred in a single bordered block.
+Update `listBrandOptions` in `admin-sales.functions.ts` so the Sale Events brand dropdown only lists **active** houses for new events, but still resolves names of any brand already attached to an existing sale event (keeps existing rows readable). Implementation: fetch active brands + brands referenced by current `sale_events.brand_id` in the filtered list, merge by id.
 
-### 5. Out of scope
+## UI
 
-- `SaleEventDrawer` (already a full-screen sheet on mobile via `w-full sm:max-w-xl`).
-- `UsersRolesTab`, `SystemTab` internals — only the parent tab strip is touched.
-- Filter behaviour, server functions, schema.
+Tab order in `src/routes/_authenticated/_admin/admin.sales.tsx`:
+`Houses` · `Sale events` · `Users & roles` · `System`. Default tab → `houses`.
 
-## Files
+New components:
+- `src/components/admin/HousesTab.tsx` — page header copy ("House management" / supporting line), filters (search input, group select, status select Active/Inactive/All), "Add house" button, desktop table (House · Group · Country · Status · Updated · Actions) and mobile stacked cards. Actions: Edit, Activate/Deactivate (no destructive delete). Mirrors `SaleEventsTab` patterns (skeleton loading, empty states, scroll preservation on filter change).
+- `src/components/admin/HouseDrawer.tsx` — `Sheet` drawer matching `SaleEventDrawer` exactly (eyebrow `NEW · HOUSE` / `EDIT · HOUSE`, serif title, description, body grid, footer with Cancel + Save). Fields: Name, Slug (auto-derived from Name on create, editable; helper "Used internally for routing and matching."), House group select (Quiet luxury, Heritage, Runway signal, Contemporary, Emerging, Archive / resale), Country, Website URL, Description textarea, Active switch (default on). Client-side zod validation matching server.
 
-- **Edit**: `src/routes/_authenticated/_admin/admin.sales.tsx`
-- **Edit**: `src/components/admin/SaleEventsTab.tsx`
+Slug auto-derive: lowercase, strip diacritics, replace non-alphanumerics with `-`, collapse/trim hyphens. Stops auto-syncing once user edits slug manually.
 
-## Verification
+## Security
 
-- Mobile (375px): tabs visible in one horizontally-scrollable row, no clipping. Filters fill the screen in a 2-col grid. "Add sale event" is full-width below the filters. Sale events render as readable cards with tappable actions.
-- Desktop (≥768px): unchanged — same toolbar layout, same table.
-- Tablet (768px): grid switches to 4 columns, table reappears, button moves back to the right.
-- No console errors; existing toasts and mutations behave identically.
+- All four server fns gated by `requireSupabaseAuth` + `ensureAdmin`.
+- Admin route already protected by `_authenticated/_admin.tsx`.
+- Non-admin reads continue to flow through existing RLS (active brands only).
+
+## Out of scope
+
+- Logo upload (no bucket exists for brand logos).
+- Hard delete.
+- Changes to sale event drawer/form, prediction logic, dashboard.
+
+## Verification after build
+
+1. New admin tab renders, defaults to Houses.
+2. Create a house → appears in list and in Sale Events brand dropdown.
+3. Deactivate a house → disappears from "new sale event" dropdown; still shown for any existing sale event already attached.
+4. Slug uniqueness rejected with a friendly inline error.
+5. Mobile: table collapses to cards, drawer usable, 44px tap targets.
