@@ -368,10 +368,24 @@ export function SaleEventsTab() {
           </div>
         )}
         {rows.map((r) => (
-          <div key={r.id} className="border border-border p-4">
+          <div
+            key={r.id}
+            className={
+              "border p-4 " +
+              (selectedIds.has(r.id) ? "border-foreground" : "border-border")
+            }
+          >
             <div className="flex items-start justify-between gap-3">
-              <div className="font-medium">
-                {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedIds.has(r.id)}
+                  onCheckedChange={(v) => toggleOne(r.id, v === true)}
+                  aria-label={`Select ${r.brandName ?? "sale event"}`}
+                  className="mt-0.5"
+                />
+                <div className="font-medium">
+                  {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
+                </div>
               </div>
               <span
                 className={
