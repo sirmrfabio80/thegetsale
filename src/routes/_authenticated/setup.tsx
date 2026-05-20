@@ -284,6 +284,29 @@ function SetupPage() {
         <StepHeader number="06" title="Review" />
 
         <div className="mt-8">
+          <ReviewRow
+            title="Department"
+            count={departments.size}
+            onEdit={() => scrollToStep("step-departments")}
+          >
+            {departments.size === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                None selected — pick at least one.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {[...departments].map((d) => (
+                  <span
+                    key={d}
+                    className="border border-border px-3 py-1 text-xs text-foreground"
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+            )}
+          </ReviewRow>
+
           <ReviewRow title="Houses" count={houses.size} onEdit={() => scrollToStep("step-houses")}>
             {houses.size === 0 ? (
               <p className="text-sm text-muted-foreground">
