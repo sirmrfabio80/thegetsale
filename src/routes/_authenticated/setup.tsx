@@ -7,7 +7,13 @@ import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
 import { brandGroups, setupCategories } from "@/data/setupBrands";
-import { loadSetup, saveSetup, type StylePreference } from "@/data/setupStorage";
+import {
+  loadSetup,
+  saveSetup,
+  DEPARTMENT_OPTIONS,
+  type Department,
+  type StylePreference,
+} from "@/data/setupStorage";
 import { STYLE_OPTIONS } from "@/data/styles";
 
 
@@ -26,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/setup")({
 
 function SetupPage() {
   const navigate = useNavigate();
+  const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [houses, setHouses] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [styles, setStyles] = useState<Set<StylePreference>>(new Set());
@@ -39,6 +46,7 @@ function SetupPage() {
   useEffect(() => {
     const stored = loadSetup();
     if (stored) {
+      setDepartments(new Set((stored.departments ?? []) as Department[]));
       setHouses(new Set(stored.houses));
       setCategories(new Set(stored.categories));
       setStyles(new Set((stored.styles ?? []) as StylePreference[]));
@@ -54,12 +62,13 @@ function SetupPage() {
   useEffect(() => {
     if (!hydrated) return;
     saveSetup({
+      departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
     });
-  }, [hydrated, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
+  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
 
   const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
@@ -69,13 +78,14 @@ function SetupPage() {
   };
 
   const valid = useMemo(
-    () => houses.size >= 3 && categories.size >= 1,
-    [houses, categories],
+    () => departments.size >= 1 && houses.size >= 3 && categories.size >= 1,
+    [departments, houses, categories],
   );
 
   const handleStart = () => {
     if (!valid) return;
     saveSetup({
+      departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
@@ -106,10 +116,51 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 1 — Houses */}
-      <section id="step-houses">
+      {/* Step 1 — Department */}
+      <section id="step-departments">
         <StepHeader
           number="01"
+          title="Department"
+          hint={`${departments.size} selected${departments.size >= 1 ? "" : " · min 1"}`}
+        />
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          Tell us which collections to watch. You can pick more than one.
+        </p>
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {DEPARTMENT_OPTIONS.map((opt) => {
+            const selected = departments.has(opt.value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setDepartments((s) => toggle(s, opt.value))}
+                className={`border p-4 text-left transition-colors ${
+                  selected
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-foreground hover:border-foreground"
+                }`}
+              >
+                <p className="font-serif text-lg">{opt.value}</p>
+                <p
+                  className={`mt-1 text-xs ${
+                    selected ? "text-background/70" : "text-muted-foreground"
+                  }`}
+                >
+                  {opt.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <SectionRule />
+
+      {/* Step 2 — Houses */}
+      <section id="step-houses">
+        <StepHeader
+          number="02"
           title="Houses"
           hint={`${houses.size} selected${houses.size >= 3 ? "" : " · min 3"}`}
         />
@@ -135,10 +186,10 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 2 — Categories */}
+      {/* Step 3 — Categories */}
       <section id="step-categories">
         <StepHeader
-          number="02"
+          number="03"
           title="Categories"
           hint={`${categories.size} selected${categories.size >= 1 ? "" : " · min 1"}`}
         />
@@ -156,10 +207,10 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 3 — Style */}
+      {/* Step 4 — Style */}
       <section id="step-styles">
         <StepHeader
-          number="03"
+          number="04"
           title="Style"
           hint={`${styles.size} selected · optional`}
         />
@@ -197,9 +248,9 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 4 — Notifications */}
+      {/* Step 5 — Notifications */}
       <section id="step-notifications">
-        <StepHeader number="04" title="Notifications" />
+        <StepHeader number="05" title="Notifications" />
 
         <div className="mt-8 grid grid-cols-1 gap-3">
           <NotificationCard
@@ -228,11 +279,34 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 5 — Review */}
+      {/* Step 6 — Review */}
       <section>
-        <StepHeader number="05" title="Review" />
+        <StepHeader number="06" title="Review" />
 
         <div className="mt-8">
+          <ReviewRow
+            title="Department"
+            count={departments.size}
+            onEdit={() => scrollToStep("step-departments")}
+          >
+            {departments.size === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                None selected — pick at least one.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {[...departments].map((d) => (
+                  <span
+                    key={d}
+                    className="border border-border px-3 py-1 text-xs text-foreground"
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+            )}
+          </ReviewRow>
+
           <ReviewRow title="Houses" count={houses.size} onEdit={() => scrollToStep("step-houses")}>
             {houses.size === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -321,7 +395,7 @@ function SetupPage() {
 
       <div className="flex flex-col items-stretch gap-3 pb-8 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
-          {valid ? "Ready when you are." : "Select at least 3 houses and 1 category to continue."}
+          {valid ? "Ready when you are." : "Pick at least 1 department, 3 houses and 1 category to continue."}
         </p>
         <Button
           onClick={handleStart}
