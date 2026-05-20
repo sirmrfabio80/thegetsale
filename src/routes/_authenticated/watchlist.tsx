@@ -180,6 +180,14 @@ function WatchlistPage() {
     toast("Department filters cleared");
   };
 
+  const removeDepartment = (d: Department) => {
+    const next = new Set(departments);
+    next.delete(d);
+    setDepartments(next);
+    const s = loadSetup();
+    if (s) saveSetup({ ...s, departments: [...next] });
+  };
+
   const removeSelected = () => {
     const ids = [...selected];
     if (ids.length === 0) return;
@@ -202,12 +210,30 @@ function WatchlistPage() {
       </section>
 
       {departments.size > 0 && (
-        <p className="mt-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          <span>Filtered by department · {deptLabel}</span>
+        <div className="mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span>Filtered by</span>
+          <ul className="flex flex-wrap items-center gap-2">
+            {[...departments].map((d) => (
+              <li key={d}>
+                <span className="inline-flex items-center gap-1.5 border border-foreground bg-foreground/5 px-2.5 py-1 text-foreground">
+                  {d}
+                  <button
+                    onClick={() => removeDepartment(d)}
+                    aria-label={`Remove ${d} filter`}
+                    className="leading-none text-foreground/60 hover:text-foreground"
+                  >
+                    ×
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
           {hiddenCount > 0 && (
-            <span aria-hidden className="text-muted-foreground/50">·</span>
+            <>
+              <span aria-hidden className="text-muted-foreground/50">·</span>
+              <span>{hiddenCount} hidden</span>
+            </>
           )}
-          {hiddenCount > 0 && <span>{hiddenCount} hidden</span>}
           <span aria-hidden className="text-muted-foreground/50">·</span>
           <button
             onClick={clearDepartmentFilters}
@@ -219,7 +245,7 @@ function WatchlistPage() {
           <Link to="/setup" className="underline underline-offset-4 hover:text-foreground">
             Edit
           </Link>
-        </p>
+        </div>
       )}
 
       <SectionRule />
