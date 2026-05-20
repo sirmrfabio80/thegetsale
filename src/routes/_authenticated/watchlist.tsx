@@ -36,15 +36,24 @@ function WatchlistPage() {
     window.localStorage.setItem("theget.watchlist.sort", sortBy);
   }, [sortBy]);
 
-  // Subtle "Updating list…" flash when the visible order changes.
+  // Subtle "Updating list…" flash + toast confirming active sort when
+  // the order changes from items/departments/sort updates.
   const firstRunRef = useRef(true);
+  const sortByRef = useRef(sortBy);
   useEffect(() => {
     if (firstRunRef.current) {
       firstRunRef.current = false;
+      sortByRef.current = sortBy;
       return;
     }
     setIsUpdating(true);
     const t = window.setTimeout(() => setIsUpdating(false), 350);
+    // Only toast when the re-sort was triggered by items/departments
+    // (i.e. the user didn't just pick a new sort option themselves).
+    if (sortByRef.current === sortBy) {
+      toast(`Sorted by ${sortLabel(sortBy)}`);
+    }
+    sortByRef.current = sortBy;
     return () => window.clearTimeout(t);
   }, [items, departments, sortBy]);
 
