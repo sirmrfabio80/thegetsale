@@ -116,10 +116,51 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 1 — Houses */}
-      <section id="step-houses">
+      {/* Step 1 — Department */}
+      <section id="step-departments">
         <StepHeader
           number="01"
+          title="Department"
+          hint={`${departments.size} selected${departments.size >= 1 ? "" : " · min 1"}`}
+        />
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          Tell us which collections to watch. You can pick more than one.
+        </p>
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {DEPARTMENT_OPTIONS.map((opt) => {
+            const selected = departments.has(opt.value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setDepartments((s) => toggle(s, opt.value))}
+                className={`border p-4 text-left transition-colors ${
+                  selected
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-foreground hover:border-foreground"
+                }`}
+              >
+                <p className="font-serif text-lg">{opt.value}</p>
+                <p
+                  className={`mt-1 text-xs ${
+                    selected ? "text-background/70" : "text-muted-foreground"
+                  }`}
+                >
+                  {opt.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <SectionRule />
+
+      {/* Step 2 — Houses */}
+      <section id="step-houses">
+        <StepHeader
+          number="02"
           title="Houses"
           hint={`${houses.size} selected${houses.size >= 3 ? "" : " · min 3"}`}
         />
