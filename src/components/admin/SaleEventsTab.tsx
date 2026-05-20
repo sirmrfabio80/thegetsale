@@ -221,6 +221,22 @@ export function SaleEventsTab() {
     return () => io.disconnect();
   }, [hasMoreMobile, rows.length]);
 
+  // Restore scroll position after a filter change once the new list has rendered
+  useEffect(() => {
+    if (savedScrollRef.current == null) return;
+    if (listQ.isFetching) return;
+    const y = savedScrollRef.current;
+    savedScrollRef.current = null;
+    const raf = requestAnimationFrame(() => {
+      const max = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight,
+      );
+      window.scrollTo({ top: Math.min(y, max) });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [listQ.isFetching, rows]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-end md:justify-between">
