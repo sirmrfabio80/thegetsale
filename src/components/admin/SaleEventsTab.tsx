@@ -38,6 +38,8 @@ import {
   updateSaleEvent,
   setSaleEventStatus,
   deleteSaleEvent,
+  bulkSetSaleEventStatus,
+  bulkDeleteSaleEvents,
   SALE_TYPES,
   SALE_STATUSES,
   type SaleEventDTO,
