@@ -1,19 +1,25 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { SelectableChip } from "@/components/setup/SelectableChip";
 import { NotificationCard } from "@/components/setup/NotificationCard";
 import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
-import { brandGroups, setupCategories } from "@/data/setupBrands";
 import {
   DEPARTMENT_OPTIONS,
   type Department,
   type StylePreference,
 } from "@/data/setupStorage";
 import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
-import { STYLE_OPTIONS } from "@/data/styles";
+import { listSetupOptions } from "@/lib/setup-options.functions";
+
+const setupOptionsQueryOptions = queryOptions({
+  queryKey: ["setup", "options"] as const,
+  queryFn: () => listSetupOptions(),
+  staleTime: 5 * 60_000,
+});
 
 
 export const Route = createFileRoute("/_authenticated/setup")({
