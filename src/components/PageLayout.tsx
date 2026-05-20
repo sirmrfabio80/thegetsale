@@ -51,8 +51,15 @@ function TopNav() {
                   size="sm"
                   loading={profileQuery.isLoading}
                 />
-                <span className="hidden max-w-[160px] truncate normal-case tracking-normal sm:inline">
-                  {triggerLabel}
+                <span className="hidden w-[140px] truncate text-left normal-case tracking-normal sm:inline">
+                  {profileQuery.isLoading && !triggerLabel ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-block h-3 w-24 align-middle bg-muted"
+                    />
+                  ) : (
+                    triggerLabel
+                  )}
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[220px]">
