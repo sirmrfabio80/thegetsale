@@ -31,6 +31,8 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
 function WatchlistPage() {
   const items = useWatchlist();
   const { removeMany } = useWatchlistMutations();
+  const { setup } = useSetup();
+  const { save: saveSetupMutation } = useSetupMutation();
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
