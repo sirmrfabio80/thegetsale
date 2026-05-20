@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Size = "sm" | "lg";
 
@@ -22,9 +22,21 @@ export function AvatarBlock({
   // letter underneath stays visible and the box never renders a broken icon.
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgErrored, setImgErrored] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   useEffect(() => {
     setImgLoaded(false);
     setImgErrored(false);
+  }, [url]);
+
+  // Cached images can fire `load` before React attaches `onLoad`, leaving
+  // the <img> stuck at opacity-0 on route navigation. Check `complete`
+  // after mount/url-change and resolve the loaded state ourselves.
+  useEffect(() => {
+    if (!url) return;
+    const node = imgRef.current;
+    if (node && node.complete && node.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
   }, [url]);
 
   const frame = `relative inline-flex ${dim} shrink-0 align-middle items-center justify-center overflow-hidden border bg-background`;
@@ -55,6 +67,7 @@ export function AvatarBlock({
       </span>
       {showImage && (
         <img
+          ref={imgRef}
           src={url}
           alt=""
           decoding="async"
