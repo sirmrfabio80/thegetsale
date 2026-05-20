@@ -1,47 +1,64 @@
 ## Context
 
-`/admin/sales` already has a working sale-event listing with filters and a modal Dialog form. The user wants the add/edit experience as a **drawer** (slide-in panel), plus a couple of listing polishes. Server functions (`listSaleEvents`, `createSaleEvent`, `updateSaleEvent`, `setSaleEventStatus`, `deleteSaleEvent`, `listBrandOptions`) are already in place with Zod validation, RLS-backed admin checks, and DTO mapping — no backend changes needed.
+`SaleEventDrawer` already has basic client-side checks and sonner toasts, but a few things make it feel rough:
+
+- Validation only fires on submit; field errors don't clear as the user fixes them.
+- A failing submit shows nothing at the top — only inline errors, easy to miss when scrolled.
+- Server errors come back as a generic `e.message`, which for Zod issues looks like a JSON dump.
+- Required fields aren't marked beyond a `*` and there's no `aria-invalid` for assistive tech.
+
+Scope: only `src/components/admin/SaleEventDrawer.tsx`. No server, schema, or table changes — server-side validation already exists via the `SaleInput` Zod schema in `admin-sales.functions.ts`.
 
 ## Approach
 
-### 1. Replace the Dialog with a side Sheet (drawer)
+### 1. Replace ad-hoc checks with a shared Zod schema
 
-Rewrite `src/components/admin/SaleEventDialog.tsx` to use shadcn `Sheet` instead of `Dialog` so it slides in from the right. Keep the same props, validation, and submit behaviour so the parent (`SaleEventsTab`) needs no API change — just the import stays the same.
+Define a `saleFormSchema` (zod) inside the drawer that mirrors the server `SaleInput` but works on the string form state:
 
-- `<Sheet>` with `side="right"`, width `w-full sm:max-w-xl`, no border-radius.
-- `SheetHeader` with `SheetTitle` (serif) + small "Draft" / "Published" / "Hidden" status hint.
-- Body uses the existing 2-col grid (brand, sale type, category, status, dates, discount min/max, admin notes).
-- Sticky `SheetFooter` at the bottom with: Cancel · Save as draft · Publish (loading spinners stay).
-- Keep current Zod-mirroring client validation and field-level error messages.
-- Rename the file `SaleEventDrawer.tsx` and update the import in `SaleEventsTab.tsx`. Component export stays the same name pattern.
+- `brandId`: uuid, required ("Brand is required")
+- `saleType`: enum from `SALE_TYPES`
+- `startDate`: `YYYY-MM-DD`, required
+- `endDate`: optional, `YYYY-MM-DD`, must be `>= startDate`
+- `category`: max 80 chars
+- `discountMin` / `discountMax`: optional, integer 0–90, max ≥ min
+- `adminNotes`: max 2000 chars
 
-### 2. Listing polish
+Run it inside a single `validate(form)` helper that returns `{ data, errors }` so the submit path and live updates share one code path.
 
-Small, surgical edits to `SaleEventsTab.tsx`:
+### 2. Live error clearing + aria
 
-- Add a "Clear filters" link next to the filter row, visible only when at least one filter is set.
-- Show a result count under the filters: `{n} sale events`.
-- Disable Publish/Hide buttons during their mutation more visibly (spinner text "Updating…" on the affected row only — track `pendingId` locally).
-- Keep the existing AlertDialog delete confirmation.
+- Each input's `onChange` calls a small `setField(name, value)` helper that updates the form and removes that field's error from state if present.
+- Pass `aria-invalid={!!errors.x}` and `aria-describedby` to inputs/selects that have an error.
+- Add `*` styling for required field labels (`Brand`, `Sale type`, `Start date`).
 
-No filter logic changes — server already handles `brandId / category / saleType / status`.
+### 3. Submit + toast flow
 
-### 3. Out of scope
+- Submit path: parse with zod. If invalid:
+  - set `errors` map,
+  - show a single `toast.error("Please fix the highlighted fields")`,
+  - scroll the drawer body to top so the first error is visible.
+- On success: keep existing success toast (`Sale event created` / `Sale event updated`).
+- On server error: extract a friendlier message. If `error.message` looks like JSON (Zod issues passed through `throw new Error(error.message)`), try to parse and surface the first `message` field; otherwise fall back to the raw `message` and finally to a generic "Couldn't save sale event."
 
-- Backend / server function changes.
-- Schema, RLS, or new tables.
-- Predictions, dashboard, notifications.
+### 4. Error summary banner
+
+Inline banner at the top of the drawer body when `Object.keys(errors).length > 0`: a thin bordered block (`border-destructive text-destructive`) listing how many fields need attention. Disappears as fields are corrected.
+
+### 5. Out of scope
+
+- Server functions, schemas, RLS.
+- `SaleEventsTab` (its own toasts for delete / status already work).
+- New dependencies — zod is already in the project.
 
 ## Files
 
-- **Edit/rename**: `src/components/admin/SaleEventDialog.tsx` → `SaleEventDrawer.tsx` (Sheet-based).
-- **Edit**: `src/components/admin/SaleEventsTab.tsx` (import path, clear-filters link, count, per-row pending state).
+- **Edit**: `src/components/admin/SaleEventDrawer.tsx`
 
 ## Verification
 
-- Open `/admin/sales`: list renders, filters narrow results, "Clear filters" appears when filters active and resets state.
-- Click "Add sale event": drawer slides from the right; required-field errors block save; "Save as draft" and "Publish" each persist and close the drawer with a toast.
-- Click "Edit" on a row: drawer opens prefilled; changes save.
-- Publish/Hide on a row: only that row shows the pending state; toast on success; status badge updates.
-- Delete with confirm still works.
-- Non-admin direct-link to `/admin/sales` still redirects to `/dashboard` (existing guard untouched).
+- Try to publish with empty form → toast "Please fix the highlighted fields", inline errors on Brand and Start date, banner at top, aria-invalid set.
+- Fix Brand → its error clears immediately as you pick a value; banner count drops.
+- Enter `endDate` before `startDate` → inline error on End date, blocked.
+- Discount min 60 / max 40 → error on Max.
+- Successful save → success toast, drawer closes, list refreshes (existing behaviour).
+- Force a server failure (e.g. duplicate or RLS) → friendlier toast instead of raw JSON.
