@@ -262,7 +262,17 @@ function SetupPage() {
 
       {/* Step 5 — Notifications */}
       <section id="step-notifications">
-        <StepHeader number="05" title="Notifications" />
+        <StepHeader
+          number="05"
+          title="Notifications"
+          onReset={() => {
+            setEmailSignals(true);
+            setSmsDrops(false);
+            setWeeklyDigest(false);
+          }}
+          canReset={!emailSignals || smsDrops || weeklyDigest}
+        />
+
 
         <div className="mt-8 grid grid-cols-1 gap-3">
           <NotificationCard
