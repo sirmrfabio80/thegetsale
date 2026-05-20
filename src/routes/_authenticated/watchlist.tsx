@@ -44,12 +44,22 @@ function WatchlistPage() {
   }, []);
 
   const { visible, hiddenCount } = useMemo(() => {
-    if (departments.size === 0) return { visible: items, hiddenCount: 0 };
-    const visible = items.filter((it) => {
-      const brand = getBrand(it.brandId);
-      return brand ? departments.has(brandDepartment(brand)) : false;
+    const withBrand = items
+      .map((it) => ({ it, brand: getBrand(it.brandId) }))
+      .filter((x): x is { it: typeof items[number]; brand: NonNullable<ReturnType<typeof getBrand>> } => !!x.brand);
+    const filtered =
+      departments.size === 0
+        ? withBrand
+        : withBrand.filter((x) => departments.has(brandDepartment(x.brand)));
+    const rank: Record<string, number> = { soon: 0, buy: 1, hold: 2, low: 3 };
+    const sorted = [...filtered].sort((a, b) => {
+      const r = (rank[a.brand.signal] ?? 99) - (rank[b.brand.signal] ?? 99);
+      if (r !== 0) return r;
+      const c = b.brand.confidence - a.brand.confidence;
+      if (c !== 0) return c;
+      return a.brand.windowDays - b.brand.windowDays;
     });
-    return { visible, hiddenCount: items.length - visible.length };
+    return { visible: sorted.map((x) => x.it), hiddenCount: items.length - filtered.length };
   }, [items, departments]);
 
   const deptLabel = [...departments].join(", ");
