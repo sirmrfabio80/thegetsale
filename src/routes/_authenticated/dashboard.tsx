@@ -68,7 +68,8 @@ function Dashboard() {
       const matchCat = filter === "All" || b.category === filter;
       const matchQ = !q || b.name.toLowerCase().includes(q.toLowerCase()) || b.tagline.toLowerCase().includes(q.toLowerCase());
       const matchMine = !onlyMine || matchedIds.has(b.id);
-      return matchCat && matchQ && matchMine;
+      const matchDept = departments.size === 0 || departments.has(brandDepartment(b));
+      return matchCat && matchQ && matchMine && matchDept;
     });
     if (!hasSetup) return base;
     return [...base].sort((a, b) => {
@@ -78,7 +79,16 @@ function Dashboard() {
       // Tie-break by style affinity so the dashboard feels tuned.
       return styleScore(b.tagline, styles) - styleScore(a.tagline, styles);
     });
-  }, [filter, q, onlyMine, matchedIds, hasSetup, styles]);
+  }, [filter, q, onlyMine, matchedIds, hasSetup, styles, departments]);
+
+  const toggleDepartment = (d: Department) => {
+    setDepartments((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
+  };
 
 
   return (
