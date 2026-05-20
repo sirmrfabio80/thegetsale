@@ -67,6 +67,9 @@ export function SaleEventsTab() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
   const [viewing, setViewing] = useState<SaleEventDTO | null>(null);
+  const MOBILE_PAGE_SIZE = 20;
+  const [mobileLimit, setMobileLimit] = useState(MOBILE_PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
