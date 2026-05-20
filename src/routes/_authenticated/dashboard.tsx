@@ -114,7 +114,7 @@ function Dashboard() {
       if (matchesSelection(b, houses, mappedCats)) ids.add(b.id);
     }
     return ids;
-  }, [hasSetup, houses, mappedCats]);
+  }, [hasSetup, houses, mappedCats, brands]);
 
   const filtered = useMemo(() => {
     const base = brands.filter((b) => {
@@ -132,7 +132,7 @@ function Dashboard() {
       // Tie-break by style affinity so the dashboard feels tuned.
       return styleScore(b.tagline, styles) - styleScore(a.tagline, styles);
     });
-  }, [filter, q, onlyMine, matchedIds, hasSetup, styles, departments]);
+  }, [filter, q, onlyMine, matchedIds, hasSetup, styles, departments, brands]);
 
   const toggleDepartment = (d: Department) => {
     setDepartments((prev) => {
