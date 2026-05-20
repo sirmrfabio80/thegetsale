@@ -21,8 +21,10 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
       { name: "description", content: "The pieces you're waiting on, watched quietly." },
     ],
   }),
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(watchlistQueryOptions),
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(watchlistQueryOptions);
+    context.queryClient.ensureQueryData(setupQueryOptions);
+  },
   component: WatchlistPage,
 });
 
