@@ -289,6 +289,72 @@ export function SaleEventsTab() {
         )}
       </div>
 
+      {selectedCount > 0 && (
+        <div className="sticky top-0 z-10 flex flex-col gap-3 border border-foreground bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 text-sm">
+            <span className="font-medium">
+              {selectedCount} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() =>
+                bulkStatusMut.mutate({
+                  ids: Array.from(selectedIds),
+                  status: "published",
+                })
+              }
+              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+            >
+              Publish
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() =>
+                bulkStatusMut.mutate({
+                  ids: Array.from(selectedIds),
+                  status: "hidden",
+                })
+              }
+              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+            >
+              Hide
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() =>
+                bulkStatusMut.mutate({
+                  ids: Array.from(selectedIds),
+                  status: "draft",
+                })
+              }
+              className="h-9 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
+            >
+              Draft
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() => setBulkConfirmDelete(true)}
+              className="h-9 border border-destructive px-3 text-[11px] uppercase tracking-[0.18em] text-destructive disabled:opacity-50"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile: card list */}
       <div className="space-y-3 md:hidden">
         {listQ.isLoading && (
