@@ -46,6 +46,7 @@ import {
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
 import { SaleEventDrawer } from "./SaleEventDrawer";
+import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
 
 type Filters = {
   brandId?: string;
@@ -65,6 +66,7 @@ export function SaleEventsTab() {
   const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
+  const [viewing, setViewing] = useState<SaleEventDTO | null>(null);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
@@ -435,6 +437,13 @@ export function SaleEventsTab() {
             <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
               <button
                 type="button"
+                className="h-10 border border-foreground bg-foreground px-3 text-[11px] uppercase tracking-[0.18em] text-background"
+                onClick={() => setViewing(r)}
+              >
+                View
+              </button>
+              <button
+                type="button"
                 className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground"
                 onClick={() => {
                   setEditing(r);
@@ -639,6 +648,18 @@ export function SaleEventsTab() {
           setDialogOpen(false);
         }}
       />
+
+      <SaleEventDetailsDrawer
+        event={viewing}
+        open={!!viewing}
+        onOpenChange={(o) => !o && setViewing(null)}
+        onEdit={(ev) => {
+          setViewing(null);
+          setEditing(ev);
+          setDialogOpen(true);
+        }}
+      />
+
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
