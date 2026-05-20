@@ -173,6 +173,13 @@ function WatchlistPage() {
     setSelected(new Set());
   };
 
+  const clearDepartmentFilters = () => {
+    setDepartments(new Set());
+    const s = loadSetup();
+    if (s) saveSetup({ ...s, departments: [] });
+    toast("Department filters cleared");
+  };
+
   const removeSelected = () => {
     const ids = [...selected];
     if (ids.length === 0) return;
