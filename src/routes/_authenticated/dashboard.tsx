@@ -5,7 +5,7 @@ import { brands } from "@/data/brands";
 import { BrandCard } from "@/components/BrandCard";
 import type { Category } from "@/data/types";
 import { cn } from "@/lib/utils";
-import { loadSetup, DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
+import { loadSetup, saveSetup, DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
 import { mapSetupCategories, matchesSelection } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
 import type { Brand } from "@/data/types";
