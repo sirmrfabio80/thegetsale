@@ -201,6 +201,7 @@ function WatchlistPage() {
                 </button>
                 <span>
                   {selected.size} selected
+                  {hiddenSelectedCount > 0 && ` · ${hiddenSelectedCount} hidden by filter`}
                 </span>
               </>
             ) : (
