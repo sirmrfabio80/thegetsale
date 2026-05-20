@@ -1,6 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { GoogleAuthCard } from "@/components/marketing/GoogleAuthCard";
+import { safeRedirect } from "@/lib/safeRedirect";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -8,7 +9,7 @@ export const Route = createFileRoute("/signup")({
   }),
   beforeLoad: ({ context, search }) => {
     if (context.auth?.status === "authenticated") {
-      throw redirect({ to: search.redirect ?? "/dashboard" });
+      throw redirect({ to: safeRedirect(search.redirect, "/dashboard") });
     }
   },
   head: () => ({
