@@ -416,8 +416,31 @@ export function SaleEventsTab() {
           </>
         )}
         {!listQ.isLoading && rows.length === 0 && (
-          <div className="border border-border py-8 text-center text-sm text-muted-foreground">
-            No sale events yet.
+          <div className="flex flex-col items-center gap-4 border border-border py-10 px-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              {hasFilters
+                ? "No sale events match these filters."
+                : "No sale events yet."}
+            </p>
+            {hasFilters ? (
+              <Button
+                variant="outline"
+                onClick={() => setFilters({})}
+                className="h-11 rounded-none px-5 text-[11px] uppercase tracking-[0.18em]"
+              >
+                Clear filters
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setDialogOpen(true);
+                }}
+                className="h-11 rounded-none px-5 text-[11px] uppercase tracking-[0.18em]"
+              >
+                Add sale event
+              </Button>
+            )}
           </div>
         )}
         {mobileRows.map((r) => (
