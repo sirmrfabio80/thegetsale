@@ -188,7 +188,7 @@ function WatchlistPage() {
 
       <SectionRule />
 
-      {items.length > 0 && visible.length > 0 && (
+      {items.length > 0 && (visible.length > 0 || selectMode) && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             {selectMode ? (
