@@ -180,6 +180,14 @@ function WatchlistPage() {
     toast("Department filters cleared");
   };
 
+  const removeDepartment = (d: Department) => {
+    const next = new Set(departments);
+    next.delete(d);
+    setDepartments(next);
+    const s = loadSetup();
+    if (s) saveSetup({ ...s, departments: [...next] });
+  };
+
   const removeSelected = () => {
     const ids = [...selected];
     if (ids.length === 0) return;
