@@ -56,6 +56,10 @@ function WatchlistPage() {
     const prevDepartments = departmentsRef.current;
     sortByRef.current = sortBy;
     departmentsRef.current = departments;
+    if (restoringRef.current) {
+      restoringRef.current = false;
+      return () => window.clearTimeout(updateTimer);
+    }
     if (!sortChanged) {
       if (toastBaselineRef.current === null) {
         toastBaselineRef.current = prevDepartments;
@@ -84,10 +88,18 @@ function WatchlistPage() {
     return () => window.clearTimeout(updateTimer);
   }, [items, departments, sortBy]);
 
+  const restoringRef = useRef(false);
   useEffect(() => {
     const sync = () => {
       const s = loadSetup();
-      setDepartments(new Set((s?.departments ?? []) as Department[]));
+      const next = new Set((s?.departments ?? []) as Department[]);
+      setDepartments((prev) => {
+        if (prev.size === next.size && [...prev].every((d) => next.has(d))) {
+          return prev;
+        }
+        restoringRef.current = true;
+        return next;
+      });
     };
     sync();
     const onStorage = (e: StorageEvent) => {
