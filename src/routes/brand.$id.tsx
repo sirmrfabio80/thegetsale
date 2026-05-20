@@ -224,6 +224,10 @@ function PublicBrandPreview({ brand }: { brand: Brand }) {
                 <dd className="mt-1 text-foreground">{brand.category}</dd>
               </div>
               <div>
+                <dt className="eyebrow text-muted-foreground">Department</dt>
+                <dd className="mt-1 text-foreground">{brandDepartment(brand)}</dd>
+              </div>
+              <div>
                 <dt className="eyebrow text-muted-foreground">Cadence</dt>
                 <dd className="mt-1 text-foreground">{brand.cadence}</dd>
               </div>
