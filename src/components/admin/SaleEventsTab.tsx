@@ -66,6 +66,7 @@ export function SaleEventsTab() {
   const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
+  const [viewing, setViewing] = useState<SaleEventDTO | null>(null);
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
