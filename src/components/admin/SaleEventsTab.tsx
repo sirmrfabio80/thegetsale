@@ -70,6 +70,14 @@ export function SaleEventsTab() {
   const MOBILE_PAGE_SIZE = 20;
   const [mobileLimit, setMobileLimit] = useState(MOBILE_PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollRef = useRef<number | null>(null);
+
+  const updateFilters = (updater: (f: Filters) => Filters) => {
+    if (typeof window !== "undefined") {
+      savedScrollRef.current = window.scrollY;
+    }
+    setFilters(updater);
+  };
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
