@@ -8,7 +8,17 @@ export type StylePreference =
   | "Street"
   | "Contemporary";
 
+export type Department = "Womenswear" | "Menswear" | "Unisex" | "Kidswear";
+
+export const DEPARTMENT_OPTIONS: { value: Department; description: string }[] = [
+  { value: "Womenswear", description: "Collections cut for women." },
+  { value: "Menswear", description: "Collections cut for men." },
+  { value: "Unisex", description: "Genderless and shared silhouettes." },
+  { value: "Kidswear", description: "Children's collections and capsules." },
+];
+
 export type SetupState = {
+  departments?: Department[];
   houses: string[];
   categories: string[];
   styles?: StylePreference[];
