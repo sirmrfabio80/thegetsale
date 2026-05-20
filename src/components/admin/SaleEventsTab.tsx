@@ -70,6 +70,14 @@ export function SaleEventsTab() {
   const MOBILE_PAGE_SIZE = 20;
   const [mobileLimit, setMobileLimit] = useState(MOBILE_PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollRef = useRef<number | null>(null);
+
+  const updateFilters = (updater: (f: Filters) => Filters) => {
+    if (typeof window !== "undefined") {
+      savedScrollRef.current = window.scrollY;
+    }
+    setFilters(updater);
+  };
 
   const fetchList = useServerFn(listSaleEvents);
   const fetchBrands = useServerFn(listBrandOptions);
@@ -213,6 +221,22 @@ export function SaleEventsTab() {
     return () => io.disconnect();
   }, [hasMoreMobile, rows.length]);
 
+  // Restore scroll position after a filter change once the new list has rendered
+  useEffect(() => {
+    if (savedScrollRef.current == null) return;
+    if (listQ.isFetching) return;
+    const y = savedScrollRef.current;
+    savedScrollRef.current = null;
+    const raf = requestAnimationFrame(() => {
+      const max = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight,
+      );
+      window.scrollTo({ top: Math.min(y, max) });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [listQ.isFetching, rows]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-end md:justify-between">
@@ -222,7 +246,7 @@ export function SaleEventsTab() {
             <Select
               value={filters.brandId ?? ANY}
               onValueChange={(v) =>
-                setFilters((f) => ({ ...f, brandId: v === ANY ? undefined : v }))
+                updateFilters((f) => ({ ...f, brandId: v === ANY ? undefined : v }))
               }
             >
               <SelectTrigger className="h-10 w-full rounded-none md:w-44">
@@ -243,7 +267,7 @@ export function SaleEventsTab() {
             <Input
               value={filters.category ?? ""}
               onChange={(e) =>
-                setFilters((f) => ({ ...f, category: e.target.value || undefined }))
+                updateFilters((f) => ({ ...f, category: e.target.value || undefined }))
               }
               placeholder="Any"
               className="h-10 w-full rounded-none md:w-44"
@@ -254,7 +278,7 @@ export function SaleEventsTab() {
             <Select
               value={filters.saleType ?? ANY}
               onValueChange={(v) =>
-                setFilters((f) => ({ ...f, saleType: v === ANY ? undefined : v }))
+                updateFilters((f) => ({ ...f, saleType: v === ANY ? undefined : v }))
               }
             >
               <SelectTrigger className="h-10 w-full rounded-none md:w-44">
@@ -275,7 +299,7 @@ export function SaleEventsTab() {
             <Select
               value={filters.status ?? ANY}
               onValueChange={(v) =>
-                setFilters((f) => ({ ...f, status: v === ANY ? undefined : v }))
+                updateFilters((f) => ({ ...f, status: v === ANY ? undefined : v }))
               }
             >
               <SelectTrigger className="h-10 w-full rounded-none md:w-44">
@@ -312,7 +336,7 @@ export function SaleEventsTab() {
         {hasFilters && (
           <button
             type="button"
-            onClick={() => setFilters({})}
+            onClick={() => updateFilters(() => ({}))}
             className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
           >
             Clear filters
@@ -425,7 +449,7 @@ export function SaleEventsTab() {
             {hasFilters ? (
               <Button
                 variant="outline"
-                onClick={() => setFilters({})}
+                onClick={() => updateFilters(() => ({}))}
                 className="h-11 rounded-none px-5 text-[11px] uppercase tracking-[0.18em]"
               >
                 Clear filters
