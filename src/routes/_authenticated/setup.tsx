@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { Search, X } from "lucide-react";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { SelectableChip } from "@/components/setup/SelectableChip";
 import { NotificationCard } from "@/components/setup/NotificationCard";
@@ -52,6 +53,15 @@ function SetupPage() {
 
   const [smsDrops, setSmsDrops] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
+
+  // Search & quick-filter state for chip pickers
+  const [houseQuery, setHouseQuery] = useState("");
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const [styleQuery, setStyleQuery] = useState("");
+  const [housesSelectedOnly, setHousesSelectedOnly] = useState(false);
+  const [categoriesSelectedOnly, setCategoriesSelectedOnly] = useState(false);
+  const [stylesSelectedOnly, setStylesSelectedOnly] = useState(false);
+
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from the backend record once it arrives.
@@ -183,22 +193,90 @@ function SetupPage() {
           canReset={houses.size > 0}
         />
 
+        {/* Filter bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={houseQuery}
+              onChange={(e) => setHouseQuery(e.target.value)}
+              placeholder="Search houses…"
+              className="flex h-10 w-full border border-border bg-transparent pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            {houseQuery && (
+              <button
+                type="button"
+                onClick={() => setHouseQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setHousesSelectedOnly((v) => !v)}
+            className={`inline-flex h-10 items-center justify-center border px-4 text-xs uppercase tracking-wider transition-colors ${
+              housesSelectedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+            }`}
+            aria-pressed={housesSelectedOnly}
+          >
+            Selected only
+          </button>
+        </div>
+
         <div className="mt-8 space-y-8">
-          {options.houseGroups.map((group) => (
-            <div key={group.label}>
-              <p className="eyebrow mb-3">{group.label}</p>
-              <div className="flex flex-wrap gap-2">
-                {group.houses.map((house) => (
-                  <SelectableChip
-                    key={house.slug}
-                    label={house.name}
-                    selected={houses.has(house.name)}
-                    onToggle={() => setHouses((s) => toggle(s, house.name))}
-                  />
-                ))}
+          {options.houseGroups.map((group) => {
+            const filteredHouses = group.houses.filter((h) => {
+              const matchesQuery =
+                !houseQuery ||
+                h.name.toLowerCase().includes(houseQuery.toLowerCase());
+              const matchesSelected = !housesSelectedOnly || houses.has(h.name);
+              return matchesQuery && matchesSelected;
+            });
+            if (filteredHouses.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <p className="eyebrow mb-3">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {filteredHouses.map((house) => (
+                    <SelectableChip
+                      key={house.slug}
+                      label={house.name}
+                      selected={houses.has(house.name)}
+                      onToggle={() => setHouses((s) => toggle(s, house.name))}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+          {(() => {
+            const totalVisible = options.houseGroups.reduce(
+              (acc, g) =>
+                acc +
+                g.houses.filter((h) => {
+                  const mq =
+                    !houseQuery ||
+                    h.name.toLowerCase().includes(houseQuery.toLowerCase());
+                  const ms = !housesSelectedOnly || houses.has(h.name);
+                  return mq && ms;
+                }).length,
+              0,
+            );
+            if (totalVisible === 0) {
+              return (
+                <p className="text-sm text-muted-foreground">
+                  No houses match your filters.
+                </p>
+              );
+            }
+            return null;
+          })()}
         </div>
         <p className="mt-6 text-xs text-muted-foreground">You can change this later.</p>
       </section>
@@ -212,18 +290,79 @@ function SetupPage() {
           title="Categories"
           hint={`${categories.size} selected${categories.size >= 1 ? "" : " · min 1"}`}
           onReset={() => setCategories(new Set())}
-          canReset={categories.size > 0}
+          canReset={categories.size > 1}
         />
 
-        <div className="mt-8 flex flex-wrap gap-2">
-          {options.categories.map((cat) => (
-            <SelectableChip
-              key={cat.slug}
-              label={cat.label}
-              selected={categories.has(cat.label)}
-              onToggle={() => setCategories((s) => toggle(s, cat.label))}
+        {/* Filter bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={categoryQuery}
+              onChange={(e) => setCategoryQuery(e.target.value)}
+              placeholder="Search categories…"
+              className="flex h-10 w-full border border-border bg-transparent pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
-          ))}
+            {categoryQuery && (
+              <button
+                type="button"
+                onClick={() => setCategoryQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setCategoriesSelectedOnly((v) => !v)}
+            className={`inline-flex h-10 items-center justify-center border px-4 text-xs uppercase tracking-wider transition-colors ${
+              categoriesSelectedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+            }`}
+            aria-pressed={categoriesSelectedOnly}
+          >
+            Selected only
+          </button>
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-2">
+          {options.categories
+            .filter((cat) => {
+              const matchesQuery =
+                !categoryQuery ||
+                cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
+              const matchesSelected = !categoriesSelectedOnly || categories.has(cat.label);
+              return matchesQuery && matchesSelected;
+            })
+            .map((cat) => (
+              <SelectableChip
+                key={cat.slug}
+                label={cat.label}
+                selected={categories.has(cat.label)}
+                onToggle={() => setCategories((s) => toggle(s, cat.label))}
+              />
+            ))}
+          {(() => {
+            const visible = options.categories.filter((cat) => {
+              const mq =
+                !categoryQuery ||
+                cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
+              const ms = !categoriesSelectedOnly || categories.has(cat.label);
+              return mq && ms;
+            });
+            if (visible.length === 0) {
+              return (
+                <p className="w-full text-sm text-muted-foreground">
+                  No categories match your filters.
+                </p>
+              );
+            }
+            return null;
+          })()}
         </div>
       </section>
 
@@ -242,33 +381,97 @@ function SetupPage() {
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Pick the aesthetics that feel like you. We'll tune your first dashboard around them.
         </p>
-        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {options.styles.map((opt) => {
-            const value = opt.label as StylePreference;
-            const selected = styles.has(value);
-            return (
+
+        {/* Filter bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={styleQuery}
+              onChange={(e) => setStyleQuery(e.target.value)}
+              placeholder="Search styles…"
+              className="flex h-10 w-full border border-border bg-transparent pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            {styleQuery && (
               <button
-                key={opt.slug}
                 type="button"
-                aria-pressed={selected}
-                onClick={() => setStyles((s) => toggle(s, value))}
-                className={`border p-4 text-left transition-colors ${
-                  selected
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border text-foreground hover:border-foreground"
-                }`}
+                onClick={() => setStyleQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
               >
-                <p className="font-serif text-lg">{opt.label}</p>
-                <p
-                  className={`mt-1 text-xs ${
-                    selected ? "text-background/70" : "text-muted-foreground"
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setStylesSelectedOnly((v) => !v)}
+            className={`inline-flex h-10 items-center justify-center border px-4 text-xs uppercase tracking-wider transition-colors ${
+              stylesSelectedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+            }`}
+            aria-pressed={stylesSelectedOnly}
+          >
+            Selected only
+          </button>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {options.styles
+            .filter((opt) => {
+              const matchesQuery =
+                !styleQuery ||
+                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
+                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
+              const matchesSelected = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
+              return matchesQuery && matchesSelected;
+            })
+            .map((opt) => {
+              const value = opt.label as StylePreference;
+              const selected = styles.has(value);
+              return (
+                <button
+                  key={opt.slug}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setStyles((s) => toggle(s, value))}
+                  className={`border p-4 text-left transition-colors ${
+                    selected
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-foreground hover:border-foreground"
                   }`}
                 >
-                  {opt.description}
+                  <p className="font-serif text-lg">{opt.label}</p>
+                  <p
+                    className={`mt-1 text-xs ${
+                      selected ? "text-background/70" : "text-muted-foreground"
+                    }`}
+                  >
+                    {opt.description}
+                  </p>
+                </button>
+              );
+            })}
+          {(() => {
+            const visible = options.styles.filter((opt) => {
+              const mq =
+                !styleQuery ||
+                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
+                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
+              const ms = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
+              return mq && ms;
+            });
+            if (visible.length === 0) {
+              return (
+                <p className="col-span-full text-sm text-muted-foreground">
+                  No styles match your filters.
                 </p>
-              </button>
-            );
-          })}
+              );
+            }
+            return null;
+          })()}
         </div>
       </section>
 
