@@ -1,13 +1,45 @@
-import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
+import {
+  createFileRoute,
+  Outlet,
+  Link,
+  redirect,
+  isRedirect,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { getMyAdminStatus } from "@/lib/admin.functions";
 import { PageLayout } from "@/components/PageLayout";
 
 export const Route = createFileRoute("/_authenticated/_admin")({
+  beforeLoad: async () => {
+    try {
+      const { isAdmin } = await getMyAdminStatus();
+      if (!isAdmin) {
+        throw redirect({ to: "/dashboard" });
+      }
+    } catch (e) {
+      if (isRedirect(e)) throw e;
+      // Fail closed: if we can't verify admin status, send to dashboard.
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: AdminLayout,
 });
 
 function AdminLayout() {
-  const { data, isLoading, error } = useIsAdmin();
+  const { data, isLoading } = useIsAdmin();
+  const navigate = useNavigate();
+
+  const denied = !isLoading && data?.isAdmin === false;
+
+  useEffect(() => {
+    if (!denied) return;
+    const t = setTimeout(() => {
+      navigate({ to: "/dashboard", replace: true });
+    }, 1600);
+    return () => clearTimeout(t);
+  }, [denied, navigate]);
 
   if (isLoading) {
     return (
@@ -20,7 +52,7 @@ function AdminLayout() {
     );
   }
 
-  if (error || !data?.isAdmin) {
+  if (denied) {
     return (
       <PageLayout>
         <section className="pt-16 md:pt-24">
@@ -30,6 +62,9 @@ function AdminLayout() {
           </h1>
           <p className="mt-4 max-w-xl text-muted-foreground">
             This area is reserved for editors of The Get.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Redirecting to your dashboard…
           </p>
           <div className="mt-6">
             <Link
