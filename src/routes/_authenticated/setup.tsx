@@ -193,22 +193,102 @@ function SetupPage() {
           canReset={houses.size > 0}
         />
 
+        {/* Filter bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={houseQuery}
+              onChange={(e) => setHouseQuery(e.target.value)}
+              placeholder="Search houses…"
+              className="flex h-10 w-full border border-border bg-transparent pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            {houseQuery && (
+              <button
+                type="button"
+                onClick={() => setHouseQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setHousesSelectedOnly((v) => !v)}
+            className={`inline-flex h-10 items-center justify-center border px-4 text-xs uppercase tracking-wider transition-colors ${
+              housesSelectedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+            }`}
+            aria-pressed={housesSelectedOnly}
+          >
+            Selected only
+          </button>
+        </div>
+
         <div className="mt-8 space-y-8">
-          {options.houseGroups.map((group) => (
-            <div key={group.label}>
-              <p className="eyebrow mb-3">{group.label}</p>
-              <div className="flex flex-wrap gap-2">
-                {group.houses.map((house) => (
-                  <SelectableChip
-                    key={house.slug}
-                    label={house.name}
-                    selected={houses.has(house.name)}
-                    onToggle={() => setHouses((s) => toggle(s, house.name))}
-                  />
-                ))}
+          {options.houseGroups
+            .map((group) => ({
+              ...group,
+              houses: group.houses.filter((h) => {
+                const matchesQuery =
+                  !houseQuery ||
+                  h.name.toLowerCase().includes(houseQuery.toLowerCase());
+                const matchesSelected = !housesSelectedOnly || houses.has(h.name);
+                return matchesQuery && matchesSelected;
+              }),
+            }))
+            .filter((group) => group.houses.length > 1)}
+          {options.houseGroups.map((group) => {
+            const filteredHouses = group.houses.filter((h) => {
+              const matchesQuery =
+                !houseQuery ||
+                h.name.toLowerCase().includes(houseQuery.toLowerCase());
+              const matchesSelected = !housesSelectedOnly || houses.has(h.name);
+              return matchesQuery && matchesSelected;
+            });
+            if (filteredHouses.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <p className="eyebrow mb-3">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {filteredHouses.map((house) => (
+                    <SelectableChip
+                      key={house.slug}
+                      label={house.name}
+                      selected={houses.has(house.name)}
+                      onToggle={() => setHouses((s) => toggle(s, house.name))}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+          {(() => {
+            const totalVisible = options.houseGroups.reduce(
+              (acc, g) =>
+                acc +
+                g.houses.filter((h) => {
+                  const mq =
+                    !houseQuery ||
+                    h.name.toLowerCase().includes(houseQuery.toLowerCase());
+                  const ms = !housesSelectedOnly || houses.has(h.name);
+                  return mq && ms;
+                }).length,
+              0,
+            );
+            if (totalVisible === 1) {
+              return (
+                <p className="text-sm text-muted-foreground">
+                  No houses match your filters.
+                </p>
+              );
+            }
+            return null;
+          })}
         </div>
         <p className="mt-6 text-xs text-muted-foreground">You can change this later.</p>
       </section>
