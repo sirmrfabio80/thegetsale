@@ -24,6 +24,7 @@ function WatchlistPage() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<"signal" | "confidence" | "window">("signal");
 
   useEffect(() => {
     const sync = () => {
@@ -57,6 +58,12 @@ function WatchlistPage() {
         : withBrand.filter((x) => departments.has(brandDepartment(x.brand)));
     const rank: Record<string, number> = { soon: 0, buy: 1, hold: 2, low: 3 };
     const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "confidence") {
+        return b.brand.confidence - a.brand.confidence;
+      }
+      if (sortBy === "window") {
+        return a.brand.windowDays - b.brand.windowDays;
+      }
       const r = (rank[a.brand.signal] ?? 99) - (rank[b.brand.signal] ?? 99);
       if (r !== 0) return r;
       const c = b.brand.confidence - a.brand.confidence;
@@ -64,7 +71,7 @@ function WatchlistPage() {
       return a.brand.windowDays - b.brand.windowDays;
     });
     return { visible: sorted.map((x) => x.it), hiddenCount: items.length - filtered.length };
-  }, [items, departments]);
+  }, [items, departments, sortBy]);
 
   const deptLabel = [...departments].join(", ");
 
@@ -206,12 +213,27 @@ function WatchlistPage() {
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setSelectMode(true)}
-                className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-              >
-                Select
-              </button>
+              <>
+                <label className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  <span className="hidden sm:inline">Sort</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    className="border border-border bg-transparent px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-foreground focus:border-foreground focus:outline-none"
+                    aria-label="Sort watchlist"
+                  >
+                    <option value="signal">Signal strength</option>
+                    <option value="confidence">Confidence</option>
+                    <option value="window">Sale window</option>
+                  </select>
+                </label>
+                <button
+                  onClick={() => setSelectMode(true)}
+                  className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Select
+                </button>
+              </>
             )}
           </div>
         </div>
