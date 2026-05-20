@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
-import { useWatchlist, watchlistStore } from "@/data/store";
+import { useWatchlist, useWatchlistMutations, watchlistQueryOptions } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
 import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
