@@ -290,18 +290,79 @@ function SetupPage() {
           title="Categories"
           hint={`${categories.size} selected${categories.size >= 1 ? "" : " · min 1"}`}
           onReset={() => setCategories(new Set())}
-          canReset={categories.size > 0}
+          canReset={categories.size > 1}
         />
 
-        <div className="mt-8 flex flex-wrap gap-2">
-          {options.categories.map((cat) => (
-            <SelectableChip
-              key={cat.slug}
-              label={cat.label}
-              selected={categories.has(cat.label)}
-              onToggle={() => setCategories((s) => toggle(s, cat.label))}
+        {/* Filter bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={categoryQuery}
+              onChange={(e) => setCategoryQuery(e.target.value)}
+              placeholder="Search categories…"
+              className="flex h-10 w-full border border-border bg-transparent pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
-          ))}
+            {categoryQuery && (
+              <button
+                type="button"
+                onClick={() => setCategoryQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setCategoriesSelectedOnly((v) => !v)}
+            className={`inline-flex h-10 items-center justify-center border px-4 text-xs uppercase tracking-wider transition-colors ${
+              categoriesSelectedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+            }`}
+            aria-pressed={categoriesSelectedOnly}
+          >
+            Selected only
+          </button>
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-2">
+          {options.categories
+            .filter((cat) => {
+              const matchesQuery =
+                !categoryQuery ||
+                cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
+              const matchesSelected = !categoriesSelectedOnly || categories.has(cat.label);
+              return matchesQuery && matchesSelected;
+            })
+            .map((cat) => (
+              <SelectableChip
+                key={cat.slug}
+                label={cat.label}
+                selected={categories.has(cat.label)}
+                onToggle={() => setCategories((s) => toggle(s, cat.label))}
+              />
+            ))}
+          {(() => {
+            const visible = options.categories.filter((cat) => {
+              const mq =
+                !categoryQuery ||
+                cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
+              const ms = !categoriesSelectedOnly || categories.has(cat.label);
+              return mq && ms;
+            });
+            if (visible.length === 1) {
+              return (
+                <p className="w-full text-sm text-muted-foreground">
+                  No categories match your filters.
+                </p>
+              );
+            }
+            return null;
+          })()}
         </div>
       </section>
 
