@@ -5,6 +5,7 @@ import { SignalBadge } from "./SignalBadge";
 import { watchlistStore } from "@/data/store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { brandDepartment } from "@/data/categoryMap";
 
 interface WatchlistCardProps {
   item: WatchlistItem;
