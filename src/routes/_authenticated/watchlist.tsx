@@ -233,9 +233,16 @@ function WatchlistPage() {
       ) : (
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {visible.map((it) => (
-            <WatchlistCard key={it.brandId} item={it} />
+            <WatchlistCard
+              key={it.brandId}
+              item={it}
+              selectable={selectMode}
+              selected={selected.has(it.brandId)}
+              onToggleSelect={toggleSelect}
+            />
           ))}
         </section>
+
       )}
     </PageLayout>
   );
