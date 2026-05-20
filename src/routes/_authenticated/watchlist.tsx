@@ -210,8 +210,7 @@ function WatchlistPage() {
 
   const clearDepartmentFilters = () => {
     setDepartments(new Set());
-    const s = loadSetup();
-    if (s) saveSetup({ ...s, departments: [] });
+    saveSetupMutation({ departments: [] });
     toast("Department filters cleared");
   };
 
@@ -225,8 +224,7 @@ function WatchlistPage() {
         window.clearTimeout(saveTimerRef.current);
       }
       saveTimerRef.current = window.setTimeout(() => {
-        const s = loadSetup();
-        if (s) saveSetup({ ...s, departments: [...next] });
+        saveSetupMutation({ departments: [...next] });
         saveTimerRef.current = null;
       }, 250);
       return next;
