@@ -55,11 +55,12 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
       <button
         type="button"
         onClick={onToggle}
+        disabled={isPending}
         aria-pressed={isWatched}
         aria-label={isWatched ? `Remove ${brand.name} from watchlist` : `Add ${brand.name} to watchlist`}
         title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
         className={cn(
-          "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-border bg-background transition-colors hover:border-foreground",
+          "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-border bg-background transition-colors hover:border-foreground disabled:opacity-50",
           isWatched && "border-foreground bg-foreground text-background hover:opacity-90",
         )}
       >
