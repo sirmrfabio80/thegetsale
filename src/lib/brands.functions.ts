@@ -130,7 +130,7 @@ export const listHousesForDashboard = createServerFn({ method: "GET" })
 
     return (brands as any[]).map((b) =>
       toDashboardDTO(
-        b as BrandRow,
+        b as unknown as BrandRow,
         eventsByBrand.get(b.id) ?? [],
         pickLatestPrediction(predsByBrand.get(b.id) ?? null),
       ),
