@@ -354,7 +354,7 @@ function SetupPage() {
               const ms = !categoriesSelectedOnly || categories.has(cat.label);
               return mq && ms;
             });
-            if (visible.length === 1) {
+            if (visible.length === 0) {
               return (
                 <p className="w-full text-sm text-muted-foreground">
                   No categories match your filters.
