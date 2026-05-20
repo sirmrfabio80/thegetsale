@@ -55,6 +55,8 @@ const FILTERS: Array<"All" | Category> = ["All", "Womens", "Mens", "Accessories"
 function Dashboard() {
   const { data: houseDTOs } = useSuspenseQuery(housesQueryOptions);
   const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
+  const { setup } = useSetup();
+  const { save } = useSetupMutation();
   const [filter, setFilter] = useState<"All" | Category>("All");
   const [q, setQ] = useState("");
   const [houses, setHouses] = useState<Set<string>>(new Set());
@@ -66,50 +68,30 @@ function Dashboard() {
   const [styles, setStyles] = useState<StylePreference[]>([]);
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
 
+  // Sync derived filter state from the backend-backed setup record.
   useEffect(() => {
-    const hydrate = () => {
-      const s = loadSetup();
-      if (!s) {
-        setHasSetup(false);
-        return;
-      }
-      setHasSetup(true);
-      setHouses(new Set(s.houses));
-      setMappedCats(mapSetupCategories(s.categories));
-      setHouseCount(s.houses.length);
-      setCatCount(s.categories.length);
-      setStyles((s.styles ?? []) as StylePreference[]);
-      setDepartments(new Set((s.departments ?? []) as Department[]));
-    };
-    hydrate();
-    // Keep filters consistent across tabs via the storage event.
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === null || e.key === "theget.setup.v1") hydrate();
-    };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") hydrate();
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("focus", hydrate);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("focus", hydrate);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, []);
+    if (!setup) {
+      setHasSetup(false);
+      return;
+    }
+    setHasSetup(true);
+    setHouses(new Set(setup.houses));
+    setMappedCats(mapSetupCategories(setup.categories));
+    setHouseCount(setup.houses.length);
+    setCatCount(setup.categories.length);
+    setStyles((setup.styles ?? []) as StylePreference[]);
+    setDepartments(new Set((setup.departments ?? []) as Department[]));
+  }, [setup]);
 
   // Persist department filter changes back to setup so the Edit flow
   // preselects them in the setup page.
   useEffect(() => {
-    if (!hasSetup) return;
-    const s = loadSetup();
-    if (!s) return;
-    const current = (s.departments ?? []) as Department[];
+    if (!hasSetup || !setup) return;
+    const current = (setup.departments ?? []) as Department[];
     const next = [...departments];
     if (current.length === next.length && current.every((d) => departments.has(d))) return;
-    saveSetup({ ...s, departments: next });
-  }, [hasSetup, departments]);
+    save({ departments: next });
+  }, [hasSetup, departments, setup, save]);
 
 
   const matchedIds = useMemo(() => {
