@@ -58,7 +58,11 @@ export function AvatarBlock({
           src={url}
           alt=""
           decoding="async"
-          loading="lazy"
+          // Nav avatar is above the fold — fetch eagerly with high priority so
+          // it lands as early as possible. The large profile avatar is the
+          // main subject of its page, so still load it eagerly.
+          loading="eager"
+          fetchPriority={size === "sm" ? "high" : "auto"}
           onLoad={() => setImgLoaded(true)}
           onError={() => {
             setImgErrored(true);
