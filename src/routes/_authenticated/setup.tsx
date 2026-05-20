@@ -268,7 +268,7 @@ function SetupPage() {
                 }).length,
               0,
             );
-            if (totalVisible === 1) {
+            if (totalVisible === 0) {
               return (
                 <p className="text-sm text-muted-foreground">
                   No houses match your filters.
@@ -276,7 +276,7 @@ function SetupPage() {
               );
             }
             return null;
-          })}
+          })()}
         </div>
         <p className="mt-6 text-xs text-muted-foreground">You can change this later.</p>
       </section>
