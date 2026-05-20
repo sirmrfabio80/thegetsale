@@ -184,16 +184,16 @@ function SetupPage() {
         />
 
         <div className="mt-8 space-y-8">
-          {brandGroups.map((group) => (
+          {options.houseGroups.map((group) => (
             <div key={group.label}>
               <p className="eyebrow mb-3">{group.label}</p>
               <div className="flex flex-wrap gap-2">
-                {group.brands.map((brand) => (
+                {group.houses.map((house) => (
                   <SelectableChip
-                    key={brand}
-                    label={brand}
-                    selected={houses.has(brand)}
-                    onToggle={() => setHouses((s) => toggle(s, brand))}
+                    key={house.slug}
+                    label={house.name}
+                    selected={houses.has(house.name)}
+                    onToggle={() => setHouses((s) => toggle(s, house.name))}
                   />
                 ))}
               </div>
