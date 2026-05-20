@@ -2,8 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { WatchlistItem } from "@/data/types";
 import { getBrand } from "@/data/brands";
 import { SignalBadge } from "./SignalBadge";
-import { watchlistStore } from "@/data/store";
-import { toast } from "sonner";
+import { useWatchlistMutations } from "@/data/store";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
 
