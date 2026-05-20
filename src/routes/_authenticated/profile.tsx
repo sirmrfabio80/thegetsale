@@ -23,8 +23,14 @@ const MAX_BYTES = 5 * 1024 * 1024;
 
 export const Route = createFileRoute("/_authenticated/profile")({
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/login" });
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) throw redirect({ to: "/login" });
+    } catch (e) {
+      // Re-throw redirects so TanStack handles navigation
+      if (e && typeof e === "object" && "to" in (e as any)) throw e;
+      throw redirect({ to: "/login" });
+    }
   },
   head: () => ({
     meta: [
@@ -32,8 +38,46 @@ export const Route = createFileRoute("/_authenticated/profile")({
       { name: "description", content: "Manage your account on The Get." },
     ],
   }),
+  errorComponent: ProfileError,
+  pendingComponent: ProfilePending,
   component: ProfilePage,
 });
+
+function ProfilePending() {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-5 py-16 md:px-10">
+      <p className="eyebrow text-muted-foreground">Account</p>
+      <p className="mt-3 text-sm text-muted-foreground">Loading your profile…</p>
+    </div>
+  );
+}
+
+function ProfileError({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-5 py-16 md:px-10">
+      <p className="eyebrow">Account</p>
+      <h1 className="mt-4 font-serif text-3xl">Couldn't load your profile</h1>
+      <p className="mt-3 max-w-lg text-sm text-muted-foreground">
+        {error?.message ?? "Something went wrong while reading your profile."}
+      </p>
+      <div className="mt-6 flex gap-3">
+        <button
+          type="button"
+          onClick={() => reset()}
+          className="h-10 border border-foreground px-5 text-[11px] uppercase tracking-[0.18em] hover:bg-foreground hover:text-background"
+        >
+          Try again
+        </button>
+        <a
+          href="/dashboard"
+          className="h-10 border border-border px-5 py-2.5 text-[11px] uppercase tracking-[0.18em] hover:border-foreground"
+        >
+          Back to signals
+        </a>
+      </div>
+    </div>
+  );
+}
 
 type UploadError = {
   message: string;

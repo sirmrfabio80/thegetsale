@@ -21,6 +21,8 @@ import { Route as AuthenticatedWatchlistRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/_admin'
+import { Route as AuthenticatedAdminAdminSalesRouteImport } from './routes/_authenticated/_admin/admin.sales'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -81,6 +83,16 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminAdminSalesRoute =
+  AuthenticatedAdminAdminSalesRouteImport.update({
+    id: '/admin/sales',
+    path: '/admin/sales',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -94,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/watchlist': typeof AuthenticatedWatchlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/brand/$id': typeof BrandIdRoute
+  '/admin/sales': typeof AuthenticatedAdminAdminSalesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -107,6 +120,7 @@ export interface FileRoutesByTo {
   '/watchlist': typeof AuthenticatedWatchlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/brand/$id': typeof BrandIdRoute
+  '/admin/sales': typeof AuthenticatedAdminAdminSalesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,12 +130,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_authenticated/_admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/watchlist': typeof AuthenticatedWatchlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/brand/$id': typeof BrandIdRoute
+  '/_authenticated/_admin/admin/sales': typeof AuthenticatedAdminAdminSalesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +153,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/auth/callback'
     | '/brand/$id'
+    | '/admin/sales'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,6 +167,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/auth/callback'
     | '/brand/$id'
+    | '/admin/sales'
   id:
     | '__root__'
     | '/'
@@ -158,12 +176,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/_authenticated/_admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/profile'
     | '/_authenticated/setup'
     | '/_authenticated/watchlist'
     | '/auth/callback'
     | '/brand/$id'
+    | '/_authenticated/_admin/admin/sales'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -263,10 +283,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/_admin': {
+      id: '/_authenticated/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/_admin/admin/sales': {
+      id: '/_authenticated/_admin/admin/sales'
+      path: '/admin/sales'
+      fullPath: '/admin/sales'
+      preLoaderRoute: typeof AuthenticatedAdminAdminSalesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAdminSalesRoute: typeof AuthenticatedAdminAdminSalesRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAdminSalesRoute: AuthenticatedAdminAdminSalesRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
@@ -274,6 +320,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
