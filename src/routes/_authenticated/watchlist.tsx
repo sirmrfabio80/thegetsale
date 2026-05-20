@@ -247,8 +247,7 @@ function WatchlistPage() {
   const removeSelected = () => {
     const ids = [...selected];
     if (ids.length === 0) return;
-    watchlistStore.removeMany(ids);
-    toast(`${ids.length} ${ids.length === 1 ? "brand" : "brands"} removed from watchlist`);
+    removeMany(ids);
     exitSelectMode();
   };
 
