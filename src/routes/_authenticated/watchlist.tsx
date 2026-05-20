@@ -205,9 +205,15 @@ function WatchlistPage() {
                 </span>
               </>
             ) : (
-              <span>
-                {visible.length} {visible.length === 1 ? "brand" : "brands"}
-              </span>
+              <>
+                <span>
+                  {visible.length} {visible.length === 1 ? "brand" : "brands"}
+                </span>
+                <span aria-hidden className="text-muted-foreground/50">·</span>
+                <span>
+                  Sorted by <span className="text-foreground">{sortLabel(sortBy)}</span>
+                </span>
+              </>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -303,4 +309,15 @@ function WatchlistPage() {
       )}
     </PageLayout>
   );
+}
+
+function sortLabel(sortBy: "signal" | "confidence" | "window") {
+  switch (sortBy) {
+    case "confidence":
+      return "Confidence";
+    case "window":
+      return "Sale window";
+    default:
+      return "Signal strength";
+  }
 }
