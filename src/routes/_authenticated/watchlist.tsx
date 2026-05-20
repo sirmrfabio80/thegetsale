@@ -56,6 +56,10 @@ function WatchlistPage() {
     const prevDepartments = departmentsRef.current;
     sortByRef.current = sortBy;
     departmentsRef.current = departments;
+    if (restoringRef.current) {
+      restoringRef.current = false;
+      return () => window.clearTimeout(updateTimer);
+    }
     if (!sortChanged) {
       if (toastBaselineRef.current === null) {
         toastBaselineRef.current = prevDepartments;
