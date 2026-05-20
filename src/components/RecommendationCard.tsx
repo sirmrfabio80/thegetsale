@@ -19,57 +19,33 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
   };
 
   return (
-    <section className="border border-border bg-card px-6 py-10 md:px-12 md:py-14">
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+    <section className="border border-border bg-card px-6 py-8 md:px-10 md:py-10">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-xl">
-          <SignalBadge signal={brand.signal} />
-          <h1 className="mt-5 font-serif text-4xl leading-[1.05] md:text-5xl">
+          <p className="eyebrow">Editor's note</p>
+          <h2 className="mt-3 font-serif text-3xl leading-[1.1] md:text-4xl">
             {brand.headline}
-          </h1>
+          </h2>
           <p className="mt-4 text-sm text-muted-foreground">
             Based on cadence, inventory, and market signals around{" "}
             <span className="text-foreground">{brand.name}</span>.
           </p>
         </div>
 
-        <div className="flex flex-col items-start gap-2 md:items-end">
-          <p className="eyebrow">Confidence</p>
-          <p className="font-serif text-5xl leading-none">{brand.confidence}%</p>
-          <ConfidenceMeter value={brand.confidence} />
+        <div className="flex flex-wrap gap-3 md:shrink-0">
+          <Button
+            onClick={onToggle}
+            variant={isWatched ? "outline" : "default"}
+            className="rounded-none"
+          >
+            {isWatched ? "Remove from watchlist" : "Add to watchlist"}
+          </Button>
+          <Button variant="outline" className="rounded-none" onClick={() => toast("Saved for later")}>
+            Save signal
+          </Button>
         </div>
       </div>
-
-      <div className="hairline my-8" />
-
-      <div className="grid grid-cols-2 gap-6 text-sm md:grid-cols-4">
-        <Field label="Expected window" value={brand.windowDays > 90 ? "No clear window" : `${brand.windowDays} days`} />
-        <Field label="Expected depth" value={brand.expectedDepth} />
-        <Field label="Last sale" value={`${brand.lastSaleDays} days ago`} />
-        <Field label="Cadence" value={brand.cadence} />
-      </div>
-
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Button
-          onClick={onToggle}
-          variant={isWatched ? "outline" : "default"}
-          className="rounded-none"
-        >
-          {isWatched ? "Remove from watchlist" : "Add to watchlist"}
-        </Button>
-        <Button variant="outline" className="rounded-none" onClick={() => toast("Saved for later")}>
-          Save signal
-        </Button>
-      </div>
     </section>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="eyebrow mb-1.5">{label}</p>
-      <p className="font-serif text-lg leading-tight">{value}</p>
-    </div>
   );
 }
 
