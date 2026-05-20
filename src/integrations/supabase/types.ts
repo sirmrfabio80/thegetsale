@@ -16,38 +16,47 @@ export type Database = {
     Tables: {
       brands: {
         Row: {
+          category: string | null
           country: string | null
           created_at: string
           description: string | null
+          editorial_copy: string | null
           house_group: string | null
           id: string
           is_active: boolean
           name: string
           slug: string
+          tagline: string | null
           updated_at: string
           website_url: string | null
         }
         Insert: {
+          category?: string | null
           country?: string | null
           created_at?: string
           description?: string | null
+          editorial_copy?: string | null
           house_group?: string | null
           id?: string
           is_active?: boolean
           name: string
           slug: string
+          tagline?: string | null
           updated_at?: string
           website_url?: string | null
         }
         Update: {
+          category?: string | null
           country?: string | null
           created_at?: string
           description?: string | null
+          editorial_copy?: string | null
           house_group?: string | null
           id?: string
           is_active?: boolean
           name?: string
           slug?: string
+          tagline?: string | null
           updated_at?: string
           website_url?: string | null
         }
@@ -189,6 +198,7 @@ export type Database = {
           reviewed_by: string | null
           sale_type: string
           sample_size: number
+          signal: string | null
           status: string
         }
         Insert: {
@@ -207,6 +217,7 @@ export type Database = {
           reviewed_by?: string | null
           sale_type: string
           sample_size?: number
+          signal?: string | null
           status?: string
         }
         Update: {
@@ -225,6 +236,7 @@ export type Database = {
           reviewed_by?: string | null
           sale_type?: string
           sample_size?: number
+          signal?: string | null
           status?: string
         }
         Relationships: [
