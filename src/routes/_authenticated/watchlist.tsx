@@ -148,6 +148,62 @@ function WatchlistPage() {
 
       <SectionRule />
 
+      {items.length > 0 && visible.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {selectMode ? (
+              <>
+                <button
+                  onClick={toggleSelectAllVisible}
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  {allVisibleSelected ? "Clear all" : "Select all"}
+                </button>
+                <span>
+                  {selected.size} selected
+                </span>
+              </>
+            ) : (
+              <span>
+                {visible.length} {visible.length === 1 ? "brand" : "brands"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {selectMode ? (
+              <>
+                <button
+                  onClick={exitSelectMode}
+                  className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={removeSelected}
+                  disabled={selected.size === 0}
+                  className={cn(
+                    "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
+                    selected.size === 0
+                      ? "cursor-not-allowed border-border text-muted-foreground/60"
+                      : "border-foreground bg-foreground text-background hover:opacity-90",
+                  )}
+                >
+                  Remove{selected.size > 0 ? ` (${selected.size})` : ""}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setSelectMode(true)}
+                className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                Select
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+
       {items.length === 0 ? (
         <div className="border border-dashed border-border px-8 py-20 text-center">
           <p className="font-serif text-2xl">Nothing on watch yet.</p>
