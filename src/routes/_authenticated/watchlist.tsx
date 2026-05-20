@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { useWatchlist, watchlistStore } from "@/data/store";
@@ -24,6 +24,7 @@ function WatchlistPage() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isUpdating, setIsUpdating] = useState(false);
   const [sortBy, setSortBy] = useState<"signal" | "confidence" | "window">(() => {
     if (typeof window === "undefined") return "signal";
     const saved = window.localStorage.getItem("theget.watchlist.sort");
@@ -34,6 +35,18 @@ function WatchlistPage() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("theget.watchlist.sort", sortBy);
   }, [sortBy]);
+
+  // Subtle "Updating list…" flash when the visible order changes.
+  const firstRunRef = useRef(true);
+  useEffect(() => {
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+      return;
+    }
+    setIsUpdating(true);
+    const t = window.setTimeout(() => setIsUpdating(false), 350);
+    return () => window.clearTimeout(t);
+  }, [items, departments, sortBy]);
 
   useEffect(() => {
     const sync = () => {
@@ -213,6 +226,15 @@ function WatchlistPage() {
                 <span>
                   Sorted by <span className="text-foreground">{sortLabel(sortBy)}</span>
                 </span>
+                {isUpdating && (
+                  <span
+                    aria-live="polite"
+                    className="inline-flex items-center gap-1.5 text-foreground/70 transition-opacity"
+                  >
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/60" />
+                    Updating list…
+                  </span>
+                )}
                 {sortBy !== "signal" && (
                   <button
                     onClick={() => setSortBy("signal")}
