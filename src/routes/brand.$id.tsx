@@ -21,6 +21,7 @@ import {
   type HouseDetailDTO,
   type PublicHouseDTO,
 } from "@/lib/brands.functions";
+import { watchlistQueryOptions } from "@/data/store";
 
 function detailToBrand(h: HouseDetailDTO): Brand {
   return {
