@@ -420,7 +420,7 @@ export function SaleEventsTab() {
             No sale events yet.
           </div>
         )}
-        {rows.map((r) => (
+        {mobileRows.map((r) => (
           <div
             key={r.id}
             className={
@@ -526,7 +526,31 @@ export function SaleEventsTab() {
             </div>
           </div>
         ))}
+        {hasMoreMobile && (
+          <>
+            <div
+              ref={sentinelRef}
+              aria-hidden
+              className="h-px w-full"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                setMobileLimit((n) => Math.min(n + MOBILE_PAGE_SIZE, rows.length))
+              }
+              className="h-11 w-full border border-border text-[11px] uppercase tracking-[0.18em] text-foreground"
+            >
+              Load more ({rows.length - mobileLimit} remaining)
+            </button>
+          </>
+        )}
+        {!listQ.isLoading && rows.length > 0 && !hasMoreMobile && (
+          <div className="py-2 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            End of list
+          </div>
+        )}
       </div>
+
 
       {/* Desktop: table */}
       <div className="hidden border border-border md:block">
