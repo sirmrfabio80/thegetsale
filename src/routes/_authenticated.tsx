@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useHydrated } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -12,9 +12,14 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { auth } = Route.useRouteContext();
-  if (auth.status === "loading") return <HydratingShell />;
+  const hydrated = useHydrated();
+  // SSR always renders HydratingShell (server auth snapshot is "loading").
+  // Match that on the first client commit to avoid a hydration mismatch
+  // when the module-scoped auth store is already "authenticated" client-side.
+  if (!hydrated || auth.status === "loading") return <HydratingShell />;
   return <Outlet />;
 }
+
 
 function HydratingShell() {
   const [slow, setSlow] = useState(false);
