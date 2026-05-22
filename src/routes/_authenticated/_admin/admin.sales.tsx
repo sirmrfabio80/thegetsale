@@ -5,6 +5,7 @@ import { HousesTab } from "@/components/admin/HousesTab";
 import { SaleEventsTab } from "@/components/admin/SaleEventsTab";
 import { UsersRolesTab } from "@/components/admin/UsersRolesTab";
 import { SystemTab } from "@/components/admin/SystemTab";
+import { SettingsTab } from "@/components/admin/SettingsTab";
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/sales")({
   head: () => ({
