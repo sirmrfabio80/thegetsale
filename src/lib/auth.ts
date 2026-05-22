@@ -15,7 +15,20 @@ export type AuthState = {
 function deriveDisplayName(user: User | null): string | null {
   if (!user) return null;
   const meta = user.user_metadata ?? {};
-  return (meta.full_name as string | undefined) ?? (meta.name as string | undefined) ?? user.email ?? null;
+  return (meta.full_name as string | undefined) ?? (meta.name as string | undefined) ?? null;
+}
+
+export function localPartFromEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const trimmed = email.trim();
+  const at = trimmed.indexOf("@");
+  if (at <= 0) return null;
+  const local = trimmed.slice(0, at).replace(/[._-]+/g, " ").trim();
+  if (!local) return null;
+  return local
+    .split(/\s+/)
+    .map((t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function fromUser(user: User | null): AuthState {
