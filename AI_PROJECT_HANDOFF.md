@@ -1,6 +1,6 @@
-# Plan: AI_PROJECT_HANDOFF.md
+# AI_PROJECT_HANDOFF.md
 
-Below is the proposed full content for `AI_PROJECT_HANDOFF.md`. **No file will be created yet** — review and tell me what to change. Anything I could not verify from the code is marked `unclear`.
+> Living handoff document for **The Get**. Read section 19 first for fast context, then dive into the rest. Items marked `unclear` are gaps in this audit, not facts.
 
 ---
 
@@ -180,7 +180,7 @@ src/
 
 ## 8. Backend and data model
 
-**Tables** (see `<supabase-tables>` for full columns)
+**Tables**
 - `brands` — houses. Cols: `slug`, `name`, `category`, `tagline`, `house_group`, `editorial_copy`, `description`, `country`, `website_url`, `is_active`. RLS: admins manage; authenticated read where `is_active=true`.
 - `sale_events` — admin-confirmed past/upcoming sales. `status` draft/published/hidden, `sale_type`, `discount_min/max`, dates.
 - `sale_predictions` — generated predictions. `status`, `confidence_score/label`, `predicted_start/end_date`, `basis_years`, `algorithm_version`, `sample_size`, `signal`. **Generator: `unclear`.**
@@ -394,7 +394,3 @@ Public routes: `/`, auth screens, `/brand/$id` (public preview). Protected: `/da
 Design: editorial, quiet, serif (Instrument Serif + Inter), warm off-white, hairline borders, uppercase 11px eyebrows, oklch tokens in `src/styles.css`. **Toasts are intentionally disabled** via a no-op shim at `src/lib/toast.ts` — do not reinstate.
 
 Watch out for: dual-source houses (`brands` table + `src/data/brands.ts` mock fallback); `sale_predictions` has no visible generator; `__root.tsx` head still has placeholder copy and a root-level `og:image`; `handle_new_user` trigger may not be attached. Preserve terminology (*house*, *signal*, *the read*). Never edit `routeTree.gen.ts` or `integrations/supabase/*`.
-
----
-
-**Ready to write this to `AI_PROJECT_HANDOFF.md`?** Tell me what to add, cut, or correct — especially anything I marked `unclear`.
