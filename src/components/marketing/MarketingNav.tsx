@@ -38,12 +38,14 @@ export function MarketingNav() {
               >
                 Sign in
               </Link>
-              <button
-                onClick={() => navigate({ to: "/signup" })}
-                className="inline-flex h-11 items-center border border-foreground bg-foreground px-4 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 md:px-5"
-              >
-                Sign up
-              </button>
+              {!privateBeta && (
+                <button
+                  onClick={() => navigate({ to: "/signup" })}
+                  className="inline-flex h-11 items-center border border-foreground bg-foreground px-4 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 md:px-5"
+                >
+                  Sign up
+                </button>
+              )}
             </>
           )}
         </nav>
