@@ -1,65 +1,38 @@
-## Problem
+## Plan
 
-Clicking a House card on the dashboard does not navigate to `/brand/$id`. The TanStack `Link` wiring is correct (`BrandCard.tsx` uses `<Link to="/brand/$id" params={{ id: brand.id }}>`), and the route exists in the generated tree.
+1. Fix the `/watchlist` popup loop at the source in `src/routes/_authenticated/watchlist.tsx`.
+   - Remove the effect-driven summary toast logic that is re-triggering on watchlist renders.
+   - Keep the existing inline sort/status text (`Sorted by…`, `Updating list…`) so the page still communicates state without popups.
+   - Remove the remaining local toast call for clearing department filters.
 
-The pre-investigation is correct: the failure is in the route loader at `src/routes/brand.$id.tsx`. The `postMessage` and `favicon.ico` console errors are unrelated preview-environment noise and should be ignored.
+2. Disable toast rendering globally.
+   - Remove the root `<Toaster />` mount from `src/routes/__root.tsx` so no popup container is rendered anywhere in the app.
+   - Clean up the now-unused toast/toaster imports.
 
-Two concrete issues in the loader:
+3. Remove all toast usage across the app.
+   - Strip `toast(...)`, `toast.success(...)`, and `toast.error(...)` calls and related imports from the files currently using them:
+     - `src/data/store.ts`
+     - `src/data/setupStore.ts`
+     - `src/routes/brand.$id.tsx`
+     - `src/routes/_authenticated/watchlist.tsx`
+     - `src/routes/_authenticated/profile.tsx`
+     - `src/components/RecommendationCard.tsx`
+     - `src/components/profile/ConnectedAccounts.tsx`
+     - `src/components/admin/UsersRolesTab.tsx`
+     - `src/components/admin/SettingsTab.tsx`
+     - `src/components/admin/SaleEventsTab.tsx`
+     - `src/components/admin/HousesTab.tsx`
+     - `src/components/admin/HouseDrawer.tsx`
+     - `src/components/admin/SaleEventDrawer.tsx`
+   - Preserve existing behaviour otherwise; no new backend or routing changes.
 
-1. `ensureQueryData(watchlistQueryOptions)` is fired without `await` and without `.catch(...)`. If the watchlist server fn rejects (auth expired, transient 401/500), the unhandled rejection can abort the navigation.
-2. `getHouseDetail` is a `requireSupabaseAuth` server fn called from a top-level (non-`_authenticated`) route. A stale/missing bearer token throws `Unauthorized`, which surfaces as a loader error and blocks navigation rather than falling back to the public view.
+4. Validate the result.
+   - Confirm `/watchlist` no longer shows looping popups.
+   - Confirm actions that previously triggered toasts now complete without any popup appearing.
+   - Confirm there are no leftover toast imports/usages in `src/`.
 
-## Fix
+## Technical details
 
-Keep `/brand/$id` as a top-level route (it has both a members and a public preview path — moving it under `_authenticated` would break the public preview for logged-out visitors).
-
-Edit only `src/routes/brand.$id.tsx`:
-
-1. **Make the watchlist prefetch fire-and-forget safely.** Replace
-   ```ts
-   context.queryClient.ensureQueryData(watchlistQueryOptions);
-   ```
-   with a version that swallows rejections:
-   ```ts
-   void context.queryClient
-     .ensureQueryData(watchlistQueryOptions)
-     .catch(() => {});
-   ```
-   Watchlist is non-critical for rendering the brand page — a failure here must never block navigation.
-
-2. **Gracefully fall back to the public view on auth failure.** Wrap the `getHouseDetail` call in a try/catch. If it throws an auth-shaped error (matches the same `Unauthorized|JWT|AuthSession|Invalid (token|Refresh Token)` regex already used in `src/lib/auth.ts` / `_authenticated.tsx`), fall through to `getPublicHouseDetail` instead of surfacing the error. Non-auth errors are re-thrown so the existing `errorComponent` still handles real failures.
-
-   Shape:
-   ```ts
-   if (authed) {
-     void context.queryClient.ensureQueryData(watchlistQueryOptions).catch(() => {});
-     try {
-       const detail = await getHouseDetail({ data: { slug: params.id } });
-       if (!detail) throw notFound();
-       return { kind: "auth" as const, brand: detailToBrand(detail) };
-     } catch (err) {
-       if (isRedirect(err) || isNotFound(err)) throw err;
-       if (!isAuthShapedError(err)) throw err;
-       // fall through to public view below
-     }
-   }
-   const pub = await getPublicHouseDetail({ data: { slug: params.id } });
-   if (!pub) throw notFound();
-   return { kind: "public" as const, house: pub };
-   ```
-
-   `isAuthShapedError` can be a small local helper (or imported from `src/lib/auth.ts` if already exported there — to be confirmed in build mode by reading the file).
-
-## What this does NOT change
-
-- No change to `BrandCard.tsx`, `RecommendationCard.tsx`, or any other component.
-- No change to server functions, RLS, or auth flow.
-- No new dependencies.
-- No route restructuring (route stays at `/brand/$id`).
-
-## Verification
-
-After the edit:
-- Click a House card while signed in → navigates to `/brand/$id` and renders the authenticated dossier.
-- Simulate a stale token (or watchlist failure) → navigation still succeeds; the page renders either the auth view (if `getHouseDetail` succeeded) or the public preview (if auth failed).
-- Click a House card while signed out → still renders the public preview as today.
+- The watchlist loop is caused by toast logic inside an effect that re-runs during state/query updates; removing that popup path fixes the immediate issue.
+- Disabling only the root toaster would hide popups, but toast calls would still remain in code. I will remove both the global renderer and the toast calls themselves so toast usage is actually disabled, not just visually suppressed.
+- I will keep the change scoped to frontend presentation/state files only.
