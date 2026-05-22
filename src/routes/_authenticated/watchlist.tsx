@@ -113,14 +113,21 @@ function WatchlistPage() {
     });
   }, [setup]);
 
-  const { visible, hiddenCount } = useMemo(() => {
-    const withBrand = items
-      .map((it) => ({ it, brand: brandsBySlug.get(it.brandId) ?? null }))
-      .filter((x): x is { it: typeof items[number]; brand: Brand } => !!x.brand);
+  const { visible, hiddenCount, orphans } = useMemo(() => {
+    const withMaybeBrand = items.map((it) => ({
+      it,
+      brand: brandsBySlug.get(it.brandId) ?? null,
+    }));
+    const known = withMaybeBrand.filter(
+      (x): x is { it: typeof items[number]; brand: Brand } => !!x.brand,
+    );
+    const orphanItems = withMaybeBrand
+      .filter((x) => !x.brand)
+      .map((x) => x.it);
     const filtered =
       departments.size === 0
-        ? withBrand
-        : withBrand.filter((x) => departments.has(brandDepartment(x.brand)));
+        ? known
+        : known.filter((x) => departments.has(brandDepartment(x.brand)));
     const rank: Record<string, number> = { soon: 0, buy: 1, hold: 2, low: 3 };
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "confidence") {
@@ -135,7 +142,11 @@ function WatchlistPage() {
       if (c !== 0) return c;
       return a.brand.windowDays - b.brand.windowDays;
     });
-    return { visible: sorted.map((x) => x.it), hiddenCount: items.length - filtered.length };
+    return {
+      visible: sorted.map((x) => x.it),
+      hiddenCount: known.length - filtered.length,
+      orphans: orphanItems,
+    };
   }, [items, brandsBySlug, departments, sortBy]);
 
   const deptLabel = [...departments].join(", ");
