@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useAuth, signOut } from "@/lib/auth";
+import { useAuth, signOut, localPartFromEmail } from "@/lib/auth";
 import { useProfile } from "@/hooks/use-profile";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { AvatarBlock } from "@/components/profile/AvatarBlock";
