@@ -84,11 +84,10 @@ function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
-    if (listeners.size === 0 && supabaseUnsubscribe) {
-      supabaseUnsubscribe();
-      supabaseUnsubscribe = null;
-      currentState = LOADING_STATE;
-    }
+    // Intentionally keep the Supabase subscription alive for the lifetime of
+    // the tab. Tearing it down on listeners=0 caused currentState to reset to
+    // LOADING during route transitions (when old subscribers unmount before
+    // new ones mount), making the entire auth-gated UI flash off.
   };
 }
 

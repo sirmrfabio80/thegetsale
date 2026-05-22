@@ -1,37 +1,71 @@
+# Fix: slow logo nav + disappearing avatar (setup → logo → dashboard)
 
-# Review of Claude's avatar/name + perf plan
+Incorporates the review notes. Two surgical changes ship; two follow-ups noted.
 
-Most of it is sound. Below is what to **keep**, **fix**, and **drop** before implementing.
+## What the user sees
 
-## Keep as-is
+From `/setup`, click the logo. The navigation feels slow and the avatar + name in the top-nav disappear before the dashboard finishes rendering.
 
-1. **`deriveDisplayName` cleanup** in `src/lib/auth.ts` — removing the `?? user.email` fallback is correct. The field name lies today.
-2. **`localPartFromEmail` helper** + new cascade in `PageLayout.tsx` (display_name → metadata name → titled local-part → `?`). Good UX, never leaks the raw email in the chip while keeping the full email under "Signed in as" in the dropdown. Whitespace normalization is the right touch.
-3. **Auth subscription fan-out** finding (perf #2). Real issue — every `useAuth()` consumer opens its own `onAuthStateChange` + `getSession()`. Worth consolidating into a module-scoped store seeded from the router.
-4. **Double `apply()` on boot** (perf #3). `getSession()` and the `INITIAL_SESSION` event both invalidate. Easy win: skip the manual `getSession()` and rely on `INITIAL_SESSION`.
-5. **Render-blocking Google Fonts** (perf #7) and **bundle/Radix audit** (perf #6, #9). Legit.
+## Root causes (both confirmed)
 
-## Fix before shipping
+**A. Logo always links to `/`.** `PageLayout.tsx:45` and `MarketingNav.tsx:13` both use `<Link to="/">`. For an authenticated user this triggers `index.tsx`'s `beforeLoad` → `redirect({ to: "/dashboard" })`. The marketing `<Marketing>` component itself never mounts (the redirect aborts before render), but the route tree still unmounts `_authenticated` → resolves the redirect → remounts `_authenticated`/`dashboard`. That round-trip is the perceived latency.
 
-1. **Loader "waterfall" claim is wrong** (perf #5). In `dashboard.tsx`, the three `ensureQueryData` calls are **fire-and-forget** — they start concurrently, not serially. They're already parallel; the loader just doesn't *wait* for them, which means the component suspends on `useSuspenseQuery` for whichever isn't ready yet. The real nit is "loader returns before data lands so first paint suspends", not "serial waterfall". Reword or drop.
-2. **Path prefix `thegetsale/`** in every link is wrong — project root is the repo root, paths are `src/...`, not `thegetsale/src/...`. Strip the prefix everywhere in the doc.
-3. **SSR auth gap** (perf #4) — the recommendation ("forward session cookie at SSR") is a much bigger architectural change than the doc implies; it requires switching Supabase auth to cookie-based storage. Mark as "long-term" rather than a quick win, or drop from the prioritized list.
+**B. Auth store resets to `LOADING` when listeners hit zero.** In `src/lib/auth.ts:87-91`:
 
-## Drop
+```ts
+if (listeners.size === 0 && supabaseUnsubscribe) {
+  supabaseUnsubscribe();
+  supabaseUnsubscribe = null;
+  currentState = LOADING_STATE;
+}
+```
 
-1. **Deleting `src/components/ui/avatar.tsx`** — out of scope and risky. It's a shadcn primitive; unused today doesn't mean unused tomorrow, and our convention is to keep the shadcn surface intact. Skip the delete.
-2. **Supabase Proxy on hot paths** (perf #8) — Claude already flags it as low. Just remove the section; it's noise without profiling data.
-3. **Cloudflare Workers cold-start** (perf #9) as a standalone section — collapse into the bundle section (#6); it's the same root cause.
+During the route transition, the three `useAuth()` subscribers in the old PageLayout (TopNav, `useProfile`, `useIsAdmin`) commit unmount before the new PageLayout commits mount. `listeners.size` hits 0 for a tick, cleanup runs, `currentState` flips to `LOADING_STATE`, the new PageLayout's first snapshot is `loading`, and the `auth.status === "authenticated"` gate on `PageLayout.tsx:52` hides the entire dropdown until Supabase re-fires `INITIAL_SESSION`.
 
-## Net plan to implement (build mode)
+## Changes
 
-1. `src/lib/auth.ts`: drop email fallback in `deriveDisplayName`; add and export `localPartFromEmail`.
-2. `src/components/PageLayout.tsx`: import helper, rebuild label cascade with whitespace normalization, leave the dropdown's "Signed in as" email untouched.
-3. `docs/PERFORMANCE.md` (new): keep sections 1, 2, 3, 6, 7, 10. Reword 5. Soften 4. Drop 8, fold 9 into 6. Strip `thegetsale/` from all paths.
+### 1. `src/lib/auth.ts` — keep the subscription alive for the tab lifetime
 
-## Verification (unchanged from Claude's plan, minus build step)
+Drop the reset-on-zero-listeners branch. `subscribe` becomes:
 
-- Header chip shows `Sirfabio` for `sirfabio@icloud.com` when `display_name` is null; `S` as avatar letter.
-- Setting `display_name = "Fab E."` updates chip to `Fab E.`, letter `F`.
-- `display_name = "   "` falls back to local-part, not blank.
-- Dropdown still shows full email under "Signed in as".
+```ts
+function subscribe(listener: () => void): () => void {
+  ensureSubscribed();
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+```
+
+The `if (supabaseUnsubscribe || typeof window === "undefined") return;` guard in `ensureSubscribed` already prevents double-subscribe under StrictMode. Sign-out continues to work: Supabase fires `SIGNED_OUT` → `emit(fromUser(null))` → state transitions cleanly to `unauthenticated`.
+
+### 2. `src/components/PageLayout.tsx` — logo destination depends on auth
+
+Explicit form (avoids the `!== "unauthenticated"` foot-gun during the loading sliver):
+
+```tsx
+<Link to={auth.status === "authenticated" ? "/dashboard" : "/"} ...>
+  The Get
+</Link>
+```
+
+### 3. `src/components/marketing/MarketingNav.tsx` — same treatment
+
+Authenticated users who land on a marketing route (e.g. via stale link) get the brand mark linking straight to `/dashboard`. Same explicit conditional.
+
+## Out of scope (intentional)
+
+- **Dashboard loader.** The `Promise.all` is correct and stays.
+- **Avatar fade-in re-flash on AvatarBlock remount** (1-frame stutter from `imgLoaded` initializing to `false`). Below threshold for the reported bug. If it shows in verification, fix with a lazy `useState` initializer that probes the image cache via `new Image()` + `.complete`.
+- **Token-refresh invalidation storm.** `src/router.tsx:25-34`'s `apply()` runs `invalidateQueries()` + `router.invalidate()` on every auth event, including the hourly `TOKEN_REFRESHED`. That causes the same kind of mid-session flicker after ~1 hour in a tab. Worth a follow-up: short-circuit `apply` when the resolved `user.id` matches the current context. **Not** the cause of this bug; logging here so it doesn't get forgotten.
+
+## Verification
+
+Functional:
+- From `/setup`, click the logo: lands on `/dashboard` in a single navigation; dropdown stays mounted and `authenticated` throughout.
+- From an unauthenticated session on `/`, marketing nav and logo still behave normally.
+- Sign out from the dropdown — chip cleanly disappears; sign back in — chip reappears (confirms long-lived subscription doesn't break the auth lifecycle).
+
+Instrumented (do these in the live preview):
+- **React DevTools Profiler**: record the logo click. The new PageLayout's `<DropdownMenu>` should render with `auth.status === "authenticated"` on its first commit — no intermediate render with `status: "loading"`.
+- **Network panel**: no extra `auth/v1/token` or `auth/v1/user` request on the click. The Supabase subscription is no longer torn down.
+- **Performance panel**: logo-click → dashboard first paint should reduce to loader-resolution time (effectively zero on cache hit) — was previously redirect cycle + auth flip.

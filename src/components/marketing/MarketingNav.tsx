@@ -10,7 +10,10 @@ export function MarketingNav() {
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-4 md:px-10">
-        <Link to="/" className="font-serif text-2xl leading-none tracking-tight">
+        <Link
+          to={auth.status === "authenticated" ? "/dashboard" : "/"}
+          className="font-serif text-2xl leading-none tracking-tight"
+        >
           The Get
         </Link>
 

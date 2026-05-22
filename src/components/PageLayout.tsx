@@ -42,7 +42,10 @@ function TopNav() {
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-10">
-        <Link to="/" className="font-serif text-2xl leading-none tracking-tight">
+        <Link
+          to={auth.status === "authenticated" ? "/dashboard" : "/"}
+          className="font-serif text-2xl leading-none tracking-tight"
+        >
           The Get
         </Link>
         <nav className="flex items-center gap-1 text-[12px]">
