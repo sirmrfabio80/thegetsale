@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export function FinalCTA() {
+  const { enabled: privateBeta } = usePrivateBeta();
   return (
     <section className="mx-auto w-full max-w-6xl border-t border-border px-5 py-24 md:px-10 md:py-32">
       <div className="mx-auto max-w-3xl text-center">
@@ -11,22 +13,26 @@ export function FinalCTA() {
           <span className="italic text-muted-foreground">you already watch.</span>
         </h2>
         <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
-          A few minutes of setup. A calmer relationship with what you buy.
+          {privateBeta
+            ? "Private beta — new accounts are paused. Sign in if you're already with us."
+            : "A few minutes of setup. A calmer relationship with what you buy."}
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-3">
           <Link
-            to="/signup"
+            to={privateBeta ? "/login" : "/signup"}
             className="inline-flex h-12 items-center justify-center border border-foreground bg-foreground px-8 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
           >
-            Create your signal
+            {privateBeta ? "Sign in" : "Create your signal"}
           </Link>
-          <Link
-            to="/login"
-            className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Already have an account · Sign in
-          </Link>
+          {!privateBeta && (
+            <Link
+              to="/login"
+              className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Already have an account · Sign in
+            </Link>
+          )}
         </div>
       </div>
     </section>
