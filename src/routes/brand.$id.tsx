@@ -193,18 +193,12 @@ function publicDepartment(category: string): "Womenswear" | "Menswear" | "Unisex
 function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
   const brand = house;
   const signupSearch = { redirect: `/brand/${brand.id}` };
-  const watchlistSearch = { redirect: "/watchlist" };
   const navigate = useNavigate();
 
   const promptSignIn = () => {
-    toast(`Sign in to watch ${brand.name}`, {
-      description: "Create a free account to follow houses and see the full signal.",
-      action: {
-        label: "Sign in",
-        onClick: () => navigate({ to: "/login", search: watchlistSearch }),
-      },
-    });
+    navigate({ to: "/login", search: signupSearch });
   };
+
 
 
   return (

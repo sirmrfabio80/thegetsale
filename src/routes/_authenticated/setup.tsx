@@ -100,10 +100,7 @@ function SetupPage() {
     return next;
   };
 
-  const valid = useMemo(
-    () => departments.size >= 1 && houses.size >= 3 && categories.size >= 1,
-    [departments, houses, categories],
-  );
+  const valid = useMemo(() => houses.size >= 3, [houses]);
 
   const handleStart = () => {
     if (!valid) return;
@@ -235,7 +232,7 @@ function SetupPage() {
               type="text"
               value={houseQuery}
               onChange={(e) => setHouseQuery(e.target.value)}
-              placeholder="Search houses…"
+              placeholder="Search fashion houses & brands…"
               className="flex h-10 w-full border border-border bg-transparent pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
             {houseQuery && (
@@ -511,44 +508,38 @@ function SetupPage() {
 
       <SectionRule />
 
-      {/* Step 5 — Notifications */}
+      {/* Step 5 — Alert preferences (coming soon) */}
       <section id="step-notifications">
         <StepHeader
           number="05"
-          title="Notifications"
+          title="Alert preferences (coming soon)"
           onReset={() => {
             setEmailSignals(true);
-            setSmsDrops(false);
             setWeeklyDigest(false);
           }}
-          canReset={!emailSignals || smsDrops || weeklyDigest}
+          canReset={!emailSignals || weeklyDigest}
         />
 
+        <p className="mt-2 max-w-xl text-sm italic text-muted-foreground">
+          We'll honour these once email alerts ship. Until then, check the dashboard for today's read.
+        </p>
 
         <div className="mt-8 grid grid-cols-1 gap-3">
           <NotificationCard
-            title="Email signals"
+            title="Email when the read changes"
             description="A quiet note when a house you follow shifts its read."
             checked={emailSignals}
             onCheckedChange={setEmailSignals}
           />
           <NotificationCard
-            title="SMS urgent drops"
-            description="Only for high-confidence price or availability signals."
-            checked={smsDrops}
-            onCheckedChange={setSmsDrops}
-          />
-          <NotificationCard
             title="Weekly digest"
-            description="A Sunday summary of the market's posture across your houses."
+            description="A Sunday summary of the market across your houses."
             checked={weeklyDigest}
             onCheckedChange={setWeeklyDigest}
           />
         </div>
-        <p className="mt-6 text-xs text-muted-foreground">
-          You can edit notification preferences anytime.
-        </p>
       </section>
+
 
       <SectionRule />
 
@@ -647,11 +638,10 @@ function SetupPage() {
 
 
 
-          <ReviewRow title="Notifications" onEdit={() => scrollToStep("step-notifications")}>
+          <ReviewRow title="Alerts (coming soon)" onEdit={() => scrollToStep("step-notifications")}>
             <dl className="space-y-2 text-sm">
               {[
-                { label: "Email signals", on: emailSignals },
-                { label: "SMS urgent drops", on: smsDrops },
+                { label: "Email when the read changes", on: emailSignals },
                 { label: "Weekly digest", on: weeklyDigest },
               ].map((row) => (
                 <div key={row.label} className="flex items-baseline justify-between">
@@ -668,7 +658,7 @@ function SetupPage() {
 
       <div className="flex flex-col items-stretch gap-3 pb-8 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
-          {valid ? "Ready when you are." : "Pick at least 1 department, 3 houses and 1 category to continue."}
+          {valid ? "Ready when you are." : "Pick at least 3 fashion houses to continue. Everything else is optional."}
         </p>
         <Button
           onClick={handleStart}
