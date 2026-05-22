@@ -43,6 +43,7 @@ function detailToBrand(h: HouseDetailDTO): Brand {
     cadence: h.cadence ?? "",
     factors: h.factors,
     history: h.history,
+    websiteUrl: h.websiteUrl,
   };
 }
 
@@ -112,8 +113,6 @@ function BrandPage() {
 }
 
 function AuthenticatedBrand({ brand }: { brand: Brand }) {
-  const watchedPieces = getWatchedPieces(brand);
-
   return (
     <PageLayout>
       <div className="pt-12 md:pt-16">
@@ -142,39 +141,37 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       <SectionRule label="Why this signal" />
       <WhySignalPanel factors={brand.factors} />
 
-      <SectionRule label="Pieces you're watching" />
-      <ul className="grid grid-cols-1 gap-px bg-border md:grid-cols-2">
-        {watchedPieces.map((piece) => (
-          <li
-            key={piece.name}
-            className="flex items-start justify-between gap-6 bg-background p-5"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-serif text-lg leading-tight text-foreground">
-                {piece.name}
-              </p>
-              <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                {piece.detail}
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="font-serif text-lg leading-tight text-foreground">
-                {piece.price}
-              </p>
-              <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                {piece.status}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <SectionRule label={`See the pieces at ${brand.name}`} />
+      <section className="border border-border bg-card px-6 py-8 md:px-10 md:py-10">
+        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+          The Get doesn't store individual pieces — sales belong to the house and
+          cover their full range. When the window opens, head to {brand.name}
+          directly to browse what's on.
+        </p>
+        <div className="mt-6">
+          {brand.websiteUrl ? (
+            <a
+              href={brand.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center gap-2 border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+            >
+              Open {brand.name}
+            </a>
+          ) : (
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              House link coming soon
+            </p>
+          )}
+        </div>
+      </section>
 
       <SectionRule label="Sale archive" />
       <SaleTimeline events={brand.history} />
 
       <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-8">
         <p className="max-w-md text-xs text-muted-foreground">
-          Signals are illustrative for this prototype. No real prediction model is connected.
+          Reads are illustrative for this prototype. No real prediction model is connected.
         </p>
         <Link
           to="/dashboard"
@@ -186,36 +183,6 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       </div>
     </PageLayout>
   );
-}
-
-type WatchedPiece = {
-  name: string;
-  detail: string;
-  price: string;
-  status: string;
-};
-
-function getWatchedPieces(brand: Brand): WatchedPiece[] {
-  // Deterministic mock pieces seeded from the brand name so each house
-  // shows a consistent shortlist without a backend.
-  const seed = brand.name.charCodeAt(0) + brand.name.length;
-  const pool: WatchedPiece[] = [
-    { name: "Soft tailored blazer", detail: "Wool · Black", price: "£1,290", status: "In stock" },
-    { name: "Cashmere crewneck", detail: "Knitwear · Camel", price: "£640", status: "Low stock" },
-    { name: "Pleated wide trouser", detail: "Wool · Charcoal", price: "£780", status: "In stock" },
-    { name: "Leather derby", detail: "Footwear · Brown", price: "£890", status: "2 sizes left" },
-    { name: "Silk square scarf", detail: "Accessory · Ivory", price: "£320", status: "In stock" },
-    { name: "Shearling overshirt", detail: "Outerwear · Stone", price: "£2,150", status: "Backorder" },
-    { name: "Cotton poplin shirt", detail: "Shirting · White", price: "£390", status: "In stock" },
-    { name: "Belted trench", detail: "Outerwear · Sand", price: "£1,890", status: "1 left" },
-  ];
-  const start = seed % pool.length;
-  return [
-    pool[start],
-    pool[(start + 3) % pool.length],
-    pool[(start + 5) % pool.length],
-    pool[(start + 6) % pool.length],
-  ];
 }
 
 function publicDepartment(category: string): "Womenswear" | "Menswear" | "Unisex" {
