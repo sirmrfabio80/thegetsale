@@ -24,6 +24,7 @@ const samples = [
 ];
 
 export function PreviewSection() {
+  const { enabled: privateBeta } = usePrivateBeta();
   return (
     <section className="mx-auto w-full max-w-6xl border-t border-border px-5 py-20 md:px-10 md:py-28">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
