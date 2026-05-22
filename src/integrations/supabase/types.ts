@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          private_beta_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          private_beta_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          private_beta_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           category: string | null
