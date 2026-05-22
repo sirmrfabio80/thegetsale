@@ -32,6 +32,7 @@ export interface Brand {
   cadence: string; // "Sales roughly every 9 weeks"
   factors: SignalFactor[];
   history: SaleEvent[];
+  websiteUrl?: string | null;
 }
 
 export interface WatchlistItem {
