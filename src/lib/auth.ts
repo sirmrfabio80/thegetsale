@@ -113,14 +113,18 @@ function ensureSubscribed() {
 }
 
 function subscribe(listener: () => void): () => void {
-  ensureSubscribed();
+  try {
+    ensureSubscribed();
+  } catch (err) {
+    if (isCorruptSessionError(err)) {
+      void purgeLocalSession().then(() => emit(fromUser(null)));
+    }
+    // swallow — do not let auth init crash React render
+  }
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
-    // Intentionally keep the Supabase subscription alive for the lifetime of
-    // the tab. Tearing it down on listeners=0 caused currentState to reset to
-    // LOADING during route transitions (when old subscribers unmount before
-    // new ones mount), making the entire auth-gated UI flash off.
+    // Keep Supabase subscription alive for the tab lifetime — see note above.
   };
 }
 
