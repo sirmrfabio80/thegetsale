@@ -24,6 +24,7 @@ export type HouseDashboardDTO = {
   cadence: string | null;
   headline: string;
   isFallback: boolean;
+  websiteUrl: string | null;
 };
 
 export type HouseHistoryItem = { date: string; label: string; depth: string };
@@ -42,6 +43,7 @@ export type PublicHouseDTO = {
   tagline: string;
   cadence: string | null;
   lastSaleDays: number | null;
+  websiteUrl: string | null;
 };
 
 function depthLabel(min: number | null, max: number | null): string {
