@@ -1,7 +1,7 @@
 import type { Brand } from "@/data/types";
 
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {

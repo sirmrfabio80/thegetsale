@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Toaster } from "@/components/ui/sonner";
+// Toasts disabled app-wide — Toaster intentionally not mounted.
 
 import appCss from "../styles.css?url";
 
@@ -118,7 +118,6 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
-      <Toaster position="bottom-center" />
     </QueryClientProvider>
   );
 }

@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { AvatarBlock } from "@/components/profile/AvatarBlock";
 import { ConnectedAccounts } from "@/components/profile/ConnectedAccounts";

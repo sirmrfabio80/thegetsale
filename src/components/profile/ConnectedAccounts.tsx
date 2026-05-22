@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { UserIdentity } from "@supabase/supabase-js";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
