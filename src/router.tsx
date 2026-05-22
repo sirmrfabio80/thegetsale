@@ -33,10 +33,9 @@ export const getRouter = () => {
       router.invalidate();
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      apply(session?.user ?? null);
-    });
-
+    // onAuthStateChange fires INITIAL_SESSION on subscribe, so we rely on
+    // it alone — a separate getSession() call would invalidate every query
+    // twice on boot.
     supabase.auth.onAuthStateChange((_event, session) => {
       apply(session?.user ?? null);
     });
