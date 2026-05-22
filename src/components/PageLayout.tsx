@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useAuth, signOut } from "@/lib/auth";
+import { useAuth, signOut, localPartFromEmail } from "@/lib/auth";
 import { useProfile } from "@/hooks/use-profile";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { AvatarBlock } from "@/components/profile/AvatarBlock";
@@ -29,8 +29,15 @@ function TopNav() {
   const adminQuery = useIsAdmin();
   const profile = profileQuery.data;
   const isAdmin = adminQuery.data?.isAdmin ?? false;
-  const fallback = profile?.displayName ?? profile?.email ?? auth.displayName ?? auth.email ?? "?";
-  const triggerLabel = profile?.displayName ?? profile?.email ?? auth.displayName ?? auth.email ?? "";
+  const normalize = (s: string | null | undefined) => (s && s.trim() ? s.trim() : null);
+  const emailDerived = localPartFromEmail(profile?.email ?? auth.email);
+  const displayName =
+    normalize(profile?.displayName) ??
+    normalize(auth.displayName) ??
+    emailDerived ??
+    null;
+  const fallback = displayName ?? "?";
+  const triggerLabel = displayName ?? "";
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
