@@ -12,8 +12,8 @@ export function Hero() {
         <span className="italic text-muted-foreground">Know when to wait.</span>
       </h1>
       <p className="mt-8 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-        Private shopping intelligence for premium fashion. Follow the houses
-        you care about and get calmer signals on price, availability, and timing.
+        Follow your favourite fashion houses and brands. We'll tell you when a sale
+        is likely, how deep it tends to go, and whether to buy now or wait.
       </p>
 
       <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
