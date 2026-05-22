@@ -1,9 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth, signOut } from "@/lib/auth";
+import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export function MarketingNav() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const { enabled: privateBeta } = usePrivateBeta();
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
