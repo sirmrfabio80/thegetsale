@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { GoogleAuthCard } from "@/components/marketing/GoogleAuthCard";
 import { safeRedirect } from "@/lib/safeRedirect";
+import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { redirect: redirectTo } = Route.useSearch();
+  const { enabled: privateBeta } = usePrivateBeta();
   return (
     <MarketingLayout>
       <GoogleAuthCard
@@ -38,16 +40,18 @@ function LoginPage() {
                 Reset it
               </Link>
             </p>
-            <p>
-              New here?{" "}
-              <Link
-                to="/signup"
-                search={redirectTo ? { redirect: redirectTo } : undefined}
-                className="text-foreground underline underline-offset-4 hover:opacity-70"
-              >
-                Create your signal
-              </Link>
-            </p>
+            {!privateBeta && (
+              <p>
+                New here?{" "}
+                <Link
+                  to="/signup"
+                  search={redirectTo ? { redirect: redirectTo } : undefined}
+                  className="text-foreground underline underline-offset-4 hover:opacity-70"
+                >
+                  Create your signal
+                </Link>
+              </p>
+            )}
           </div>
         }
       />
