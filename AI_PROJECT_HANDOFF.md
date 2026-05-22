@@ -394,3 +394,48 @@ Public routes: `/`, auth screens, `/brand/$id` (public preview). Protected: `/da
 Design: editorial, quiet, serif (Instrument Serif + Inter), warm off-white, hairline borders, uppercase 11px eyebrows, oklch tokens in `src/styles.css`. **Toasts are intentionally disabled** via a no-op shim at `src/lib/toast.ts` — do not reinstate.
 
 Watch out for: dual-source houses (`brands` table + `src/data/brands.ts` mock fallback); `sale_predictions` has no visible generator; `__root.tsx` head still has placeholder copy and a root-level `og:image`; `handle_new_user` trigger may not be attached. Preserve terminology (*house*, *signal*, *the read*). Never edit `routeTree.gen.ts` or `integrations/supabase/*`.
+
+---
+
+## 20. Voice & terminology (hybrid)
+
+The Get keeps its editorial voice — `house`, `signal`, `the read`, `cadence` —
+but pairs them with plain-English anchors so first-time users (especially the
+target "save-money fashion lover" persona) aren't lost:
+
+- First mention: "fashion houses & brands" → then "houses".
+- Signal badges read as actions: `Buy now`, `Wait for sale`, `Hold`, `No clear read`.
+- Long-form explainers may say "recommendation" or "buy/wait read"
+  instead of "signal" when clarity matters.
+- "Window" → "expected sale window"; "Depth" → "expected discount" in copy.
+
+**Code identifiers (`SignalKind`, `signal`, `house`, etc.) are unchanged** —
+this is a UI-copy rule, not a refactor.
+
+## 21. No products in The Get
+
+A deliberate product decision: The Get tracks **brands/houses and their sale
+windows**, not individual items. A sale belongs to a house and covers many
+pieces; the user clicks through to the house's own site to browse what's on.
+
+Implications enforced in the UI:
+- Watchlist headline is "The houses you're watching" (not "pieces").
+- Brand detail does **not** render an item list. Instead, a "See the pieces
+  at {house}" panel links out via `brand.websiteUrl` (sourced from
+  `brands.website_url`).
+- No `saved_pieces` / item table exists or should be added without an explicit
+  product decision to change this stance.
+
+## 22. Resolved debt (this pass)
+
+- Watchlist no longer falls back to `src/data/brands.ts` mock — it resolves
+  via the dashboard houses query and renders a "No longer tracked" card for
+  orphan entries.
+- `getWatchedPieces` and the "Pieces you're watching" block on brand detail
+  are removed.
+- Hardcoded "Eight houses…" dashboard subhead is now computed from loaded
+  signals.
+- Logged-out "Add to watchlist" navigates straight to `/login?redirect=…`
+  instead of relying on a (disabled) toast.
+- Onboarding gate relaxed to just 3 houses; SMS toggle hidden until a real
+  alert pipeline exists; notifications section labelled "coming soon".
