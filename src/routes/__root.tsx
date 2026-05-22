@@ -77,9 +77,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient; auth
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+    ],
+    scripts: [
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap",
+        // Non-blocking Google Fonts load. Injected client-side so the
+        // stylesheet never blocks first paint; system fallbacks in
+        // styles.css cover the swap window.
+        children:
+          "var l=document.createElement('link');" +
+          "l.rel='stylesheet';" +
+          "l.href='https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap';" +
+          "l.media='print';" +
+          "l.onload=function(){l.media='all'};" +
+          "document.head.appendChild(l);",
       },
     ],
   }),
