@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -41,34 +41,67 @@ function fromUser(user: User | null): AuthState {
   };
 }
 
-export function useAuth(): AuthState {
-  const [state, setState] = useState<AuthState>({
-    status: "loading",
-    user: null,
-    email: null,
-    displayName: null,
+// Module-scoped auth store. A single Supabase subscription is opened lazily
+// the first time any component subscribes via useAuth(), and shared across
+// every consumer. Previously each useAuth() caller opened its own
+// onAuthStateChange + getSession() round-trip on mount.
+const LOADING_STATE: AuthState = {
+  status: "loading",
+  user: null,
+  email: null,
+  displayName: null,
+};
+
+let currentState: AuthState = LOADING_STATE;
+const listeners = new Set<() => void>();
+let supabaseUnsubscribe: (() => void) | null = null;
+
+function emit(next: AuthState) {
+  if (
+    next.status === currentState.status &&
+    next.user?.id === currentState.user?.id &&
+    next.email === currentState.email &&
+    next.displayName === currentState.displayName
+  ) {
+    return;
+  }
+  currentState = next;
+  for (const listener of listeners) listener();
+}
+
+function ensureSubscribed() {
+  if (supabaseUnsubscribe || typeof window === "undefined") return;
+  // onAuthStateChange fires INITIAL_SESSION on subscribe, so no manual
+  // getSession() call is needed — that would double-invalidate on boot.
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    emit(fromUser(session?.user ?? null));
   });
+  supabaseUnsubscribe = () => subscription.unsubscribe();
+}
 
-  useEffect(() => {
-    let active = true;
+function subscribe(listener: () => void): () => void {
+  ensureSubscribed();
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0 && supabaseUnsubscribe) {
+      supabaseUnsubscribe();
+      supabaseUnsubscribe = null;
+      currentState = LOADING_STATE;
+    }
+  };
+}
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      setState(fromUser(session?.user ?? null));
-    });
+function getSnapshot(): AuthState {
+  return currentState;
+}
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!active) return;
-      setState(fromUser(session?.user ?? null));
-    });
+function getServerSnapshot(): AuthState {
+  return LOADING_STATE;
+}
 
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  return state;
+export function useAuth(): AuthState {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 export type OAuthResult = { error?: Error; redirected?: boolean; authenticated?: boolean };
