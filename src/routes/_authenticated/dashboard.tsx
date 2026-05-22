@@ -42,12 +42,17 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { name: "description", content: "Today's quiet read on the brands worth watching." },
     ],
   }),
-  loader: ({ context }) =>
-    Promise.all([
+  loader: ({ context }) => {
+    // Auth context is "loading" during SSR (no client session yet). Skip
+    // protected query prefetch on the server; useSuspenseQuery will fetch
+    // on the client once the session is hydrated.
+    if (context.auth?.status !== "authenticated") return null;
+    return Promise.all([
       context.queryClient.ensureQueryData(housesQueryOptions),
       context.queryClient.ensureQueryData(watchlistQueryOptions),
       context.queryClient.ensureQueryData(setupQueryOptions),
-    ]),
+    ]);
+  },
   component: Dashboard,
 });
 
