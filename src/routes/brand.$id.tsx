@@ -12,7 +12,6 @@ import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand, Category } from "@/data/types";
 import { ArrowLeft, Bookmark, Lock } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { toast } from "@/lib/toast";
 import {
   Accordion,
   AccordionContent,
