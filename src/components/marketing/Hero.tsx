@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export function Hero() {
+  const { enabled: privateBeta } = usePrivateBeta();
   return (
     <section className="mx-auto w-full max-w-6xl px-5 pt-16 pb-20 md:px-10 md:pt-28 md:pb-32">
       <p className="eyebrow">Private shopping intelligence</p>
