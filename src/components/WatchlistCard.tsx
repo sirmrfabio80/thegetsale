@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { WatchlistItem } from "@/data/types";
-import { getBrand } from "@/data/brands";
+import type { Brand, WatchlistItem } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { useWatchlistMutations } from "@/data/store";
 import { cn } from "@/lib/utils";
@@ -8,15 +7,43 @@ import { brandDepartment } from "@/data/categoryMap";
 
 interface WatchlistCardProps {
   item: WatchlistItem;
+  brand: Brand | null;
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: (brandId: string) => void;
 }
 
-export function WatchlistCard({ item, selectable, selected, onToggleSelect }: WatchlistCardProps) {
-  const brand = getBrand(item.brandId);
+export function WatchlistCard({
+  item,
+  brand,
+  selectable,
+  selected,
+  onToggleSelect,
+}: WatchlistCardProps) {
   const { remove, isPending } = useWatchlistMutations();
-  if (!brand) return null;
+
+  if (!brand) {
+    return (
+      <article className="border border-dashed border-border bg-card px-5 py-6">
+        <p className="eyebrow text-muted-foreground">No longer tracked</p>
+        <h3 className="mt-2 font-serif text-2xl leading-tight">
+          This house has been removed from our index.
+        </h3>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Watching since {formatDate(item.addedAt)}
+        </p>
+        <div className="mt-5 text-[12px]">
+          <button
+            onClick={() => remove(item.brandId)}
+            disabled={isPending}
+            className="text-foreground underline underline-offset-4 disabled:opacity-50"
+          >
+            Remove from watchlist
+          </button>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
@@ -67,7 +94,7 @@ export function WatchlistCard({ item, selectable, selected, onToggleSelect }: Wa
           params={{ id: brand.id }}
           className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
         >
-          View signal
+          View the read
         </Link>
         <button
           onClick={() => remove(item.brandId, brand.name)}
@@ -91,13 +118,13 @@ function formatDate(iso: string) {
 function signalPhrase(signal: "soon" | "hold" | "buy" | "low") {
   switch (signal) {
     case "soon":
-      return "Sale likely soon";
+      return "Wait for sale";
     case "buy":
-      return "Worth acting on";
+      return "Buy now";
     case "hold":
       return "Hold for now";
     case "low":
-      return "Quiet signal";
+      return "No clear read";
   }
 }
 
