@@ -18,10 +18,10 @@ export function Hero() {
 
       <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link
-          to="/signup"
+          to={privateBeta ? "/login" : "/signup"}
           className="inline-flex h-12 items-center justify-center border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
         >
-          Create your signal
+          {privateBeta ? "Sign in" : "Create your signal"}
         </Link>
         <a
           href="#how-it-works"
