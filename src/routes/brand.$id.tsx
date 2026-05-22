@@ -50,10 +50,16 @@ export const Route = createFileRoute("/brand/$id")({
   loader: async ({ params, context }) => {
     const authed = context.auth?.status === "authenticated";
     if (authed) {
-      context.queryClient.ensureQueryData(watchlistQueryOptions);
-      const detail = await getHouseDetail({ data: { slug: params.id } });
-      if (!detail) throw notFound();
-      return { kind: "auth" as const, brand: detailToBrand(detail) };
+      void context.queryClient.ensureQueryData(watchlistQueryOptions).catch(() => {});
+      try {
+        const detail = await getHouseDetail({ data: { slug: params.id } });
+        if (!detail) throw notFound();
+        return { kind: "auth" as const, brand: detailToBrand(detail) };
+      } catch (err) {
+        if (isRedirect(err) || isNotFound(err)) throw err;
+        if (!isAuthShapedError(err)) throw err;
+        // fall through to public view on auth failure
+      }
     }
     const pub = await getPublicHouseDetail({ data: { slug: params.id } });
     if (!pub) throw notFound();
