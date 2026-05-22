@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { SignalPreviewCard } from "./SignalPreviewCard";
+import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 const samples = [
   {
