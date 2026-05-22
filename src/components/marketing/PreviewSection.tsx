@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { SignalPreviewCard } from "./SignalPreviewCard";
+import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 const samples = [
   {
@@ -23,6 +24,7 @@ const samples = [
 ];
 
 export function PreviewSection() {
+  const { enabled: privateBeta } = usePrivateBeta();
   return (
     <section className="mx-auto w-full max-w-6xl border-t border-border px-5 py-20 md:px-10 md:py-28">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -44,11 +46,23 @@ export function PreviewSection() {
       </div>
 
       <p className="mt-10 text-sm text-muted-foreground">
-        Full signals unlock after sign-up.{" "}
-        <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70">
-          Create your signal
-        </Link>
-        .
+        {privateBeta ? (
+          <>
+            Full signals unlock after sign-in.{" "}
+            <Link to="/login" className="text-foreground underline underline-offset-4 hover:opacity-70">
+              Sign in
+            </Link>
+            .
+          </>
+        ) : (
+          <>
+            Full signals unlock after sign-up.{" "}
+            <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70">
+              Create your signal
+            </Link>
+            .
+          </>
+        )}
       </p>
     </section>
   );

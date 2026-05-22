@@ -5,6 +5,7 @@ import { HousesTab } from "@/components/admin/HousesTab";
 import { SaleEventsTab } from "@/components/admin/SaleEventsTab";
 import { UsersRolesTab } from "@/components/admin/UsersRolesTab";
 import { SystemTab } from "@/components/admin/SystemTab";
+import { SettingsTab } from "@/components/admin/SettingsTab";
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/sales")({
   head: () => ({
@@ -56,6 +57,12 @@ function AdminSalesPage() {
             >
               System
             </TabsTrigger>
+            <TabsTrigger
+              value="settings"
+              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+            >
+              Settings
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -70,6 +77,9 @@ function AdminSalesPage() {
         </TabsContent>
         <TabsContent value="system" className="mt-0">
           <SystemTab />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-0">
+          <SettingsTab />
         </TabsContent>
       </Tabs>
     </PageLayout>

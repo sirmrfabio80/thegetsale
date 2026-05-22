@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export function Hero() {
+  const { enabled: privateBeta } = usePrivateBeta();
   return (
     <section className="mx-auto w-full max-w-6xl px-5 pt-16 pb-20 md:px-10 md:pt-28 md:pb-32">
       <p className="eyebrow">Private shopping intelligence</p>
@@ -16,10 +18,10 @@ export function Hero() {
 
       <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link
-          to="/signup"
+          to={privateBeta ? "/login" : "/signup"}
           className="inline-flex h-12 items-center justify-center border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
         >
-          Create your signal
+          {privateBeta ? "Sign in" : "Create your signal"}
         </Link>
         <a
           href="#how-it-works"
