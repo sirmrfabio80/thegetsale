@@ -1,4 +1,9 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, isRedirect, isNotFound } from "@tanstack/react-router";
+
+function isAuthShapedError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /Unauthorized|JWT|issued at future|AuthSession|Invalid token|Invalid Refresh Token/i.test(msg);
+}
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { RecommendationCard } from "@/components/RecommendationCard";
@@ -45,10 +50,16 @@ export const Route = createFileRoute("/brand/$id")({
   loader: async ({ params, context }) => {
     const authed = context.auth?.status === "authenticated";
     if (authed) {
-      context.queryClient.ensureQueryData(watchlistQueryOptions);
-      const detail = await getHouseDetail({ data: { slug: params.id } });
-      if (!detail) throw notFound();
-      return { kind: "auth" as const, brand: detailToBrand(detail) };
+      void context.queryClient.ensureQueryData(watchlistQueryOptions).catch(() => {});
+      try {
+        const detail = await getHouseDetail({ data: { slug: params.id } });
+        if (!detail) throw notFound();
+        return { kind: "auth" as const, brand: detailToBrand(detail) };
+      } catch (err) {
+        if (isRedirect(err) || isNotFound(err)) throw err;
+        if (!isAuthShapedError(err)) throw err;
+        // fall through to public view on auth failure
+      }
     }
     const pub = await getPublicHouseDetail({ data: { slug: params.id } });
     if (!pub) throw notFound();
