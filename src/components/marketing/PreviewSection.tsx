@@ -46,11 +46,23 @@ export function PreviewSection() {
       </div>
 
       <p className="mt-10 text-sm text-muted-foreground">
-        Full signals unlock after sign-up.{" "}
-        <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70">
-          Create your signal
-        </Link>
-        .
+        {privateBeta ? (
+          <>
+            Full signals unlock after sign-in.{" "}
+            <Link to="/login" className="text-foreground underline underline-offset-4 hover:opacity-70">
+              Sign in
+            </Link>
+            .
+          </>
+        ) : (
+          <>
+            Full signals unlock after sign-up.{" "}
+            <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70">
+              Create your signal
+            </Link>
+            .
+          </>
+        )}
       </p>
     </section>
   );
