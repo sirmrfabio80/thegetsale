@@ -42,11 +42,12 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { name: "description", content: "Today's quiet read on the brands worth watching." },
     ],
   }),
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(housesQueryOptions);
-    context.queryClient.ensureQueryData(watchlistQueryOptions);
-    context.queryClient.ensureQueryData(setupQueryOptions);
-  },
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(housesQueryOptions),
+      context.queryClient.ensureQueryData(watchlistQueryOptions),
+      context.queryClient.ensureQueryData(setupQueryOptions),
+    ]),
   component: Dashboard,
 });
 
