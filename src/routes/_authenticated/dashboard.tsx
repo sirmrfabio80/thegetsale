@@ -137,17 +137,26 @@ function Dashboard() {
   };
 
 
+  const counts = useMemo(() => {
+    const wait = brands.filter((b) => b.signal === "soon").length;
+    const buy = brands.filter((b) => b.signal === "buy").length;
+    return { total: brands.length, wait, buy };
+  }, [brands]);
+
   return (
     <PageLayout>
       <section className="pt-16 md:pt-24">
         <p className="eyebrow">Today's signals</p>
         <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">
-          A quiet read on the market.
+          Your buy/wait read.
         </h1>
         <p className="mt-4 max-w-xl text-muted-foreground">
-          Eight houses, watched closely. Three suggest waiting, two suggest acting now.
+          {counts.total > 0
+            ? `${counts.total} ${counts.total === 1 ? "house" : "houses"}, watched closely. ${counts.wait} suggest waiting, ${counts.buy} suggest acting now.`
+            : "We'll surface the read across the fashion houses you follow."}
         </p>
       </section>
+
 
       <div className="mt-10 flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         {hasSetup ? (

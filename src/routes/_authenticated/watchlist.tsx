@@ -1,35 +1,71 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "@/lib/toast";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { useWatchlist, useWatchlistMutations, watchlistQueryOptions } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
-import { getBrand } from "@/data/brands";
 import { brandDepartment } from "@/data/categoryMap";
 import { type Department } from "@/data/setupStorage";
 import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
 import { cn } from "@/lib/utils";
+import {
+  listHousesForDashboard,
+  type HouseDashboardDTO,
+} from "@/lib/brands.functions";
+import type { Brand, Category } from "@/data/types";
 
-// Single source of truth so the "Updating list…" flash and the summary
-// toast always settle together after a bulk department toggle.
+// Single source of truth so the "Updating list…" flash settles cleanly
+// after a bulk department toggle.
 const BULK_TOGGLE_DEBOUNCE_MS = 300;
+
+const housesQueryOptions = queryOptions({
+  queryKey: ["houses", "dashboard"],
+  queryFn: () => listHousesForDashboard(),
+});
+
+function toBrand(h: HouseDashboardDTO): Brand {
+  return {
+    id: h.id,
+    name: h.name,
+    category: (h.category as Category) || "Womens",
+    tagline: h.tagline,
+    signal: h.signal,
+    headline: h.headline,
+    confidence: h.confidenceScore,
+    windowDays: h.windowDays ?? 999,
+    lastSaleDays: h.lastSaleDays ?? 0,
+    expectedDepth: h.expectedDepth,
+    cadence: h.cadence ?? "",
+    factors: [],
+    history: [],
+    websiteUrl: h.websiteUrl,
+  };
+}
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
   head: () => ({
     meta: [
       { title: "Watchlist — The Get" },
-      { name: "description", content: "The pieces you're waiting on, watched quietly." },
+      { name: "description", content: "The fashion houses you're watching for upcoming sales." },
     ],
   }),
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(watchlistQueryOptions);
     context.queryClient.ensureQueryData(setupQueryOptions);
+    context.queryClient.ensureQueryData(housesQueryOptions);
   },
   component: WatchlistPage,
 });
 
 function WatchlistPage() {
   const items = useWatchlist();
+  const { data: houseDTOs } = useSuspenseQuery(housesQueryOptions);
+  const brandsBySlug = useMemo(() => {
+    const m = new Map<string, Brand>();
+    for (const h of houseDTOs) m.set(h.id, toBrand(h));
+    return m;
+  }, [houseDTOs]);
+
   const { removeMany } = useWatchlistMutations();
   const { setup } = useSetup();
   const { save: saveSetupMutation } = useSetupMutation();
@@ -50,6 +86,7 @@ function WatchlistPage() {
 
   // Subtle "Updating list…" flash when departments/sort change.
   const firstRunRef = useRef(true);
+  const restoringRef = useRef(false);
   useEffect(() => {
     if (firstRunRef.current) {
       firstRunRef.current = false;
@@ -64,9 +101,7 @@ function WatchlistPage() {
     return () => window.clearTimeout(updateTimer);
   }, [departments, sortBy]);
 
-  // Mirror department filter state from the backend-backed setup record so
-  // changes made on the dashboard show up here too.
-  const restoringRef = useRef(false);
+  // Mirror department filter state from the backend-backed setup record.
   useEffect(() => {
     const next = new Set((setup?.departments ?? []) as Department[]);
     setDepartments((prev) => {
@@ -78,14 +113,21 @@ function WatchlistPage() {
     });
   }, [setup]);
 
-  const { visible, hiddenCount } = useMemo(() => {
-    const withBrand = items
-      .map((it) => ({ it, brand: getBrand(it.brandId) }))
-      .filter((x): x is { it: typeof items[number]; brand: NonNullable<ReturnType<typeof getBrand>> } => !!x.brand);
+  const { visible, hiddenCount, orphans } = useMemo(() => {
+    const withMaybeBrand = items.map((it) => ({
+      it,
+      brand: brandsBySlug.get(it.brandId) ?? null,
+    }));
+    const known = withMaybeBrand.filter(
+      (x): x is { it: typeof items[number]; brand: Brand } => !!x.brand,
+    );
+    const orphanItems = withMaybeBrand
+      .filter((x) => !x.brand)
+      .map((x) => x.it);
     const filtered =
       departments.size === 0
-        ? withBrand
-        : withBrand.filter((x) => departments.has(brandDepartment(x.brand)));
+        ? known
+        : known.filter((x) => departments.has(brandDepartment(x.brand)));
     const rank: Record<string, number> = { soon: 0, buy: 1, hold: 2, low: 3 };
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "confidence") {
@@ -100,8 +142,12 @@ function WatchlistPage() {
       if (c !== 0) return c;
       return a.brand.windowDays - b.brand.windowDays;
     });
-    return { visible: sorted.map((x) => x.it), hiddenCount: items.length - filtered.length };
-  }, [items, departments, sortBy]);
+    return {
+      visible: sorted.map((x) => x.it),
+      hiddenCount: known.length - filtered.length,
+      orphans: orphanItems,
+    };
+  }, [items, brandsBySlug, departments, sortBy]);
 
   const deptLabel = [...departments].join(", ");
 
@@ -109,15 +155,14 @@ function WatchlistPage() {
     if (departments.size === 0) return "";
     const counts = new Map<Department, number>();
     for (const it of items) {
-      const brand = getBrand(it.brandId);
+      const brand = brandsBySlug.get(it.brandId);
       if (!brand) continue;
       const d = brandDepartment(brand);
       if (departments.has(d)) continue;
       counts.set(d, (counts.get(d) ?? 0) + 1);
     }
     return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
-  }, [items, departments]);
-
+  }, [items, brandsBySlug, departments]);
 
   const visibleIds = useMemo(() => visible.map((v) => v.brandId), [visible]);
   const selectedVisibleCount = useMemo(
@@ -175,7 +220,6 @@ function WatchlistPage() {
   const clearDepartmentFilters = () => {
     setDepartments(new Set());
     saveSetupMutation({ departments: [] });
-    toast("Department filters cleared");
   };
 
   const saveTimerRef = useRef<number | null>(null);
@@ -208,10 +252,10 @@ function WatchlistPage() {
       <section className="pt-16 md:pt-24">
         <p className="eyebrow">Your watchlist</p>
         <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">
-          The pieces you're waiting on.
+          The houses you're watching.
         </h1>
         <p className="mt-4 max-w-xl text-muted-foreground">
-          We'll let you know — gently — when the signal turns.
+          We'll surface the read when a sale window opens for any of them.
         </p>
       </section>
 
@@ -275,7 +319,7 @@ function WatchlistPage() {
             ) : (
               <>
                 <span>
-                  {visible.length} {visible.length === 1 ? "brand" : "brands"}
+                  {visible.length} {visible.length === 1 ? "house" : "houses"}
                 </span>
                 <span aria-hidden className="text-muted-foreground/50">·</span>
                 <span>
@@ -355,13 +399,13 @@ function WatchlistPage() {
         <div className="border border-dashed border-border px-8 py-20 text-center">
           <p className="font-serif text-2xl">Nothing on watch yet.</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Start with today's signals — add a house in Womenswear, Menswear or Unisex you're considering.
+            Start with a few favourite fashion houses you'd buy on sale.
           </p>
           <Link
             to="/dashboard"
             className="mt-6 inline-block border border-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] hover:bg-foreground hover:text-background"
           >
-            Browse signals
+            Browse houses
           </Link>
         </div>
       ) : visible.length === 0 ? (
@@ -371,7 +415,7 @@ function WatchlistPage() {
             Nothing on watch in {deptLabel}.
           </p>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other departments
+            {hiddenCount} {hiddenCount === 1 ? "house is" : "houses are"} waiting in other departments
             {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -395,10 +439,14 @@ function WatchlistPage() {
             <WatchlistCard
               key={it.brandId}
               item={it}
+              brand={brandsBySlug.get(it.brandId) ?? null}
               selectable={selectMode}
               selected={selected.has(it.brandId)}
               onToggleSelect={toggleSelect}
             />
+          ))}
+          {orphans.map((it) => (
+            <WatchlistCard key={it.brandId} item={it} brand={null} />
           ))}
         </section>
 

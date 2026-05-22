@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 import type { SignalKind } from "@/data/types";
 
 const labels: Record<SignalKind, string> = {
-  soon: "Sale likely soon",
+  soon: "Wait for sale",
   hold: "Hold",
   buy: "Buy now",
-  low: "Low signal",
+  low: "No clear read",
 };
 
 const tones: Record<SignalKind, string> = {

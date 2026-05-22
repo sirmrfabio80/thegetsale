@@ -1,7 +1,6 @@
 import type { Brand } from "@/data/types";
 
 import { Button } from "@/components/ui/button";
-import { toast } from "@/lib/toast";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {
@@ -25,6 +24,9 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
           <p className="mt-4 text-sm text-muted-foreground">
             Based on cadence, inventory, and market signals around{" "}
             <span className="text-foreground">{brand.name}</span>.
+            {isWatched
+              ? " We'll keep watching and surface the read when the window opens."
+              : " Add to your watchlist to follow the next move."}
           </p>
         </div>
 
@@ -36,9 +38,6 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
             className="rounded-none"
           >
             {isWatched ? "Remove from watchlist" : "Add to watchlist"}
-          </Button>
-          <Button variant="outline" className="rounded-none" onClick={() => toast("Saved for later")}>
-            Save signal
           </Button>
         </div>
       </div>
