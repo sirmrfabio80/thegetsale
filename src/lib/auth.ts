@@ -69,25 +69,62 @@ function emit(next: AuthState) {
   for (const listener of listeners) listener();
 }
 
+function isCorruptSessionError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /JWT|issued at future|AuthSession|deserialize|Invalid Refresh Token/i.test(msg);
+}
+
+async function purgeLocalSession() {
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch {
+    // best-effort cleanup
+  }
+}
+
 function ensureSubscribed() {
   if (supabaseUnsubscribe || typeof window === "undefined") return;
   // onAuthStateChange fires INITIAL_SESSION on subscribe, so no manual
   // getSession() call is needed — that would double-invalidate on boot.
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-    emit(fromUser(session?.user ?? null));
-  });
-  supabaseUnsubscribe = () => subscription.unsubscribe();
+  try {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      try {
+        emit(fromUser(session?.user ?? null));
+      } catch (err) {
+        if (isCorruptSessionError(err)) {
+          void purgeLocalSession().then(() => emit(fromUser(null)));
+          return;
+        }
+        throw err;
+      }
+    });
+    supabaseUnsubscribe = () => subscription.unsubscribe();
+  } catch (err) {
+    // A corrupt persisted token (e.g. "JWT issued at future" from clock skew)
+    // can throw synchronously inside supabase-js. Purge and treat as
+    // unauthenticated rather than letting the throw reach React's error
+    // boundary and render the generic "Something went wrong" page.
+    if (isCorruptSessionError(err)) {
+      void purgeLocalSession().then(() => emit(fromUser(null)));
+      return;
+    }
+    throw err;
+  }
 }
 
 function subscribe(listener: () => void): () => void {
-  ensureSubscribed();
+  try {
+    ensureSubscribed();
+  } catch (err) {
+    if (isCorruptSessionError(err)) {
+      void purgeLocalSession().then(() => emit(fromUser(null)));
+    }
+    // swallow — do not let auth init crash React render
+  }
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
-    // Intentionally keep the Supabase subscription alive for the lifetime of
-    // the tab. Tearing it down on listeners=0 caused currentState to reset to
-    // LOADING during route transitions (when old subscribers unmount before
-    // new ones mount), making the entire auth-gated UI flash off.
+    // Keep Supabase subscription alive for the tab lifetime — see note above.
   };
 }
 

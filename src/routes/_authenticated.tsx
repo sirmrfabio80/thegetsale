@@ -1,5 +1,38 @@
-import { createFileRoute, Outlet, redirect, useHydrated } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useHydrated, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+function isAuthShapedError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /Unauthorized|JWT|issued at future|AuthSession|Invalid token|Invalid Refresh Token/i.test(msg);
+}
+
+function AuthErrorRecovery({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  useEffect(() => {
+    if (!isAuthShapedError(error)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // ignore
+      }
+      if (cancelled) return;
+      reset();
+      router.invalidate();
+      router.navigate({ to: "/login" });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [error, reset, router]);
+
+  // Re-throw non-auth errors so the root errorComponent handles them.
+  if (!isAuthShapedError(error)) throw error;
+
+  return <HydratingShell />;
+}
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context }) => {
@@ -8,6 +41,7 @@ export const Route = createFileRoute("/_authenticated")({
     }
   },
   component: AuthenticatedLayout,
+  errorComponent: AuthErrorRecovery,
 });
 
 function AuthenticatedLayout() {
