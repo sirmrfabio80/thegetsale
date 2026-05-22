@@ -445,6 +445,9 @@ function WatchlistPage() {
               onToggleSelect={toggleSelect}
             />
           ))}
+          {orphans.map((it) => (
+            <WatchlistCard key={it.brandId} item={it} brand={null} />
+          ))}
         </section>
 
       )}
