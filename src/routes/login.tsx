@@ -44,7 +44,7 @@ function LoginPage() {
                 New here?{" "}
                 <Link
                   to="/signup"
-                  search={redirectTo ? { redirect: redirectTo } : undefined}
+                  search={redirectTo ? { redirect: redirectTo } : {}}
                   className="text-foreground underline underline-offset-4 hover:opacity-70"
                 >
                   Create your signal
