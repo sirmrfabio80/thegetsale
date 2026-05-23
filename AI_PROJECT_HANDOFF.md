@@ -37,7 +37,7 @@
 | Email + Google auth | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/auth/callback` | `routes/login.tsx` etc., `lib/auth.ts`, `integrations/lovable/index.ts` | Production-ready | Google goes via Lovable broker; never call raw `signInWithOAuth("google")`. |
 | Private-beta gate | Across auth pages | `hooks/use-private-beta.ts`, `lib/app-settings.functions.ts`, `app_settings` table | Working | Default ON if row missing. |
 | Signals dashboard | `/dashboard` | `routes/_authenticated/dashboard.tsx`, `components/BrandCard.tsx` | Backend-connected | Reads `listHousesForDashboard`; sort uses personal setup + style affinity. |
-| House detail | `/brand/$id` | `routes/brand.$id.tsx`, `components/brand/SignalEditorial.tsx`, `SaleTimeline.tsx`, `RecommendationCard.tsx` | Backend-connected (public fallback for logged-out) | Has dual loader path: auth → `getHouseDetail`, public → `getPublicHouseDetail`. |
+| House detail | `/brand/$id` | `routes/brand.$id.tsx`, `components/brand/SignalEditorial.tsx`, `SaleTimeline.tsx`, `RecommendationCard.tsx` | Backend-connected (public fallback for logged-out) | Dual loader path: auth → `getHouseDetail`, public → `getPublicHouseDetail`. Public preview shows a single consolidated "Sign in to add to watchlist" CTA that bounces through `/login?redirect=/brand/<slug>`. |
 | Watchlist | `/watchlist` | `routes/_authenticated/watchlist.tsx`, `data/store.ts`, `lib/watchlist.functions.ts`, `user_watchlist` table | Production-ready, optimistic | Recently fixed toast loop; do not re-add effect-driven popups. |
 | Setup / onboarding | `/setup` | `routes/_authenticated/setup.tsx`, `components/setup/*`, `data/setupStore.ts`, `lib/setup.functions.ts`, `user_setup` table | Production-ready | Persists departments, houses, categories, styles, notification prefs. |
 | Profile + avatar | `/profile` | `routes/_authenticated/profile.tsx`, `components/profile/*`, `lib/profile.functions.ts`, `avatars` storage bucket | Production-ready | Signed avatar URLs, 1h TTL. |
@@ -266,7 +266,7 @@ No Stripe / email / analytics integrations detected.
 - **Server gate**: `requireSupabaseAuth` middleware on every protected `createServerFn`.
 - **Admin gate**: every admin server fn calls local `ensureAdmin` → `has_role` RPC; client UI also checks via `useIsAdmin`.
 - **Route gates**:
-  - `_authenticated` redirects unauthenticated users to `/`.
+  - `_authenticated` redirects unauthenticated users to `/login?redirect=<current url>`. `/login` reads the `redirect` search param and routes back after sign-in (Google/Apple/email all pass `redirectTo`).
   - `_admin` (assumed) gates `/admin/*` — needs spot-check (`unclear`).
 - **RLS**: every user-data table has policies scoped to `auth.uid()`. Admin tables additionally allow `has_role(auth.uid(),'admin')`.
 - **Sensitive code paths**:
