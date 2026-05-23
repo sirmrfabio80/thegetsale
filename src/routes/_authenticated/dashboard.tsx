@@ -148,7 +148,9 @@ function Dashboard() {
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
     const buy = brands.filter((b) => b.signal === "buy").length;
-    return { total: brands.length, wait, buy };
+    const hold = brands.filter((b) => b.signal === "hold").length;
+    const low = brands.filter((b) => b.signal === "low").length;
+    return { total: brands.length, wait, buy, hold, low };
   }, [brands]);
 
   return (
