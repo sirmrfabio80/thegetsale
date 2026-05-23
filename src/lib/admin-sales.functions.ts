@@ -27,6 +27,7 @@ export type SaleEventDTO = {
   brandId: string;
   brandName: string | null;
   category: string | null;
+  countryCode: string | null;
   saleType: string;
   startDate: string;
   endDate: string | null;
@@ -42,6 +43,11 @@ const SaleInput = z
   .object({
     brandId: z.string().uuid(),
     category: z.string().trim().max(80).optional().nullable(),
+    countryCode: z
+      .string()
+      .regex(/^[a-z]{2}$/, "Use a 2-letter lowercase country code")
+      .optional()
+      .nullable(),
     saleType: z.enum(SALE_TYPES),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     endDate: z
@@ -69,6 +75,7 @@ function mapRow(r: any, brandName: string | null): SaleEventDTO {
     brandId: r.brand_id,
     brandName,
     category: r.category ?? null,
+    countryCode: r.country_code ?? null,
     saleType: r.sale_type,
     startDate: r.start_date,
     endDate: r.end_date,
@@ -128,6 +135,12 @@ export const listSaleEvents = createServerFn({ method: "POST" })
         category: z.string().trim().max(80).optional().nullable(),
         saleType: z.enum(SALE_TYPES).optional().nullable(),
         status: z.enum(SALE_STATUSES).optional().nullable(),
+        // "" = filter to Global (NULL) rows only; 2-letter code = that market; null/undefined = no filter
+        countryCode: z
+          .string()
+          .regex(/^([a-z]{2})?$/, "Invalid market code")
+          .optional()
+          .nullable(),
       })
       .parse(input ?? {}),
   )
@@ -141,6 +154,8 @@ export const listSaleEvents = createServerFn({ method: "POST" })
     if (data.category) q = q.ilike("category", `%${data.category}%`);
     if (data.saleType) q = q.eq("sale_type", data.saleType);
     if (data.status) q = q.eq("status", data.status);
+    if (data.countryCode === "") q = q.is("country_code", null);
+    else if (data.countryCode) q = q.eq("country_code", data.countryCode);
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -164,6 +179,7 @@ export const createSaleEvent = createServerFn({ method: "POST" })
     const { error } = await supabase.from("sale_events").insert({
       brand_id: data.brandId,
       category: data.category ?? null,
+      country_code: data.countryCode ?? null,
       sale_type: data.saleType,
       start_date: data.startDate,
       end_date: data.endDate ?? null,
@@ -189,6 +205,7 @@ export const updateSaleEvent = createServerFn({ method: "POST" })
       .update({
         brand_id: data.brandId,
         category: data.category ?? null,
+        country_code: data.countryCode ?? null,
         sale_type: data.saleType,
         start_date: data.startDate,
         end_date: data.endDate ?? null,

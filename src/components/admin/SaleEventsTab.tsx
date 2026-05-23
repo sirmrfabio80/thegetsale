@@ -48,15 +48,18 @@ import {
 } from "@/lib/admin-sales.functions";
 import { SaleEventDrawer } from "./SaleEventDrawer";
 import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
+import { MARKETS, marketLabel } from "@/lib/markets";
 
 type Filters = {
   brandId?: string;
   category?: string;
   saleType?: string;
   status?: string;
+  countryCode?: string; // "" = Global only, undefined = any
 };
 
 const ANY = "__any__";
+const GLOBAL = "__global__";
 
 export function SaleEventsTab() {
   const qc = useQueryClient();
@@ -102,6 +105,7 @@ export function SaleEventsTab() {
           category: filters.category ?? null,
           saleType: (filters.saleType as any) ?? null,
           status: (filters.status as any) ?? null,
+          countryCode: filters.countryCode ?? null,
         },
       }),
   });
@@ -160,7 +164,11 @@ export function SaleEventsTab() {
   const rows = listQ.data ?? [];
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
   const hasFilters =
-    !!filters.brandId || !!filters.category || !!filters.saleType || !!filters.status;
+    !!filters.brandId ||
+    !!filters.category ||
+    !!filters.saleType ||
+    !!filters.status ||
+    filters.countryCode !== undefined;
 
   const visibleIds = useMemo(() => rows.map((r) => r.id), [rows]);
   const selectedCount = selectedIds.size;
@@ -235,7 +243,7 @@ export function SaleEventsTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-end md:justify-between">
-        <div className="grid w-full grid-cols-2 gap-3 md:w-auto md:grid-cols-4">
+        <div className="grid w-full grid-cols-2 gap-3 md:w-auto md:grid-cols-5">
           <div>
             <label className="eyebrow mb-1 block">Brand</label>
             <Select
@@ -305,6 +313,37 @@ export function SaleEventsTab() {
                 {SALE_STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="eyebrow mb-1 block">Market</label>
+            <Select
+              value={
+                filters.countryCode === undefined
+                  ? ANY
+                  : filters.countryCode === ""
+                    ? GLOBAL
+                    : filters.countryCode
+              }
+              onValueChange={(v) =>
+                updateFilters((f) => ({
+                  ...f,
+                  countryCode: v === ANY ? undefined : v === GLOBAL ? "" : v,
+                }))
+              }
+            >
+              <SelectTrigger className="h-10 w-full rounded-none md:w-44">
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Any market</SelectItem>
+                <SelectItem value={GLOBAL}>Global only</SelectItem>
+                {MARKETS.map((m) => (
+                  <SelectItem key={m.code} value={m.code}>
+                    {m.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -487,7 +526,7 @@ export function SaleEventsTab() {
               </span>
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              {(r.category ?? "—") + " · " + r.saleType.replace("_", " ")}
+              {marketLabel(r.countryCode) + " · " + (r.category ?? "—") + " · " + r.saleType.replace("_", " ")}
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 text-sm">
               <span>
@@ -592,6 +631,7 @@ export function SaleEventsTab() {
                 />
               </TableHead>
               <TableHead>Brand</TableHead>
+              <TableHead>Market</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Start</TableHead>
@@ -610,6 +650,9 @@ export function SaleEventsTab() {
                   </TableCell>
                   <TableCell>
                     <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
                   </TableCell>
                   <TableCell>
                     <Skeleton className="h-4 w-24" />
@@ -640,14 +683,14 @@ export function SaleEventsTab() {
               ))}
             {listQ.isLoading && (
               <TableRow>
-                <TableCell colSpan={9} className="sr-only">
+                <TableCell colSpan={10} className="sr-only">
                   Loading sale events…
                 </TableCell>
               </TableRow>
             )}
             {!listQ.isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={10} className="py-8 text-center text-sm text-muted-foreground">
                   No sale events yet.
                 </TableCell>
               </TableRow>
@@ -663,6 +706,9 @@ export function SaleEventsTab() {
                 </TableCell>
                 <TableCell className="font-medium">
                   {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {marketLabel(r.countryCode)}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{r.category ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import type { SaleEventDTO } from "@/lib/admin-sales.functions";
+import { marketLabel } from "@/lib/markets";
 
 type Props = {
   event: SaleEventDTO | null;
@@ -35,6 +36,7 @@ export function SaleEventDetailsDrawer({ event, open, onOpenChange, onEdit }: Pr
             <dl className="divide-y divide-border border-y border-border text-sm">
               <Field label="Status" value={<StatusBadge status={event.status} />} />
               <Field label="Brand" value={event.brandName ?? "—"} />
+              <Field label="Market" value={marketLabel(event.countryCode)} />
               <Field label="Category" value={event.category ?? "—"} />
               <Field label="Sale type" value={event.saleType.replace("_", " ")} />
               <Field label="Start date" value={fmt(event.startDate)} />

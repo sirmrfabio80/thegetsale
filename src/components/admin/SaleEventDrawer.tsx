@@ -29,6 +29,7 @@ import {
   type BrandOption,
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
+import { MARKETS } from "@/lib/markets";
 
 type Props = {
   open: boolean;
@@ -41,6 +42,7 @@ type Props = {
 type FormState = {
   brandId: string;
   category: string;
+  countryCode: string; // "" = Global
   saleType: (typeof SALE_TYPES)[number];
   startDate: string;
   endDate: string;
@@ -55,6 +57,7 @@ type FieldName = keyof FormState;
 const empty: FormState = {
   brandId: "",
   category: "",
+  countryCode: "",
   saleType: "seasonal",
   startDate: "",
   endDate: "",
@@ -119,6 +122,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
       setForm({
         brandId: editing.brandId,
         category: editing.category ?? "",
+        countryCode: editing.countryCode ?? "",
         saleType: (editing.saleType as FormState["saleType"]) ?? "seasonal",
         startDate: editing.startDate,
         endDate: editing.endDate ?? "",
@@ -235,6 +239,30 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
                 </SelectContent>
               </Select>
             </Field>
+
+            <Field id="countryCode" label="Market" error={errors.countryCode}>
+              <Select
+                value={form.countryCode === "" ? "__global__" : form.countryCode}
+                onValueChange={(v) => setField("countryCode", v === "__global__" ? "" : v)}
+              >
+                <SelectTrigger
+                  id="countryCode"
+                  aria-invalid={!!errors.countryCode}
+                  className="h-10 rounded-none"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__global__">Global</SelectItem>
+                  {MARKETS.map((m) => (
+                    <SelectItem key={m.code} value={m.code}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
 
             <Field id="saleType" label="Sale type" required error={errors.saleType}>
               <Select
@@ -390,6 +418,7 @@ function buildPayload(form: FormState) {
   return {
     brandId: form.brandId,
     category: form.category.trim() || null,
+    countryCode: form.countryCode === "" ? null : form.countryCode,
     saleType: form.saleType,
     startDate: form.startDate,
     endDate: form.endDate || null,
