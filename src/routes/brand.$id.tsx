@@ -226,15 +226,18 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
             <p className="mt-4 max-w-xl font-serif text-xl italic leading-snug text-foreground/80 md:text-2xl">
               {brand.tagline}
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <button
                 type="button"
                 onClick={promptSignIn}
-                className="inline-flex h-11 items-center gap-2 border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 border border-foreground bg-foreground px-6 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 sm:w-auto sm:justify-start"
               >
                 <Bookmark className="h-3.5 w-3.5" aria-hidden />
                 Sign in to add to watchlist
               </button>
+              <p className="text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:text-left">
+                Free while in preview
+              </p>
             </div>
           </div>
           <aside className="md:col-span-4 md:border-l md:border-border md:pl-8">
