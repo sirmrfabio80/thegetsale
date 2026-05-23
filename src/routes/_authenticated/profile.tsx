@@ -8,15 +8,18 @@ import { AvatarBlock } from "@/components/profile/AvatarBlock";
 import { ConnectedAccounts } from "@/components/profile/ConnectedAccounts";
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { Button } from "@/components/ui/button";
+import { MarketSelect } from "@/components/MarketSelect";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getMyProfile,
   removeAvatar,
   setAvatarPath,
+  setMyMarket,
   updateDisplayName,
   type ProfileDTO,
 } from "@/lib/profile.functions";
 import { useProfile } from "@/hooks/use-profile";
+import { isMarketCode, type MarketCode } from "@/lib/markets";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
