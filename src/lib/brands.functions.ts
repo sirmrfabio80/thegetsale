@@ -246,7 +246,7 @@ export const getHouseDetail = createServerFn({ method: "POST" })
       fetchBrandLinks(supabase, brandId),
     ]);
 
-    const eventRows = ((eventsResult?.data ?? []) as EventRow[]) ?? [];
+    const eventRows = ((eventsResult?.data ?? []) as EventRow[]);
     const prediction = pickLatestPrediction(((preds ?? []) as PredictionRow[]) || null);
     const base = toDashboardDTO(brand as unknown as BrandRow, eventRows, prediction);
 
