@@ -9,11 +9,13 @@ import {
   type PredictionRow,
 } from "./brands.server";
 
+export type BrandLinkDTO = { countryCode: string; url: string };
+
 export type HouseDashboardDTO = {
   id: string; // slug
   brandId: string; // uuid
   name: string;
-  category: string;
+  categories: string[];
   tagline: string;
   signal: "buy" | "soon" | "hold" | "low";
   confidenceScore: number;
@@ -34,16 +36,18 @@ export type HouseDetailDTO = HouseDashboardDTO & {
   history: HouseHistoryItem[];
   factors: { title: string; note: string }[];
   algorithmVersion: string;
+  links: BrandLinkDTO[];
 };
 
 export type PublicHouseDTO = {
   id: string;
   name: string;
-  category: string;
+  categories: string[];
   tagline: string;
   cadence: string | null;
   lastSaleDays: number | null;
   websiteUrl: string | null;
+  links: BrandLinkDTO[];
 };
 
 function depthLabel(min: number | null, max: number | null): string {
@@ -58,6 +62,13 @@ function pickLatestPrediction(rows: PredictionRow[] | null): PredictionRow | nul
   return [...rows].sort((a, b) => (a.predicted_start_date < b.predicted_start_date ? 1 : -1))[0];
 }
 
+function normaliseCategories(brand: { categories?: string[] | null; category?: string | null }): string[] {
+  const arr = Array.isArray(brand.categories) ? brand.categories.filter((c) => !!c) : [];
+  if (arr.length > 0) return arr;
+  if (brand.category) return [brand.category];
+  return [];
+}
+
 function toDashboardDTO(
   brand: BrandRow & { website_url?: string | null },
   events: EventRow[],
@@ -68,7 +79,7 @@ function toDashboardDTO(
     id: brand.slug,
     brandId: brand.id,
     name: brand.name,
-    category: brand.category ?? "",
+    categories: normaliseCategories(brand),
     tagline: brand.tagline ?? "",
     signal: d.signal,
     confidenceScore: d.confidenceScore,
@@ -83,7 +94,8 @@ function toDashboardDTO(
   };
 }
 
-const BRAND_COLS = "id, slug, name, category, tagline, editorial_copy, website_url";
+const BRAND_COLS =
+  "id, slug, name, category, categories, tagline, editorial_copy, website_url";
 const EVENT_COLS = "brand_id, start_date, discount_min, discount_max, admin_notes, status";
 const PREDICTION_COLS =
   "brand_id, predicted_start_date, confidence_score, confidence_label, signal, reasoning_summary, algorithm_version, status";
@@ -136,6 +148,21 @@ export const listHousesForDashboard = createServerFn({ method: "GET" })
 
 const SlugInput = z.object({ slug: z.string().min(1).max(120) });
 
+async function fetchBrandLinks(
+  client: { from: (t: string) => any },
+  brandId: string,
+): Promise<BrandLinkDTO[]> {
+  const { data, error } = await client
+    .from("brand_links")
+    .select("country_code, url")
+    .eq("brand_id", brandId);
+  if (error) return [];
+  return ((data ?? []) as any[]).map((r) => ({
+    countryCode: String(r.country_code),
+    url: String(r.url),
+  }));
+}
+
 export const getHouseDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => SlugInput.parse(input))
@@ -152,7 +179,7 @@ export const getHouseDetail = createServerFn({ method: "POST" })
 
     const brandId = (brand as any).id;
 
-    const [{ data: events }, { data: preds }] = await Promise.all([
+    const [{ data: events }, { data: preds }, links] = await Promise.all([
       supabase
         .from("sale_events")
         .select(EVENT_COLS)
@@ -164,6 +191,7 @@ export const getHouseDetail = createServerFn({ method: "POST" })
         .select(PREDICTION_COLS)
         .eq("brand_id", brandId)
         .eq("status", "published"),
+      fetchBrandLinks(supabase, brandId),
     ]);
 
     const eventRows = (events ?? []) as EventRow[];
@@ -182,6 +210,7 @@ export const getHouseDetail = createServerFn({ method: "POST" })
       history,
       factors: [],
       algorithmVersion: prediction?.algorithm_version ?? "none",
+      links,
     };
   });
 
@@ -191,18 +220,21 @@ export const getPublicHouseDetail = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PublicHouseDTO | null> => {
     const { data: brand, error } = await supabaseAdmin
       .from("brands")
-      .select("id, slug, name, category, tagline, website_url, is_active")
+      .select("id, slug, name, category, categories, tagline, website_url, is_active")
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!brand) return null;
 
-    const { data: events } = await supabaseAdmin
-      .from("sale_events")
-      .select("start_date, discount_min, discount_max, status")
-      .eq("brand_id", (brand as any).id)
-      .eq("status", "published");
+    const [{ data: events }, links] = await Promise.all([
+      supabaseAdmin
+        .from("sale_events")
+        .select("start_date, discount_min, discount_max, status")
+        .eq("brand_id", (brand as any).id)
+        .eq("status", "published"),
+      fetchBrandLinks(supabaseAdmin, (brand as any).id),
+    ]);
 
     const eventRows = ((events ?? []) as any[]).map((e) => ({
       start_date: e.start_date,
@@ -216,10 +248,11 @@ export const getPublicHouseDetail = createServerFn({ method: "POST" })
     return {
       id: (brand as any).slug,
       name: (brand as any).name,
-      category: (brand as any).category ?? "",
+      categories: normaliseCategories(brand as any),
       tagline: (brand as any).tagline ?? "",
       cadence: d.cadence,
       lastSaleDays: d.lastSaleDays,
       websiteUrl: (brand as any).website_url ?? null,
+      links,
     };
   });
