@@ -183,6 +183,7 @@ function SetupPage() {
           hint={`${departments.size} selected${departments.size >= 1 ? "" : " · min 1"}`}
           onReset={() => setDepartments(new Set())}
           canReset={departments.size > 0}
+          onClose={() => navigate({ to: "/dashboard" })}
         />
 
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">

@@ -4,9 +4,10 @@ interface StepHeaderProps {
   hint?: string;
   onReset?: () => void;
   canReset?: boolean;
+  onClose?: () => void;
 }
 
-export function StepHeader({ number, title, hint, onReset, canReset }: StepHeaderProps) {
+export function StepHeader({ number, title, hint, onReset, canReset, onClose }: StepHeaderProps) {
   return (
     <div className="flex items-baseline justify-between gap-4">
       <div className="flex items-baseline gap-4">
@@ -27,6 +28,15 @@ export function StepHeader({ number, title, hint, onReset, canReset }: StepHeade
             className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground hover:underline underline-offset-4 disabled:opacity-40 disabled:hover:no-underline disabled:hover:text-muted-foreground disabled:cursor-not-allowed"
           >
             Reset
+          </button>
+        )}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
+          >
+            Close
           </button>
         )}
       </div>
