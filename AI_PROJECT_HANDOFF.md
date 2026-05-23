@@ -359,7 +359,8 @@ Suggested order: 1 → 2 → 3 → 9 → 4 → 8 → 5 → 6 → others.
 - **Do not reinstate toasts**: `src/lib/toast.ts` is a deliberate no-op. Do not mount `<Toaster />` in `__root.tsx`, do not import from `"sonner"` directly.
 - **Do not use Supabase Edge Functions** for app logic — write `createServerFn`.
 - **Do not call `supabase.auth.signInWithOAuth("google")`** directly — must go through `lovable.auth.signInWithOAuth`.
-- **Preserve terminology**: house / signal / window / depth / cadence / The Get.
+- **Preserve hybrid terminology**: editorial = *house / signal / window / depth / cadence / The Get*; utility (empty/error/CTAs) = *brand* + buy/wait verbs. See §10.
+- **Keep AI_PROJECT_HANDOFF.md current**: any feature, route, schema, server-fn, terminology, UX-flow, or known-issue change must update the relevant section in the SAME turn. Skip only for typo/format/dep-bump edits.
 - **Fragile flows**: `_authenticated` HydratingShell timing, `AuthErrorRecovery` (don't throw new error types past it), brand.$id dual loader.
 - **Files requiring caution**: `routes/_authenticated/watchlist.tsx` (recently de-looped), `routes/brand.$id.tsx`, `lib/auth.ts`, `router.tsx`.
 - **Coding standards**: TypeScript strict, no `any` in new code, zod-validate all server-fn inputs, optimistic-update + rollback pattern for mutations, queries via `*QueryOptions` + `useSuspenseQuery`.
