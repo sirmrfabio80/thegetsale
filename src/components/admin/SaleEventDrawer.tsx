@@ -240,6 +240,30 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
               </Select>
             </Field>
 
+            <Field id="countryCode" label="Market" error={errors.countryCode}>
+              <Select
+                value={form.countryCode === "" ? "__global__" : form.countryCode}
+                onValueChange={(v) => setField("countryCode", v === "__global__" ? "" : v)}
+              >
+                <SelectTrigger
+                  id="countryCode"
+                  aria-invalid={!!errors.countryCode}
+                  className="h-10 rounded-none"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__global__">Global</SelectItem>
+                  {MARKETS.map((m) => (
+                    <SelectItem key={m.code} value={m.code}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+
             <Field id="saleType" label="Sale type" required error={errors.saleType}>
               <Select
                 value={form.saleType}
