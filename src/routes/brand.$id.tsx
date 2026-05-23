@@ -199,9 +199,14 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
   const brand = house;
   const signupSearch = { redirect: `/brand/${brand.id}` };
   const navigate = useNavigate();
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const promptSignIn = () => {
-    navigate({ to: "/login", search: signupSearch });
+    if (isSigningIn) return;
+    setIsSigningIn(true);
+    navigate({ to: "/login", search: signupSearch }).catch(() => {
+      setIsSigningIn(false);
+    });
   };
 
   return (
@@ -230,10 +235,21 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
               <button
                 type="button"
                 onClick={promptSignIn}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 border border-foreground bg-foreground px-6 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 sm:w-auto sm:justify-start"
+                disabled={isSigningIn}
+                aria-busy={isSigningIn}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 border border-foreground bg-foreground px-6 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-70 sm:w-auto sm:justify-start"
               >
-                <Bookmark className="h-3.5 w-3.5" aria-hidden />
-                Sign in to add to watchlist
+                {isSigningIn ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    Taking you to sign in…
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="h-3.5 w-3.5" aria-hidden />
+                    Sign in to add to watchlist
+                  </>
+                )}
               </button>
               <p className="text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:text-left">
                 Free while in preview
