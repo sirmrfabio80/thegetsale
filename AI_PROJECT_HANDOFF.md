@@ -27,7 +27,7 @@
   2. *"Notify me quietly when a watched house is about to move."*
   3. *"Tune what I see to my departments / categories / styles."*
 - **Value proposition**: Editorial restraint + cadence intelligence. Calm UI, never urgency-driven.
-- **User-facing terminology to preserve**: *house* (not "brand"), *signal*, *the read*, *cadence*, *window*, *depth*, *watchlist*, *The Get*, *Editor's note*. Internally code still uses `brand`/`brands` (table + types); the rename is only on-screen.
+- **User-facing terminology (hybrid)**: editorial surfaces keep *house*, *signal*, *the read*, *cadence*, *window*, *depth*, *watchlist*, *The Get*, *Editor's note*. Utility surfaces (empty/error states, search placeholders, dashboard filters, watchlist CTAs, badge labels) use plain *brand* and buy/wait language (*Buy now*, *Wait for sale*, *Hold*, *No clear read*). Internally code uses `brand`/`brands` (table + types).
 
 ## 3. Current feature inventory
 
