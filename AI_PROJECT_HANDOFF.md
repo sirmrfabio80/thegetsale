@@ -183,8 +183,8 @@ src/
 **Tables**
 - `brands` — houses. Cols: `slug`, `name`, `category` *(legacy, deprecated)*, `categories text[]` *(canonical, GIN-indexed)*, `tagline`, `house_group`, `editorial_copy`, `description`, `country`, `website_url` *(canonical global URL — never country-specific)*, `is_active`. RLS: admins manage; authenticated read where `is_active=true`. **Seeded with 31 active houses** (Weekend Max Mara added May 2026 alongside the categories[] migration).
 - `brand_links` — per-country URL overrides. Cols: `brand_id`, `country_code` (lowercase ISO 3166-1 alpha-2), `url`. PK `(brand_id, country_code)`. RLS: admins manage; authenticated read. Resolved client-side by `src/lib/brand-links.ts::resolveBrandUrl` using `navigator.language`, falling back to `brands.website_url`.
-- `sale_events` — admin-confirmed past/upcoming sales. `status` draft/published/hidden, `sale_type`, `discount_min/max`, dates.
-- `sale_predictions` — generated predictions. `status`, `confidence_score/label`, `predicted_start/end_date`, `basis_years`, `algorithm_version`, `sample_size`, `signal`. **Generator: `unclear`.**
+- `sale_events` — admin-confirmed past/upcoming sales. `status` draft/published/hidden, `sale_type`, `discount_min/max`, dates, `country_code` *(lowercase ISO 3166-1 alpha-2; `NULL` = Global / unspecified market; CHECK + `(brand_id, country_code, start_date)` index)*.
+- `sale_predictions` — generated predictions. `status`, `confidence_score/label`, `predicted_start/end_date`, `basis_years`, `algorithm_version`, `sample_size`, `signal`, `country_code` *(same shape as `sale_events`)*. **Generator: `unclear`.**
 - `prediction_runs` — admin-only log of generation runs.
 - `user_setup` — per-user onboarding selections + notification prefs.
 - `user_watchlist` — `(user_id, brand_id)` rows.
