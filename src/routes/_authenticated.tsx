@@ -37,9 +37,12 @@ function AuthErrorRecovery({ error, reset }: { error: Error; reset: () => void }
 }
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: ({ context }) => {
+  beforeLoad: ({ context, location }) => {
     if (context.auth?.status === "unauthenticated") {
-      throw redirect({ to: "/" });
+      throw redirect({
+        to: "/login",
+        search: { redirect: location.href },
+      });
     }
   },
   component: AuthenticatedLayout,
