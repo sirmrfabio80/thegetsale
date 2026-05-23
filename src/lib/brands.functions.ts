@@ -213,7 +213,9 @@ export const getHouseDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => SlugInput.parse(input))
   .handler(async ({ data, context }): Promise<HouseDetailDTO | null> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+
+    const market = await getUserMarket(supabase, userId);
 
     const { data: brand, error } = await supabase
       .from("brands")
@@ -225,13 +227,17 @@ export const getHouseDetail = createServerFn({ method: "POST" })
 
     const brandId = (brand as any).id;
 
-    const [{ data: events }, { data: preds }, links] = await Promise.all([
-      supabase
-        .from("sale_events")
-        .select(EVENT_COLS)
-        .eq("brand_id", brandId)
-        .eq("status", "published")
-        .order("start_date", { ascending: false }),
+    const [eventsResult, { data: preds }, links] = await Promise.all([
+      market
+        ? applyMarketFilter(
+            supabase
+              .from("sale_events")
+              .select(EVENT_COLS)
+              .eq("brand_id", brandId)
+              .eq("status", "published"),
+            market,
+          ).order("start_date", { ascending: false })
+        : Promise.resolve({ data: [] as any[] }),
       supabase
         .from("sale_predictions")
         .select(PREDICTION_COLS)
@@ -240,7 +246,7 @@ export const getHouseDetail = createServerFn({ method: "POST" })
       fetchBrandLinks(supabase, brandId),
     ]);
 
-    const eventRows = (events ?? []) as EventRow[];
+    const eventRows = ((eventsResult?.data ?? []) as EventRow[]) ?? [];
     const prediction = pickLatestPrediction(((preds ?? []) as PredictionRow[]) || null);
     const base = toDashboardDTO(brand as unknown as BrandRow, eventRows, prediction);
 
@@ -257,8 +263,11 @@ export const getHouseDetail = createServerFn({ method: "POST" })
       factors: [],
       algorithmVersion: prediction?.algorithm_version ?? "none",
       links,
+      needsMarket: !market,
+      market,
     };
   });
+
 
 // Public preview — no auth, strictly trimmed.
 export const getPublicHouseDetail = createServerFn({ method: "POST" })
