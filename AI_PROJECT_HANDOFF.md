@@ -228,8 +228,8 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
 
 ## 10. Domain rules and terminology
 
-- **House** = a fashion brand row. Internally `brand`, externally always *house*.
-- **Signal**: enum `buy | soon | hold | low`. Drives badge color, sort, copy.
+- **House / Brand**: same entity. Use *house* in editorial copy (hero, landing, brand-detail editorial, Editor's note). Use *brand* in utility copy (empty states, search placeholders, dashboard filters, watchlist CTAs, error fallbacks). Internally always `brand`.
+- **Signal**: enum `buy | soon | hold | low`. Drives badge color, sort, copy. Badge labels (utility): *Buy now*, *Wait for sale*, *Hold*, *No clear read*. Editorial kickers (brand detail): *Buy now*, *Wait — sale forming*, *Don't buy yet*, *Not enough signal*.
 - **Confidence**: 0–100 numeric; label `low | medium | high`.
 - **Window** (`windowDays`): predicted days until next sale.
 - **Depth** (`expectedDepth`): expected discount range (e.g. "20–30%").
@@ -243,7 +243,8 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
 - **Sale status**: draft, published, hidden.
 - **Role**: `app_role` enum (admin / moderator / user). Only `admin` is actively checked.
 - **Rules an agent must not break**:
-  - Never rename "house" back to "brand" in copy.
+  - Keep the hybrid split: editorial = *house*, utility = *brand*. Don't replace one with the other globally.
+  - Empty / error / fallback copy must lead with the buy-vs-wait action, not editorial mood.
   - Signal enum strings are persisted — do not change casing.
   - `sortBy` localStorage key is `theget.watchlist.sort`.
 
