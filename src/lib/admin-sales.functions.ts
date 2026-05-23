@@ -205,6 +205,7 @@ export const updateSaleEvent = createServerFn({ method: "POST" })
       .update({
         brand_id: data.brandId,
         category: data.category ?? null,
+        country_code: data.countryCode ?? null,
         sale_type: data.saleType,
         start_date: data.startDate,
         end_date: data.endDate ?? null,
