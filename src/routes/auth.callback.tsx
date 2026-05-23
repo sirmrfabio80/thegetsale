@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMySetup } from "@/lib/setup.functions";
 import { resolveRedirect } from "@/lib/safeRedirect";
+import { getMyProfile, setMyMarket } from "@/lib/profile.functions";
+import { clearPendingMarket, readPendingMarket } from "@/lib/detect-market";
 
 export const Route = createFileRoute("/auth/callback")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
