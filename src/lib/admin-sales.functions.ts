@@ -27,6 +27,7 @@ export type SaleEventDTO = {
   brandId: string;
   brandName: string | null;
   category: string | null;
+  countryCode: string | null;
   saleType: string;
   startDate: string;
   endDate: string | null;
