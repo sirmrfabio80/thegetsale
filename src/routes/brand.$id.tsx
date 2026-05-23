@@ -233,11 +233,8 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                 className="inline-flex h-11 items-center gap-2 border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
               >
                 <Bookmark className="h-3.5 w-3.5" aria-hidden />
-                Add to watchlist
+                Sign in to add to watchlist
               </button>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                Sign in required
-              </p>
             </div>
           </div>
           <aside className="md:col-span-4 md:border-l md:border-border md:pl-8">
