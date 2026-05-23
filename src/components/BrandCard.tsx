@@ -1,10 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import type { Brand } from "@/data/types";
+import type { Brand, SignalKind } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
+
+const SIGNAL_ACCENT: Record<SignalKind, string> = {
+  buy: "var(--signal-buy)",
+  soon: "var(--signal-soon)",
+  hold: "var(--signal-hold)",
+  low: "var(--signal-low)",
+};
 
 export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: boolean }) {
   const items = useWatchlist();
@@ -23,7 +30,8 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
       <Link
         to="/brand/$id"
         params={{ id: brand.id }}
-        className="group block border border-border bg-card px-5 py-6 transition-all md:hover:-translate-y-px md:hover:border-foreground/20"
+        style={{ borderLeftColor: SIGNAL_ACCENT[brand.signal] }}
+        className="group block border border-border border-l-2 bg-card px-5 py-6 transition-all md:hover:border-foreground/20 md:hover:shadow-[0_2px_12px_oklch(0_0_0/0.06)]"
       >
         <div className="flex items-start justify-between gap-4 pr-10">
           <div>
@@ -31,7 +39,7 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
               {brand.category} <span className="text-muted-foreground/60">·</span>{" "}
               {brandDepartment(brand)}
             </p>
-            <h3 className="font-serif text-2xl leading-tight">{brand.name}</h3>
+            <h3 className="font-serif text-[1.5rem] leading-tight">{brand.name}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{brand.tagline}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -77,7 +85,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="eyebrow mb-1">{label}</p>
-      <p className="font-serif text-lg">{value}</p>
+      <p className="font-serif text-[1.1rem] [font-variant-numeric:tabular-nums]">{value}</p>
     </div>
   );
 }
