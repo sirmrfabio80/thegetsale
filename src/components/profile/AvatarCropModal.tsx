@@ -119,9 +119,9 @@ export function AvatarCropModal({ file, onCancel, onConfirm, busy }: Props) {
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <img
             src={src}
+            alt=""
             draggable={false}
             onLoad={(e) => {
               const im = e.currentTarget;
