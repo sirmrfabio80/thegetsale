@@ -12,7 +12,7 @@ import { RecommendationCard } from "@/components/RecommendationCard";
 import { SignalEditorial } from "@/components/brand/SignalEditorial";
 import { SaleTimeline, WhySignalPanel } from "@/components/SaleTimeline";
 import type { Brand, Category } from "@/data/types";
-import { ArrowLeft, Bookmark, Lock } from "lucide-react";
+import { ArrowLeft, Bookmark, Loader2, Lock } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Accordion,
