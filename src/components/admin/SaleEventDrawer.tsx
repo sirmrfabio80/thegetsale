@@ -41,6 +41,7 @@ type Props = {
 type FormState = {
   brandId: string;
   category: string;
+  countryCode: string; // "" = Global
   saleType: (typeof SALE_TYPES)[number];
   startDate: string;
   endDate: string;
@@ -55,6 +56,7 @@ type FieldName = keyof FormState;
 const empty: FormState = {
   brandId: "",
   category: "",
+  countryCode: "",
   saleType: "seasonal",
   startDate: "",
   endDate: "",
