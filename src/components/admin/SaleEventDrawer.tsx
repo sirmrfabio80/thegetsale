@@ -418,6 +418,7 @@ function buildPayload(form: FormState) {
   return {
     brandId: form.brandId,
     category: form.category.trim() || null,
+    countryCode: form.countryCode === "" ? null : form.countryCode,
     saleType: form.saleType,
     startDate: form.startDate,
     endDate: form.endDate || null,
