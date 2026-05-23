@@ -30,6 +30,22 @@ function AuthCallback() {
         } = await supabase.auth.getSession();
         if (session) {
           if (cancelled) return;
+
+          // If a pending market was stashed before OAuth, persist it now
+          // (only when the profile doesn't already have one set).
+          const pendingMarket = readPendingMarket();
+          if (pendingMarket) {
+            try {
+              const profile = await getMyProfile();
+              if (!profile.market) {
+                await setMyMarket({ data: { market: pendingMarket } });
+              }
+            } catch {
+              /* non-blocking — user can set market from profile */
+            }
+            clearPendingMarket();
+          }
+
           // If a redirect was supplied, validate it; otherwise fall back to setup/dashboard.
           if (redirectTo !== undefined) {
             const resolved = resolveRedirect(redirectTo, "/dashboard");
