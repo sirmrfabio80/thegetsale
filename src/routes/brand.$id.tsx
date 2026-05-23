@@ -164,7 +164,7 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
             </a>
           ) : (
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              House link coming soon
+              Brand link coming soon
             </p>
           )}
         </div>
