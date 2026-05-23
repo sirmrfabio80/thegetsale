@@ -11,6 +11,12 @@ import {
 
 export type BrandLinkDTO = { countryCode: string; url: string };
 
+export type DashboardResultDTO = {
+  houses: HouseDashboardDTO[];
+  needsMarket: boolean;
+  market: string | null;
+};
+
 export type HouseDashboardDTO = {
   id: string; // slug
   brandId: string; // uuid
