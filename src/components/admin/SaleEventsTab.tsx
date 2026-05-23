@@ -631,6 +631,7 @@ export function SaleEventsTab() {
                 />
               </TableHead>
               <TableHead>Brand</TableHead>
+              <TableHead>Market</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Start</TableHead>
