@@ -10,6 +10,7 @@ export type ProfileDTO = {
   displayName: string | null;
   avatarPath: string | null;
   avatarUrl: string | null;
+  market: string | null;
 };
 
 async function signAvatar(
