@@ -484,4 +484,20 @@ Implications enforced in the UI:
     rewritten to canonical globals. `brands.website_url` is now the
     canonical/global URL by policy; country-specific destinations belong in
     `brand_links`.
+- **Market-aware sale events** (May 2026):
+  - Added nullable `country_code` (lowercase ISO 3166-1 alpha-2) to
+    `sale_events` and `sale_predictions`, with CHECK constraint and
+    `(brand_id, country_code, start_date)` index. `NULL` = Global /
+    unspecified, which is also the default for all existing rows.
+  - Admin UI: new **Market** field in the sale-event drawer, a Market
+    filter (Any / Global only / curated country list) and a Market column
+    on the events table; the details drawer shows the resolved market
+    label via `marketLabel()` from `src/lib/markets.ts`.
+  - Server: `SaleEventDTO` exposes `countryCode`; `listSaleEvents` accepts
+    `countryCode` (`""` filters to Global rows, a code filters to that
+    market, omitted = no filter); create/update map it to `country_code`.
+  - User-facing locale filtering (dashboard, brand detail, predictions)
+    intentionally **not** wired yet — follow-up once admins seed per-market
+    data.
+
 
