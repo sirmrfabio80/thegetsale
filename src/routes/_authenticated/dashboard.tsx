@@ -223,7 +223,7 @@ function Dashboard() {
         )}
       </div>
 
-      <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
