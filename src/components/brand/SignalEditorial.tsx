@@ -3,20 +3,20 @@ import { SignalBadge } from "@/components/SignalBadge";
 
 const signalCopy: Record<Brand["signal"], { kicker: string; body: string }> = {
   buy: {
-    kicker: "Move now",
-    body: "The window is open. Depth and availability favour the buyer this week.",
+    kicker: "Buy now",
+    body: "The sale window is open. Depth and availability favour you this week.",
   },
   soon: {
-    kicker: "Hold position",
-    body: "A markdown is forming. Watch the next two weeks before committing.",
+    kicker: "Wait — sale forming",
+    body: "A markdown is building. Hold off for up to two weeks before committing.",
   },
   hold: {
-    kicker: "Stay patient",
-    body: "Cadence suggests the house is between edits. No need to chase.",
+    kicker: "Don't buy yet",
+    body: "No markdown forming. We'll alert you the moment the window opens.",
   },
   low: {
-    kicker: "Quiet line",
-    body: "Limited signal. We're listening, but there is little to act on right now.",
+    kicker: "Not enough signal",
+    body: "Too quiet to call buy or wait. We'll flag it as soon as cadence picks up.",
   },
 };
 
