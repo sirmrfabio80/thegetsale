@@ -181,7 +181,8 @@ src/
 ## 8. Backend and data model
 
 **Tables**
-- `brands` — houses. Cols: `slug`, `name`, `category`, `tagline`, `house_group`, `editorial_copy`, `description`, `country`, `website_url`, `is_active`. RLS: admins manage; authenticated read where `is_active=true`. **Seeded with 30 active houses** (12 initial + 18 added May 2026).
+- `brands` — houses. Cols: `slug`, `name`, `category` *(legacy, deprecated)*, `categories text[]` *(canonical, GIN-indexed)*, `tagline`, `house_group`, `editorial_copy`, `description`, `country`, `website_url` *(canonical global URL — never country-specific)*, `is_active`. RLS: admins manage; authenticated read where `is_active=true`. **Seeded with 31 active houses** (Weekend Max Mara added May 2026 alongside the categories[] migration).
+- `brand_links` — per-country URL overrides. Cols: `brand_id`, `country_code` (lowercase ISO 3166-1 alpha-2), `url`. PK `(brand_id, country_code)`. RLS: admins manage; authenticated read. Resolved client-side by `src/lib/brand-links.ts::resolveBrandUrl` using `navigator.language`, falling back to `brands.website_url`.
 - `sale_events` — admin-confirmed past/upcoming sales. `status` draft/published/hidden, `sale_type`, `discount_min/max`, dates.
 - `sale_predictions` — generated predictions. `status`, `confidence_score/label`, `predicted_start/end_date`, `basis_years`, `algorithm_version`, `sample_size`, `signal`. **Generator: `unclear`.**
 - `prediction_runs` — admin-only log of generation runs.
@@ -466,3 +467,21 @@ Implications enforced in the UI:
   Never Fully Dressed, RIXO, Samsøe Samsøe, Soeur, Theory, TOTEME,
   Zimmermann. All fully populated with slug, category (Womens), tagline,
   website URL, country, description, house group, and editorial copy.
+- **Multi-category brands + localised URLs** (May 2026):
+  - New `brands.categories text[]` (GIN-indexed) replaces the single
+    `category` field across the UI. `Brand.categories: Category[]` in
+    `src/data/types.ts`; `brandDepartment` derives Womenswear/Menswear/Unisex
+    from the array. Legacy `brands.category` column kept temporarily as a
+    deprecated mirror — drop in a follow-up.
+  - Seeded realistic multi-values for all 34 existing houses (e.g. Marni,
+    Acne Studios, Sandro, lululemon, Massimo Dutti = Womens + Mens +
+    Accessories + Footwear).
+  - **Weekend Max Mara** added as a new house.
+  - New `brand_links` table for per-country URL overrides.
+    `src/lib/brand-links.ts::resolveBrandUrl(websiteUrl, links, ?cc)` picks
+    the locale match via `navigator.language`, else the canonical URL.
+  - **US-default URLs removed**: Claudie Pierlot, Maje, ME+EM, Sandro
+    rewritten to canonical globals. `brands.website_url` is now the
+    canonical/global URL by policy; country-specific destinations belong in
+    `brand_links`.
+
