@@ -179,6 +179,7 @@ export const createSaleEvent = createServerFn({ method: "POST" })
     const { error } = await supabase.from("sale_events").insert({
       brand_id: data.brandId,
       category: data.category ?? null,
+      country_code: data.countryCode ?? null,
       sale_type: data.saleType,
       start_date: data.startDate,
       end_date: data.endDate ?? null,
