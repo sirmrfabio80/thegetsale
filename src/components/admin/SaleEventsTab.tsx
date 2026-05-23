@@ -707,6 +707,9 @@ export function SaleEventsTab() {
                 <TableCell className="font-medium">
                   {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
                 </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {marketLabel(r.countryCode)}
+                </TableCell>
                 <TableCell className="text-muted-foreground">{r.category ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {r.saleType.replace("_", " ")}
