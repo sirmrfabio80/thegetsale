@@ -195,9 +195,12 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
   );
 }
 
-function publicDepartment(category: string): "Womenswear" | "Menswear" | "Unisex" {
-  if (category === "Womens") return "Womenswear";
-  if (category === "Mens") return "Menswear";
+function publicDepartment(categories: string[]): "Womenswear" | "Menswear" | "Unisex" {
+  const hasW = categories.includes("Womens");
+  const hasM = categories.includes("Mens");
+  if (hasW && hasM) return "Unisex";
+  if (hasW) return "Womenswear";
+  if (hasM) return "Menswear";
   return "Unisex";
 }
 
@@ -266,11 +269,13 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
             <dl className="space-y-5 text-[13px] leading-relaxed">
               <div>
                 <dt className="eyebrow text-muted-foreground">House</dt>
-                <dd className="mt-1 text-foreground">{brand.category}</dd>
+                <dd className="mt-1 text-foreground">
+                  {(brand.categories ?? []).join(" · ") || "—"}
+                </dd>
               </div>
               <div>
                 <dt className="eyebrow text-muted-foreground">Department</dt>
-                <dd className="mt-1 text-foreground">{publicDepartment(brand.category)}</dd>
+                <dd className="mt-1 text-foreground">{publicDepartment(brand.categories ?? [])}</dd>
               </div>
               <div>
                 <dt className="eyebrow text-muted-foreground">Cadence</dt>
