@@ -318,6 +318,37 @@ export function SaleEventsTab() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <label className="eyebrow mb-1 block">Market</label>
+            <Select
+              value={
+                filters.countryCode === undefined
+                  ? ANY
+                  : filters.countryCode === ""
+                    ? GLOBAL
+                    : filters.countryCode
+              }
+              onValueChange={(v) =>
+                updateFilters((f) => ({
+                  ...f,
+                  countryCode: v === ANY ? undefined : v === GLOBAL ? "" : v,
+                }))
+              }
+            >
+              <SelectTrigger className="h-10 w-full rounded-none md:w-44">
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Any market</SelectItem>
+                <SelectItem value={GLOBAL}>Global only</SelectItem>
+                {MARKETS.map((m) => (
+                  <SelectItem key={m.code} value={m.code}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <Button
           onClick={() => {
