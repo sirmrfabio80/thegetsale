@@ -181,7 +181,7 @@ src/
 ## 8. Backend and data model
 
 **Tables**
-- `brands` — houses. Cols: `slug`, `name`, `category`, `tagline`, `house_group`, `editorial_copy`, `description`, `country`, `website_url`, `is_active`. RLS: admins manage; authenticated read where `is_active=true`.
+- `brands` — houses. Cols: `slug`, `name`, `category`, `tagline`, `house_group`, `editorial_copy`, `description`, `country`, `website_url`, `is_active`. RLS: admins manage; authenticated read where `is_active=true`. **Seeded with 30 active houses** (12 initial + 18 added May 2026).
 - `sale_events` — admin-confirmed past/upcoming sales. `status` draft/published/hidden, `sale_type`, `discount_min/max`, dates.
 - `sale_predictions` — generated predictions. `status`, `confidence_score/label`, `predicted_start/end_date`, `basis_years`, `algorithm_version`, `sample_size`, `signal`. **Generator: `unclear`.**
 - `prediction_runs` — admin-only log of generation runs.
@@ -460,3 +460,9 @@ Implications enforced in the UI:
     (2rem Instrument Serif italic) with a left rule in `--signal-soon`.
   - Watchlist empty-state headline: `Nothing on your watchlist yet. Add
     the houses you're watching.`
+- **Brand database seed — 18 new houses added** (May 2026):
+  Acne Studios, Bec + Bridge, CAMILLA AND MARC, Damson Madder, FARM Rio,
+  FRAME, GANNI, Isabel Marant, Isabel Marant Étoile, JOSEPH, Marni,
+  Never Fully Dressed, RIXO, Samsøe Samsøe, Soeur, Theory, TOTEME,
+  Zimmermann. All fully populated with slug, category (Womens), tagline,
+  website URL, country, description, house group, and editorial copy.
