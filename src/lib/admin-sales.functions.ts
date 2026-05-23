@@ -43,6 +43,11 @@ const SaleInput = z
   .object({
     brandId: z.string().uuid(),
     category: z.string().trim().max(80).optional().nullable(),
+    countryCode: z
+      .string()
+      .regex(/^[a-z]{2}$/, "Use a 2-letter lowercase country code")
+      .optional()
+      .nullable(),
     saleType: z.enum(SALE_TYPES),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     endDate: z
@@ -70,6 +75,7 @@ function mapRow(r: any, brandName: string | null): SaleEventDTO {
     brandId: r.brand_id,
     brandName,
     category: r.category ?? null,
+    countryCode: r.country_code ?? null,
     saleType: r.sale_type,
     startDate: r.start_date,
     endDate: r.end_date,
