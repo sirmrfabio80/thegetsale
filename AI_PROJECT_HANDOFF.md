@@ -266,7 +266,7 @@ No Stripe / email / analytics integrations detected.
 - **Server gate**: `requireSupabaseAuth` middleware on every protected `createServerFn`.
 - **Admin gate**: every admin server fn calls local `ensureAdmin` → `has_role` RPC; client UI also checks via `useIsAdmin`.
 - **Route gates**:
-  - `_authenticated` redirects unauthenticated users to `/`.
+  - `_authenticated` redirects unauthenticated users to `/login?redirect=<current url>`. `/login` reads the `redirect` search param and routes back after sign-in (Google/Apple/email all pass `redirectTo`).
   - `_admin` (assumed) gates `/admin/*` — needs spot-check (`unclear`).
 - **RLS**: every user-data table has policies scoped to `auth.uid()`. Admin tables additionally allow `has_role(auth.uid(),'admin')`.
 - **Sensitive code paths**:
