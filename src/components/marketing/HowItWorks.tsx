@@ -30,8 +30,8 @@ export function HowItWorks() {
           </h2>
         </div>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-          The Get watches the patterns brands hope you won't notice — and tells
-          you, gently, when to act.
+          The Get watches the patterns brands hope you won't notice — and tells you, gently, when to
+          act.
         </p>
       </div>
 
@@ -40,9 +40,7 @@ export function HowItWorks() {
           <div key={s.n}>
             <p className="font-serif text-4xl text-muted-foreground">{s.n}</p>
             <h3 className="mt-5 font-serif text-2xl">{s.t}</h3>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {s.d}
-            </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{s.d}</p>
           </div>
         ))}
       </div>

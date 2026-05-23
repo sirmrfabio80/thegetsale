@@ -59,8 +59,8 @@ function ForgotPasswordPage() {
         {sent ? (
           <div className="mt-10 border border-foreground p-6">
             <p className="text-sm text-foreground">
-              If an account exists for <span className="font-medium">{email}</span>, a reset link is on its way. Check
-              your inbox.
+              If an account exists for <span className="font-medium">{email}</span>, a reset link is
+              on its way. Check your inbox.
             </p>
           </div>
         ) : (
@@ -96,7 +96,10 @@ function ForgotPasswordPage() {
 
         <p className="mt-10 text-sm text-muted-foreground">
           Remembered it?{" "}
-          <Link to="/login" className="text-foreground underline underline-offset-4 hover:opacity-70">
+          <Link
+            to="/login"
+            className="text-foreground underline underline-offset-4 hover:opacity-70"
+          >
             Back to sign in
           </Link>
         </p>

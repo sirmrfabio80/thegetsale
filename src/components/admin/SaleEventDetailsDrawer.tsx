@@ -24,7 +24,9 @@ export function SaleEventDetailsDrawer({ event, open, onOpenChange, onEdit }: Pr
         <DrawerHeader className="text-left">
           <DrawerTitle>{event?.brandName ?? "Sale event"}</DrawerTitle>
           <DrawerDescription>
-            {event ? (event.category ?? "Uncategorised") + " · " + event.saleType.replace("_", " ") : ""}
+            {event
+              ? (event.category ?? "Uncategorised") + " · " + event.saleType.replace("_", " ")
+              : ""}
           </DrawerDescription>
         </DrawerHeader>
 
@@ -37,7 +39,10 @@ export function SaleEventDetailsDrawer({ event, open, onOpenChange, onEdit }: Pr
               <Field label="Sale type" value={event.saleType.replace("_", " ")} />
               <Field label="Start date" value={fmt(event.startDate)} />
               <Field label="End date" value={event.endDate ? fmt(event.endDate) : "—"} />
-              <Field label="Discount" value={formatDiscount(event.discountMin, event.discountMax)} />
+              <Field
+                label="Discount"
+                value={formatDiscount(event.discountMin, event.discountMax)}
+              />
               <Field
                 label="Admin notes"
                 value={
@@ -54,11 +59,7 @@ export function SaleEventDetailsDrawer({ event, open, onOpenChange, onEdit }: Pr
 
         <DrawerFooter className="flex-row justify-end gap-2">
           {event && onEdit && (
-            <Button
-              variant="outline"
-              className="rounded-none"
-              onClick={() => onEdit(event)}
-            >
+            <Button variant="outline" className="rounded-none" onClick={() => onEdit(event)}>
               Edit
             </Button>
           )}
@@ -74,9 +75,7 @@ export function SaleEventDetailsDrawer({ event, open, onOpenChange, onEdit }: Pr
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[110px_1fr] items-start gap-3 py-3">
-      <dt className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{label}</dt>
       <dd className="text-foreground">{value}</dd>
     </div>
   );
@@ -89,9 +88,7 @@ function StatusBadge({ status }: { status: string }) {
       : "border-border text-muted-foreground";
   return (
     <span
-      className={
-        "inline-block border px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] " + cls
-      }
+      className={"inline-block border px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] " + cls}
     >
       {status}
     </span>

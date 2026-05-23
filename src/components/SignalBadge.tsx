@@ -15,13 +15,7 @@ const tones: Record<SignalKind, string> = {
   low: "border-[color:var(--signal-low)]/50 text-muted-foreground bg-muted/40",
 };
 
-export function SignalBadge({
-  signal,
-  className,
-}: {
-  signal: SignalKind;
-  className?: string;
-}) {
+export function SignalBadge({ signal, className }: { signal: SignalKind; className?: string }) {
   return (
     <span
       className={cn(

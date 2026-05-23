@@ -57,15 +57,11 @@ function AdminLayout() {
       <PageLayout>
         <section className="pt-16 md:pt-24">
           <p className="eyebrow">Admin</p>
-          <h1 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
-            Not for you.
-          </h1>
+          <h1 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">Not for you.</h1>
           <p className="mt-4 max-w-xl text-muted-foreground">
             This area is reserved for editors of The Get.
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Redirecting to your dashboard…
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">Redirecting to your dashboard…</p>
           <div className="mt-6">
             <Link
               to="/dashboard"

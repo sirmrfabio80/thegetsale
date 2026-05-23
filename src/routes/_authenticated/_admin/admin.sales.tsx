@@ -19,9 +19,7 @@ function AdminSalesPage() {
     <PageLayout>
       <section className="pt-16 md:pt-24">
         <p className="eyebrow">Admin</p>
-        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">
-          Sale management.
-        </h1>
+        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">Sale management.</h1>
         <p className="mt-4 max-w-xl text-muted-foreground">
           Add, edit, publish and hide sale events. Curate the people who can see this room.
         </p>
@@ -85,5 +83,3 @@ function AdminSalesPage() {
     </PageLayout>
   );
 }
-
-

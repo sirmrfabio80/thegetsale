@@ -8,10 +8,7 @@ import { brandDepartment } from "@/data/categoryMap";
 import { type Department } from "@/data/setupStorage";
 import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
 import { cn } from "@/lib/utils";
-import {
-  listHousesForDashboard,
-  type HouseDashboardDTO,
-} from "@/lib/brands.functions";
+import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
 
 // Single source of truth so the "Updating list…" flash settles cleanly
@@ -119,11 +116,9 @@ function WatchlistPage() {
       brand: brandsBySlug.get(it.brandId) ?? null,
     }));
     const known = withMaybeBrand.filter(
-      (x): x is { it: typeof items[number]; brand: Brand } => !!x.brand,
+      (x): x is { it: (typeof items)[number]; brand: Brand } => !!x.brand,
     );
-    const orphanItems = withMaybeBrand
-      .filter((x) => !x.brand)
-      .map((x) => x.it);
+    const orphanItems = withMaybeBrand.filter((x) => !x.brand).map((x) => x.it);
     const filtered =
       departments.size === 0
         ? known
@@ -246,7 +241,6 @@ function WatchlistPage() {
     exitSelectMode();
   };
 
-
   return (
     <PageLayout>
       <section className="pt-16 md:pt-24">
@@ -280,18 +274,24 @@ function WatchlistPage() {
           </ul>
           {hiddenCount > 0 && (
             <>
-              <span aria-hidden className="text-muted-foreground/50">·</span>
+              <span aria-hidden className="text-muted-foreground/50">
+                ·
+              </span>
               <span>{hiddenCount} hidden</span>
             </>
           )}
-          <span aria-hidden className="text-muted-foreground/50">·</span>
+          <span aria-hidden className="text-muted-foreground/50">
+            ·
+          </span>
           <button
             onClick={clearDepartmentFilters}
             className="underline-offset-4 hover:text-foreground hover:underline"
           >
             Clear filters
           </button>
-          <span aria-hidden className="text-muted-foreground/50">·</span>
+          <span aria-hidden className="text-muted-foreground/50">
+            ·
+          </span>
           <Link to="/setup" className="underline underline-offset-4 hover:text-foreground">
             Edit
           </Link>
@@ -321,7 +321,9 @@ function WatchlistPage() {
                 <span>
                   {visible.length} {visible.length === 1 ? "house" : "houses"}
                 </span>
-                <span aria-hidden className="text-muted-foreground/50">·</span>
+                <span aria-hidden className="text-muted-foreground/50">
+                  ·
+                </span>
                 <span>
                   Sorted by <span className="text-foreground">{sortLabel(sortBy)}</span>
                 </span>
@@ -394,7 +396,6 @@ function WatchlistPage() {
         </div>
       )}
 
-
       {items.length === 0 ? (
         <div className="border border-dashed border-border px-8 py-20 text-center">
           <p className="font-serif text-2xl">Nothing on watch yet.</p>
@@ -411,11 +412,10 @@ function WatchlistPage() {
       ) : visible.length === 0 ? (
         <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
           <p className="eyebrow text-muted-foreground">Filtered out</p>
-          <p className="mt-4 font-serif text-3xl leading-tight">
-            Nothing on watch in {deptLabel}.
-          </p>
+          <p className="mt-4 font-serif text-3xl leading-tight">Nothing on watch in {deptLabel}.</p>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "house is" : "houses are"} waiting in other departments
+            {hiddenCount} {hiddenCount === 1 ? "house is" : "houses are"} waiting in other
+            departments
             {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -449,7 +449,6 @@ function WatchlistPage() {
             <WatchlistCard key={it.brandId} item={it} brand={null} />
           ))}
         </section>
-
       )}
     </PageLayout>
   );

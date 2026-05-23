@@ -18,14 +18,9 @@ export function safeRedirect(input: unknown, fallback = "/dashboard"): string {
  * Known routes (like /brand/:id) are returned with their typed params so
  * callers can pass them straight into TanStack `navigate(...)`.
  */
-export type ResolvedRedirect =
-  | { kind: "brand"; id: string }
-  | { kind: "path"; to: string };
+export type ResolvedRedirect = { kind: "brand"; id: string } | { kind: "path"; to: string };
 
-export function resolveRedirect(
-  input: unknown,
-  fallback = "/dashboard",
-): ResolvedRedirect {
+export function resolveRedirect(input: unknown, fallback = "/dashboard"): ResolvedRedirect {
   const safe = safeRedirect(input, fallback);
   const brandMatch = safe.match(/^\/brand\/([^/?#]+)$/);
   if (brandMatch) {

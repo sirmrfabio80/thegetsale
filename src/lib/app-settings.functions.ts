@@ -22,9 +22,7 @@ export const getPrivateBetaEnabled = createServerFn({ method: "GET" }).handler(
 
 export const setPrivateBetaEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ enabled: z.boolean() }).parse(input),
-  )
+  .inputValidator((input) => z.object({ enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }): Promise<PrivateBetaSetting> => {
     const { supabase, userId } = context;
     const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
@@ -36,10 +34,7 @@ export const setPrivateBetaEnabled = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("app_settings")
-      .upsert(
-        { key: SETTINGS_KEY, private_beta_enabled: data.enabled },
-        { onConflict: "key" },
-      );
+      .upsert({ key: SETTINGS_KEY, private_beta_enabled: data.enabled }, { onConflict: "key" });
     if (error) throw new Error(error.message);
     return { privateBetaEnabled: data.enabled };
   });

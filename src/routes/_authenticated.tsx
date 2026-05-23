@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 function isAuthShapedError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
-  return /Unauthorized|JWT|issued at future|AuthSession|Invalid token|Invalid Refresh Token/i.test(msg);
+  return /Unauthorized|JWT|issued at future|AuthSession|Invalid token|Invalid Refresh Token/i.test(
+    msg,
+  );
 }
 
 function AuthErrorRecovery({ error, reset }: { error: Error; reset: () => void }) {
@@ -53,7 +55,6 @@ function AuthenticatedLayout() {
   if (!hydrated || auth.status === "loading") return <HydratingShell />;
   return <Outlet />;
 }
-
 
 function HydratingShell() {
   const [slow, setSlow] = useState(false);
@@ -110,8 +111,8 @@ function HydratingShell() {
             {stuck
               ? "Still working…"
               : slow
-              ? "Reading the room — one moment"
-              : "Tuning the signal"}
+                ? "Reading the room — one moment"
+                : "Tuning the signal"}
           </p>
           {stuck && (
             <a

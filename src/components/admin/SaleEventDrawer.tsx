@@ -74,7 +74,7 @@ const discountField = z
       const n = Number(v);
       return n >= 0 && n <= 90;
     },
-    { message: "Must be between 0 and 90" }
+    { message: "Must be between 0 and 90" },
   );
 
 const saleFormSchema = z
@@ -84,9 +84,7 @@ const saleFormSchema = z
     status: z.enum(SALE_STATUSES as unknown as [string, ...string[]]),
     category: z.string().max(80, "Keep under 80 characters"),
     startDate: z.string().regex(dateRe, "Start date is required"),
-    endDate: z
-      .string()
-      .refine((v) => v === "" || dateRe.test(v), { message: "Invalid date" }),
+    endDate: z.string().refine((v) => v === "" || dateRe.test(v), { message: "Invalid date" }),
     discountMin: discountField,
     discountMax: discountField,
     adminNotes: z.string().max(2000, "Keep under 2000 characters"),
@@ -110,13 +108,7 @@ const saleFormSchema = z
     }
   });
 
-export function SaleEventDrawer({
-  open,
-  onOpenChange,
-  brands,
-  editing,
-  onSaved,
-}: Props) {
+export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }: Props) {
   const [form, setForm] = useState<FormState>(empty);
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -207,8 +199,8 @@ export function SaleEventDrawer({
             {editing ? "Edit sale event" : "Add sale event"}
           </SheetTitle>
           <SheetDescription>
-            Set the brand, dates and discount range. Save as draft to keep it
-            private, or publish to make it visible.
+            Set the brand, dates and discount range. Save as draft to keep it private, or publish to
+            make it visible.
           </SheetDescription>
         </SheetHeader>
 
@@ -226,10 +218,7 @@ export function SaleEventDrawer({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field id="brandId" label="Brand" required error={errors.brandId}>
-              <Select
-                value={form.brandId}
-                onValueChange={(v) => setField("brandId", v)}
-              >
+              <Select value={form.brandId} onValueChange={(v) => setField("brandId", v)}>
                 <SelectTrigger
                   id="brandId"
                   aria-invalid={!!errors.brandId}
@@ -250,9 +239,7 @@ export function SaleEventDrawer({
             <Field id="saleType" label="Sale type" required error={errors.saleType}>
               <Select
                 value={form.saleType}
-                onValueChange={(v) =>
-                  setField("saleType", v as FormState["saleType"])
-                }
+                onValueChange={(v) => setField("saleType", v as FormState["saleType"])}
               >
                 <SelectTrigger
                   id="saleType"
@@ -286,9 +273,7 @@ export function SaleEventDrawer({
             <Field id="status" label="Status" error={errors.status}>
               <Select
                 value={form.status}
-                onValueChange={(v) =>
-                  setField("status", v as FormState["status"])
-                }
+                onValueChange={(v) => setField("status", v as FormState["status"])}
               >
                 <SelectTrigger
                   id="status"

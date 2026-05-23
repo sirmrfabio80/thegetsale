@@ -44,7 +44,11 @@ const SaleInput = z
     category: z.string().trim().max(80).optional().nullable(),
     saleType: z.enum(SALE_TYPES),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional()
+      .nullable(),
     discountMin: z.number().int().min(0).max(90).optional().nullable(),
     discountMax: z.number().int().min(0).max(90).optional().nullable(),
     status: z.enum(SALE_STATUSES),
@@ -54,13 +58,10 @@ const SaleInput = z
     message: "End date can't be before start date",
     path: ["endDate"],
   })
-  .refine(
-    (v) =>
-      v.discountMin == null ||
-      v.discountMax == null ||
-      v.discountMax >= v.discountMin,
-    { message: "Max discount can't be lower than min", path: ["discountMax"] },
-  );
+  .refine((v) => v.discountMin == null || v.discountMax == null || v.discountMax >= v.discountMin, {
+    message: "Max discount can't be lower than min",
+    path: ["discountMax"],
+  });
 
 function mapRow(r: any, brandName: string | null): SaleEventDTO {
   return {
@@ -94,12 +95,8 @@ export const listBrandOptions = createServerFn({ method: "GET" })
 
     // Also include inactive brands already attached to a sale event so
     // existing rows remain readable in the dropdown.
-    const { data: usedRows } = await supabase
-      .from("sale_events")
-      .select("brand_id");
-    const usedIds = Array.from(
-      new Set((usedRows ?? []).map((r: any) => r.brand_id)),
-    );
+    const { data: usedRows } = await supabase.from("sale_events").select("brand_id");
+    const usedIds = Array.from(new Set((usedRows ?? []).map((r: any) => r.brand_id)));
     const activeIds = new Set((active ?? []).map((b: any) => b.id));
     const missingIds = usedIds.filter((id) => !activeIds.has(id));
 
@@ -138,10 +135,7 @@ export const listSaleEvents = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await ensureAdmin(supabase, userId);
 
-    let q = supabase
-      .from("sale_events")
-      .select("*")
-      .order("start_date", { ascending: false });
+    let q = supabase.from("sale_events").select("*").order("start_date", { ascending: false });
 
     if (data.brandId) q = q.eq("brand_id", data.brandId);
     if (data.category) q = q.ilike("category", `%${data.category}%`);
@@ -154,10 +148,7 @@ export const listSaleEvents = createServerFn({ method: "POST" })
     const brandIds = Array.from(new Set((rows ?? []).map((r: any) => r.brand_id)));
     const brandsById = new Map<string, string>();
     if (brandIds.length) {
-      const { data: brands } = await supabase
-        .from("brands")
-        .select("id, name")
-        .in("id", brandIds);
+      const { data: brands } = await supabase.from("brands").select("id, name").in("id", brandIds);
       for (const b of brands ?? []) brandsById.set((b as any).id, (b as any).name);
     }
 
@@ -189,9 +180,7 @@ export const createSaleEvent = createServerFn({ method: "POST" })
 
 export const updateSaleEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).and(SaleInput).parse(input),
-  )
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).and(SaleInput).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await ensureAdmin(supabase, userId);
@@ -269,10 +258,7 @@ export const bulkDeleteSaleEvents = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await ensureAdmin(supabase, userId);
-    const { error } = await supabase
-      .from("sale_events")
-      .delete()
-      .in("id", data.ids);
+    const { error } = await supabase.from("sale_events").delete().in("id", data.ids);
     if (error) throw new Error(error.message);
     return { ok: true, count: data.ids.length };
   });

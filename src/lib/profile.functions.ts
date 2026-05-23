@@ -13,7 +13,16 @@ export type ProfileDTO = {
 };
 
 async function signAvatar(
-  supabase: { storage: { from: (b: string) => { createSignedUrl: (p: string, ttl: number) => Promise<{ data: { signedUrl: string } | null }> } } },
+  supabase: {
+    storage: {
+      from: (b: string) => {
+        createSignedUrl: (
+          p: string,
+          ttl: number,
+        ) => Promise<{ data: { signedUrl: string } | null }>;
+      };
+    };
+  },
   path: string | null,
 ): Promise<string | null> {
   if (!path) return null;
@@ -68,10 +77,7 @@ export const setAvatarPath = createServerFn({ method: "POST" })
 
     const { error } = await supabase
       .from("profiles")
-      .upsert(
-        { id: userId, avatar_path: data.path },
-        { onConflict: "id" },
-      );
+      .upsert({ id: userId, avatar_path: data.path }, { onConflict: "id" });
     if (error) throw new Error(error.message);
 
     const avatarUrl = await signAvatar(supabase, data.path);
@@ -107,10 +113,7 @@ export const removeAvatar = createServerFn({ method: "POST" })
 
     const { error } = await supabase
       .from("profiles")
-      .upsert(
-        { id: userId, avatar_path: null },
-        { onConflict: "id" },
-      );
+      .upsert({ id: userId, avatar_path: null }, { onConflict: "id" });
     if (error) throw new Error(error.message);
 
     return {
@@ -140,10 +143,7 @@ export const updateDisplayName = createServerFn({ method: "POST" })
 
     const { error } = await supabase
       .from("profiles")
-      .upsert(
-        { id: userId, display_name: data.displayName },
-        { onConflict: "id" },
-      );
+      .upsert({ id: userId, display_name: data.displayName }, { onConflict: "id" });
     if (error) throw new Error(error.message);
 
     const { data: profile } = await supabase
@@ -163,4 +163,3 @@ export const updateDisplayName = createServerFn({ method: "POST" })
       avatarUrl,
     };
   });
-

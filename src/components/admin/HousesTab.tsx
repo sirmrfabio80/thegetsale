@@ -60,16 +60,14 @@ export function HousesTab() {
   });
 
   const activeMut = useMutation({
-    mutationFn: (vars: { id: string; isActive: boolean }) =>
-      setActiveFn({ data: vars }),
+    mutationFn: (vars: { id: string; isActive: boolean }) => setActiveFn({ data: vars }),
     onMutate: (vars) => setPendingId(vars.id),
     onSuccess: (_d, vars) => {
       toast.success(vars.isActive ? "House activated" : "House deactivated");
       qc.invalidateQueries({ queryKey: ["admin", "houses"] });
       qc.invalidateQueries({ queryKey: ["admin", "brands"] });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Couldn't update"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Couldn't update"),
     onSettled: () => setPendingId(null),
   });
 
@@ -89,8 +87,7 @@ export function HousesTab() {
       <div>
         <h2 className="font-serif text-3xl leading-tight">House management</h2>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          Create and maintain the fashion houses used across sale events, signals
-          and the dashboard.
+          Create and maintain the fashion houses used across sale events, signals and the dashboard.
         </p>
       </div>
 
@@ -100,9 +97,7 @@ export function HousesTab() {
             <label className="eyebrow mb-1 block">Search</label>
             <Input
               value={filters.search ?? ""}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, search: e.target.value || undefined }))
-              }
+              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value || undefined }))}
               placeholder="House name"
               className="h-10 w-full rounded-none md:w-48"
             />
@@ -111,9 +106,7 @@ export function HousesTab() {
             <label className="eyebrow mb-1 block">Group</label>
             <Select
               value={filters.group ?? ANY}
-              onValueChange={(v) =>
-                setFilters((f) => ({ ...f, group: v === ANY ? undefined : v }))
-              }
+              onValueChange={(v) => setFilters((f) => ({ ...f, group: v === ANY ? undefined : v }))}
             >
               <SelectTrigger className="h-10 w-full rounded-none md:w-44">
                 <SelectValue placeholder="Any" />
@@ -132,9 +125,7 @@ export function HousesTab() {
             <label className="eyebrow mb-1 block">Status</label>
             <Select
               value={filters.status ?? "all"}
-              onValueChange={(v) =>
-                setFilters((f) => ({ ...f, status: v as Filters["status"] }))
-              }
+              onValueChange={(v) => setFilters((f) => ({ ...f, status: v as Filters["status"] }))}
             >
               <SelectTrigger className="h-10 w-full rounded-none md:w-40">
                 <SelectValue />
@@ -160,9 +151,7 @@ export function HousesTab() {
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          {listQ.isLoading
-            ? "Loading…"
-            : `${rows.length} house${rows.length === 1 ? "" : "s"}`}
+          {listQ.isLoading ? "Loading…" : `${rows.length} house${rows.length === 1 ? "" : "s"}`}
         </span>
         {hasFilters && (
           <button
@@ -237,16 +226,10 @@ export function HousesTab() {
               <Button
                 variant="outline"
                 disabled={pendingId === r.id}
-                onClick={() =>
-                  activeMut.mutate({ id: r.id, isActive: !r.isActive })
-                }
+                onClick={() => activeMut.mutate({ id: r.id, isActive: !r.isActive })}
                 className="h-11 rounded-none px-4 text-[11px] uppercase tracking-[0.18em]"
               >
-                {pendingId === r.id
-                  ? "Working…"
-                  : r.isActive
-                    ? "Deactivate"
-                    : "Activate"}
+                {pendingId === r.id ? "Working…" : r.isActive ? "Deactivate" : "Activate"}
               </Button>
             </div>
           </div>
@@ -309,16 +292,10 @@ export function HousesTab() {
                     <button
                       type="button"
                       disabled={pendingId === r.id}
-                      onClick={() =>
-                        activeMut.mutate({ id: r.id, isActive: !r.isActive })
-                      }
+                      onClick={() => activeMut.mutate({ id: r.id, isActive: !r.isActive })}
                       className="border border-border px-3 py-2 text-[11px] uppercase tracking-[0.18em] hover:bg-foreground hover:text-background disabled:opacity-50"
                     >
-                      {pendingId === r.id
-                        ? "…"
-                        : r.isActive
-                          ? "Deactivate"
-                          : "Activate"}
+                      {pendingId === r.id ? "…" : r.isActive ? "Deactivate" : "Activate"}
                     </button>
                   </div>
                 </TableCell>
@@ -346,9 +323,7 @@ function StatusPill({ active }: { active: boolean }) {
     <span
       className={
         "inline-flex items-center border px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] " +
-        (active
-          ? "border-foreground text-foreground"
-          : "border-border text-muted-foreground")
+        (active ? "border-foreground text-foreground" : "border-border text-muted-foreground")
       }
     >
       {active ? "Active" : "Inactive"}

@@ -5,9 +5,8 @@ import { safeRedirect } from "@/lib/safeRedirect";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === "string" ? { redirect: search.redirect } : {},
   beforeLoad: ({ context, search }) => {
     if (context.auth?.status === "authenticated") {
       throw redirect({ to: safeRedirect(search.redirect, "/dashboard") });
@@ -36,7 +35,10 @@ function LoginPage() {
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>
               Forgot your password?{" "}
-              <Link to="/forgot-password" className="text-foreground underline underline-offset-4 hover:opacity-70">
+              <Link
+                to="/forgot-password"
+                className="text-foreground underline underline-offset-4 hover:opacity-70"
+              >
                 Reset it
               </Link>
             </p>
@@ -45,7 +47,7 @@ function LoginPage() {
                 New here?{" "}
                 <Link
                   to="/signup"
-                  search={redirectTo ? { redirect: redirectTo } : undefined}
+                  search={redirectTo ? { redirect: redirectTo } : {}}
                   className="text-foreground underline underline-offset-4 hover:opacity-70"
                 >
                   Create your signal

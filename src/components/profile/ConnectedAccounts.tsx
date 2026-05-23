@@ -25,8 +25,7 @@ export function ConnectedAccounts({ email }: { email: string | null }) {
     void refresh();
   }, []);
 
-  const linked = (provider: Provider) =>
-    identities?.some((i) => i.provider === provider) ?? false;
+  const linked = (provider: Provider) => identities?.some((i) => i.provider === provider) ?? false;
 
   const link = async (provider: Provider) => {
     setError(null);
@@ -43,8 +42,8 @@ export function ConnectedAccounts({ email }: { email: string | null }) {
       const friendly = /manual linking|not enabled/i.test(raw)
         ? "Account linking isn't enabled on this project yet. Ask an admin to turn on Manual Linking in Auth settings."
         : /email/i.test(raw) && /match|same|different/i.test(raw)
-        ? `That ${PROVIDER_LABEL[provider]} account uses a different email than ${email ?? "your account"}. Sign in with the matching email to link.`
-        : raw;
+          ? `That ${PROVIDER_LABEL[provider]} account uses a different email than ${email ?? "your account"}. Sign in with the matching email to link.`
+          : raw;
       setError(friendly);
       setPending(null);
     }
@@ -84,7 +83,9 @@ export function ConnectedAccounts({ email }: { email: string | null }) {
             type="button"
             onClick={() => void unlink(id!)}
             disabled={!canUnlink}
-            title={canUnlink ? undefined : "Add another sign-in method before disconnecting this one."}
+            title={
+              canUnlink ? undefined : "Add another sign-in method before disconnecting this one."
+            }
             className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-40"
           >
             Disconnect

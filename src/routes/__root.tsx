@@ -43,12 +43,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <h1 className="mt-3 font-serif text-3xl text-foreground">This page didn't load</h1>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="border border-foreground px-5 py-2.5 text-xs uppercase tracking-[0.18em] hover:bg-foreground hover:text-background"
           >
             Try again
           </button>
-          <a href="/" className="border border-border px-5 py-2.5 text-xs uppercase tracking-[0.18em] hover:border-foreground">
+          <a
+            href="/"
+            className="border border-border px-5 py-2.5 text-xs uppercase tracking-[0.18em] hover:border-foreground"
+          >
             Home
           </a>
         </div>
@@ -57,7 +63,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient; auth: { status: "loading" | "authenticated" | "unauthenticated"; user: import("@supabase/supabase-js").User | null } }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  auth: {
+    status: "loading" | "authenticated" | "unauthenticated";
+    user: import("@supabase/supabase-js").User | null;
+  };
+}>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -69,8 +81,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient; auth
       { property: "og:type", content: "website" },
       { name: "twitter:title", content: "The Get" },
       { name: "twitter:description", content: "Lorem ipsum" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7798c1b3-7400-44e9-a4e5-3bb999ce5944/id-preview-f98e8dfc--ba1e041c-74b2-4a5d-a81e-04bf1398a6ce.lovable.app-1779293092950.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7798c1b3-7400-44e9-a4e5-3bb999ce5944/id-preview-f98e8dfc--ba1e041c-74b2-4a5d-a81e-04bf1398a6ce.lovable.app-1779293092950.png" },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7798c1b3-7400-44e9-a4e5-3bb999ce5944/id-preview-f98e8dfc--ba1e041c-74b2-4a5d-a81e-04bf1398a6ce.lovable.app-1779293092950.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7798c1b3-7400-44e9-a4e5-3bb999ce5944/id-preview-f98e8dfc--ba1e041c-74b2-4a5d-a81e-04bf1398a6ce.lovable.app-1779293092950.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [

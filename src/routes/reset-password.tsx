@@ -39,7 +39,9 @@ function ResetPasswordPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (cancelled) return;
       if (event === "PASSWORD_RECOVERY") {
         setReady(true);
@@ -91,14 +93,18 @@ function ResetPasswordPage() {
     <MarketingLayout>
       <section className="mx-auto w-full max-w-md px-5 pt-20 pb-24 md:pt-28">
         <p className="eyebrow">The Get</p>
-        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">Choose a new password.</h1>
+        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
+          Choose a new password.
+        </h1>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           Pick something memorable but private. You'll be signed in once it's saved.
         </p>
 
         {linkError ? (
           <div className="mt-10 space-y-4">
-            <div className="border border-destructive/50 p-6 text-sm text-destructive">{linkError}</div>
+            <div className="border border-destructive/50 p-6 text-sm text-destructive">
+              {linkError}
+            </div>
             <Link
               to="/forgot-password"
               className="inline-flex h-12 w-full items-center justify-center border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"

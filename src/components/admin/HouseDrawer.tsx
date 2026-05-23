@@ -140,8 +140,7 @@ export function HouseDrawer({ open, onOpenChange, editing, onSaved }: Props) {
       toast.success(editing ? "House updated" : "House created");
       onSaved();
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Couldn't save house"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Couldn't save house"),
   });
 
   const setField = <K extends FieldName>(name: K, value: FormState[K]) => {
@@ -203,15 +202,12 @@ export function HouseDrawer({ open, onOpenChange, editing, onSaved }: Props) {
         className="flex w-full flex-col gap-0 rounded-none p-0 sm:max-w-xl"
       >
         <SheetHeader className="border-b border-border p-6 text-left">
-          <p className="eyebrow text-muted-foreground">
-            {editing ? "Edit" : "New"} · House
-          </p>
+          <p className="eyebrow text-muted-foreground">{editing ? "Edit" : "New"} · House</p>
           <SheetTitle className="font-serif text-2xl">
             {editing ? "Edit house" : "Add house"}
           </SheetTitle>
           <SheetDescription>
-            Create a house record used for signals, sale events and personalised
-            recommendations.
+            Create a house record used for signals, sale events and personalised recommendations.
           </SheetDescription>
         </SheetHeader>
 
@@ -330,10 +326,7 @@ export function HouseDrawer({ open, onOpenChange, editing, onSaved }: Props) {
                     Inactive houses are hidden from new sale events and the dashboard.
                   </span>
                 </span>
-                <Switch
-                  checked={form.isActive}
-                  onCheckedChange={(v) => setField("isActive", v)}
-                />
+                <Switch checked={form.isActive} onCheckedChange={(v) => setField("isActive", v)} />
               </label>
             </div>
           </div>
@@ -383,9 +376,7 @@ function Field({
         {required && <span className="ml-1 text-destructive">*</span>}
       </label>
       {children}
-      {hint && !error && (
-        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-      )}
+      {hint && !error && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
       {error && (
         <p id={id ? `${id}-error` : undefined} className="mt-1 text-xs text-destructive">
           {error}

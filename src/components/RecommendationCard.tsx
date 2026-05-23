@@ -18,9 +18,7 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-xl">
           <p className="eyebrow">Editor's note</p>
-          <h2 className="mt-3 font-serif text-3xl leading-[1.1] md:text-4xl">
-            {brand.headline}
-          </h2>
+          <h2 className="mt-3 font-serif text-3xl leading-[1.1] md:text-4xl">{brand.headline}</h2>
           <p className="mt-4 text-sm text-muted-foreground">
             Based on cadence, inventory, and market signals around{" "}
             <span className="text-foreground">{brand.name}</span>.

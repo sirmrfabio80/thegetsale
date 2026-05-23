@@ -41,16 +41,12 @@ export function SignalEditorial({ brand }: { brand: Brand }) {
   const last = lastSalePhrase(brand.lastSaleDays);
 
   return (
-    <section
-      aria-label="Signal at a glance"
-      className="relative border border-border bg-card"
-    >
+    <section aria-label="Signal at a glance" className="relative border border-border bg-card">
       {/* Top eyebrow rail */}
       <div className="flex items-center justify-between border-b border-border px-6 py-3 md:px-10">
         <p className="eyebrow text-muted-foreground">The read · this week</p>
         <p className="eyebrow text-muted-foreground">
-          Confidence{" "}
-          <span className="ml-2 text-foreground">{brand.confidence}</span>
+          Confidence <span className="ml-2 text-foreground">{brand.confidence}</span>
           <span className="text-muted-foreground">/100</span>
         </p>
       </div>
@@ -62,9 +58,7 @@ export function SignalEditorial({ brand }: { brand: Brand }) {
           <p className="mt-6 font-serif text-[2.75rem] leading-[0.95] tracking-tight md:text-6xl">
             {copy.kicker}.
           </p>
-          <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            {copy.body}
-          </p>
+          <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
         </div>
 
         {/* Predicted window */}
@@ -113,9 +107,7 @@ function Stat({
           {suffix}
         </p>
       </div>
-      <p className="mt-8 text-xs leading-relaxed text-muted-foreground">
-        {footnote}
-      </p>
+      <p className="mt-8 text-xs leading-relaxed text-muted-foreground">{footnote}</p>
     </div>
   );
 }

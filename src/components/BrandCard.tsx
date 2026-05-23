@@ -28,7 +28,8 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
         <div className="flex items-start justify-between gap-4 pr-10">
           <div>
             <p className="eyebrow mb-2">
-              {brand.category} <span className="text-muted-foreground/60">·</span> {brandDepartment(brand)}
+              {brand.category} <span className="text-muted-foreground/60">·</span>{" "}
+              {brandDepartment(brand)}
             </p>
             <h3 className="font-serif text-2xl leading-tight">{brand.name}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{brand.tagline}</p>
@@ -57,17 +58,16 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
         onClick={onToggle}
         disabled={isPending}
         aria-pressed={isWatched}
-        aria-label={isWatched ? `Remove ${brand.name} from watchlist` : `Add ${brand.name} to watchlist`}
+        aria-label={
+          isWatched ? `Remove ${brand.name} from watchlist` : `Add ${brand.name} to watchlist`
+        }
         title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
         className={cn(
           "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-border bg-background transition-colors hover:border-foreground disabled:opacity-50",
           isWatched && "border-foreground bg-foreground text-background hover:opacity-90",
         )}
       >
-        <Bookmark
-          className={cn("h-3.5 w-3.5", isWatched && "fill-current")}
-          aria-hidden
-        />
+        <Bookmark className={cn("h-3.5 w-3.5", isWatched && "fill-current")} aria-hidden />
       </button>
     </div>
   );

@@ -55,9 +55,7 @@ function depthLabel(min: number | null, max: number | null): string {
 
 function pickLatestPrediction(rows: PredictionRow[] | null): PredictionRow | null {
   if (!rows || rows.length === 0) return null;
-  return [...rows].sort((a, b) =>
-    a.predicted_start_date < b.predicted_start_date ? 1 : -1,
-  )[0];
+  return [...rows].sort((a, b) => (a.predicted_start_date < b.predicted_start_date ? 1 : -1))[0];
 }
 
 function toDashboardDTO(
@@ -106,11 +104,7 @@ export const listHousesForDashboard = createServerFn({ method: "GET" })
     const ids = brands.map((b: any) => b.id);
 
     const [{ data: events }, { data: preds }] = await Promise.all([
-      supabase
-        .from("sale_events")
-        .select(EVENT_COLS)
-        .in("brand_id", ids)
-        .eq("status", "published"),
+      supabase.from("sale_events").select(EVENT_COLS).in("brand_id", ids).eq("status", "published"),
       supabase
         .from("sale_predictions")
         .select(PREDICTION_COLS)
