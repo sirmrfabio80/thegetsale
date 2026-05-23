@@ -98,7 +98,17 @@ function ProfilePage() {
   const setPath = useServerFn(setAvatarPath);
   const remove = useServerFn(removeAvatar);
   const updateName = useServerFn(updateDisplayName);
+  const saveMarket = useServerFn(setMyMarket);
   const refetchProfile = useServerFn(getMyProfile);
+
+  const marketMutation = useMutation({
+    mutationFn: (market: MarketCode) => saveMarket({ data: { market } }),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["me", "profile", next.id], next);
+      queryClient.invalidateQueries({ queryKey: ["houses", "dashboard"] });
+      toast.success("Market updated");
+    },
+  });
 
   const writeCache = (next: ProfileDTO) => {
     queryClient.setQueryData(["me", "profile", next.id], next);
