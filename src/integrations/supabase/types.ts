@@ -213,6 +213,7 @@ export type Database = {
           admin_notes: string | null
           brand_id: string
           category: string | null
+          country_code: string | null
           created_at: string
           created_by: string | null
           discount_max: number | null
@@ -229,6 +230,7 @@ export type Database = {
           admin_notes?: string | null
           brand_id: string
           category?: string | null
+          country_code?: string | null
           created_at?: string
           created_by?: string | null
           discount_max?: number | null
@@ -245,6 +247,7 @@ export type Database = {
           admin_notes?: string | null
           brand_id?: string
           category?: string | null
+          country_code?: string | null
           created_at?: string
           created_by?: string | null
           discount_max?: number | null
@@ -275,6 +278,7 @@ export type Database = {
           category: string | null
           confidence_label: string
           confidence_score: number
+          country_code: string | null
           generated_at: string
           id: string
           predicted_end_date: string | null
@@ -294,6 +298,7 @@ export type Database = {
           category?: string | null
           confidence_label: string
           confidence_score: number
+          country_code?: string | null
           generated_at?: string
           id?: string
           predicted_end_date?: string | null
@@ -313,6 +318,7 @@ export type Database = {
           category?: string | null
           confidence_label?: string
           confidence_score?: number
+          country_code?: string | null
           generated_at?: string
           id?: string
           predicted_end_date?: string | null
