@@ -246,7 +246,7 @@ function Dashboard() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search a house…"
+          placeholder="Search a brand…"
           className="w-full border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-foreground focus:outline-none md:w-64"
         />
       </div>
