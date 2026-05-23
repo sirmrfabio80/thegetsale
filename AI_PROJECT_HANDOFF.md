@@ -27,7 +27,7 @@
   2. *"Notify me quietly when a watched house is about to move."*
   3. *"Tune what I see to my departments / categories / styles."*
 - **Value proposition**: Editorial restraint + cadence intelligence. Calm UI, never urgency-driven.
-- **User-facing terminology to preserve**: *house* (not "brand"), *signal*, *the read*, *cadence*, *window*, *depth*, *watchlist*, *The Get*, *Editor's note*. Internally code still uses `brand`/`brands` (table + types); the rename is only on-screen.
+- **User-facing terminology (hybrid)**: editorial surfaces keep *house*, *signal*, *the read*, *cadence*, *window*, *depth*, *watchlist*, *The Get*, *Editor's note*. Utility surfaces (empty/error states, search placeholders, dashboard filters, watchlist CTAs, badge labels) use plain *brand* and buy/wait language (*Buy now*, *Wait for sale*, *Hold*, *No clear read*). Internally code uses `brand`/`brands` (table + types).
 
 ## 3. Current feature inventory
 
@@ -228,8 +228,8 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
 
 ## 10. Domain rules and terminology
 
-- **House** = a fashion brand row. Internally `brand`, externally always *house*.
-- **Signal**: enum `buy | soon | hold | low`. Drives badge color, sort, copy.
+- **House / Brand**: same entity. Use *house* in editorial copy (hero, landing, brand-detail editorial, Editor's note). Use *brand* in utility copy (empty states, search placeholders, dashboard filters, watchlist CTAs, error fallbacks). Internally always `brand`.
+- **Signal**: enum `buy | soon | hold | low`. Drives badge color, sort, copy. Badge labels (utility): *Buy now*, *Wait for sale*, *Hold*, *No clear read*. Editorial kickers (brand detail): *Buy now*, *Wait — sale forming*, *Don't buy yet*, *Not enough signal*.
 - **Confidence**: 0–100 numeric; label `low | medium | high`.
 - **Window** (`windowDays`): predicted days until next sale.
 - **Depth** (`expectedDepth`): expected discount range (e.g. "20–30%").
@@ -243,7 +243,8 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
 - **Sale status**: draft, published, hidden.
 - **Role**: `app_role` enum (admin / moderator / user). Only `admin` is actively checked.
 - **Rules an agent must not break**:
-  - Never rename "house" back to "brand" in copy.
+  - Keep the hybrid split: editorial = *house*, utility = *brand*. Don't replace one with the other globally.
+  - Empty / error / fallback copy must lead with the buy-vs-wait action, not editorial mood.
   - Signal enum strings are persisted — do not change casing.
   - `sortBy` localStorage key is `theget.watchlist.sort`.
 
@@ -358,7 +359,8 @@ Suggested order: 1 → 2 → 3 → 9 → 4 → 8 → 5 → 6 → others.
 - **Do not reinstate toasts**: `src/lib/toast.ts` is a deliberate no-op. Do not mount `<Toaster />` in `__root.tsx`, do not import from `"sonner"` directly.
 - **Do not use Supabase Edge Functions** for app logic — write `createServerFn`.
 - **Do not call `supabase.auth.signInWithOAuth("google")`** directly — must go through `lovable.auth.signInWithOAuth`.
-- **Preserve terminology**: house / signal / window / depth / cadence / The Get.
+- **Preserve hybrid terminology**: editorial = *house / signal / window / depth / cadence / The Get*; utility (empty/error/CTAs) = *brand* + buy/wait verbs. See §10.
+- **Keep AI_PROJECT_HANDOFF.md current**: any feature, route, schema, server-fn, terminology, UX-flow, or known-issue change must update the relevant section in the SAME turn. Skip only for typo/format/dep-bump edits.
 - **Fragile flows**: `_authenticated` HydratingShell timing, `AuthErrorRecovery` (don't throw new error types past it), brand.$id dual loader.
 - **Files requiring caution**: `routes/_authenticated/watchlist.tsx` (recently de-looped), `routes/brand.$id.tsx`, `lib/auth.ts`, `router.tsx`.
 - **Coding standards**: TypeScript strict, no `any` in new code, zod-validate all server-fn inputs, optimistic-update + rollback pattern for mutations, queries via `*QueryOptions` + `useSuspenseQuery`.
