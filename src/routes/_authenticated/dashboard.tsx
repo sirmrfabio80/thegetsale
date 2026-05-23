@@ -156,13 +156,21 @@ function Dashboard() {
   return (
     <PageLayout>
       <section className="pt-16 md:pt-24">
-        <p className="eyebrow">Today's signals</p>
+        <p className="eyebrow">The Read · Today</p>
         <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">Your buy/wait read.</h1>
         <p className="mt-4 max-w-xl text-muted-foreground">
           {counts.total > 0
             ? `${counts.total} ${counts.total === 1 ? "house" : "houses"}, watched closely. ${counts.wait} suggest waiting, ${counts.buy} suggest acting now.`
             : "We'll surface the read across the fashion houses you follow."}
         </p>
+        {counts.total > 0 && (
+          <>
+            <div className="hairline mt-10" />
+            <p className="eyebrow mt-4 [font-variant-numeric:tabular-nums]">
+              {counts.buy} Buy · {counts.wait} Soon · {counts.hold} Hold · {counts.low} Low
+            </p>
+          </>
+        )}
       </section>
 
       <div className="mt-10 flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
