@@ -43,6 +43,8 @@ export type HouseDetailDTO = HouseDashboardDTO & {
   factors: { title: string; note: string }[];
   algorithmVersion: string;
   links: BrandLinkDTO[];
+  needsMarket: boolean;
+  market: string | null;
 };
 
 export type PublicHouseDTO = {
