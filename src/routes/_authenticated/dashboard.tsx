@@ -68,7 +68,9 @@ const FILTERS: Array<"All" | Category> = [
 ];
 
 function Dashboard() {
-  const { data: houseDTOs } = useSuspenseQuery(housesQueryOptions);
+  const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
+  const houseDTOs = dashboard.houses;
+  const needsMarket = dashboard.needsMarket;
   const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
   const { setup } = useSetup();
   const { save } = useSetupMutation();
