@@ -412,9 +412,9 @@ function WatchlistPage() {
       ) : visible.length === 0 ? (
         <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
           <p className="eyebrow text-muted-foreground">Filtered out</p>
-          <p className="mt-4 font-serif text-3xl leading-tight">Nothing on watch in {deptLabel}.</p>
+          <p className="mt-4 font-serif text-3xl leading-tight">No brands in {deptLabel}.</p>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "house is" : "houses are"} waiting in other
+            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other
             departments
             {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
           </p>
