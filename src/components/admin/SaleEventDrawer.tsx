@@ -121,6 +121,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
       setForm({
         brandId: editing.brandId,
         category: editing.category ?? "",
+        countryCode: editing.countryCode ?? "",
         saleType: (editing.saleType as FormState["saleType"]) ?? "seasonal",
         startDate: editing.startDate,
         endDate: editing.endDate ?? "",
