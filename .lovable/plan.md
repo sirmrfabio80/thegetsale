@@ -1,100 +1,60 @@
-# The Get — UX, copy & terminology pass
+# Editorial polish: dashboard, brand cards, signal badges, brand detail
 
-A focused, frontend-only pass addressing all 10 issues in the review, with a **hybrid voice** (keep "house"/"signal" as brand voice but pair with plain-English anchors) and a clear stance that **The Get tracks brands/houses and their sale windows — not individual products**. Users click through to the house to see actual pieces.
+A pure UI/copy pass. No data, routing, or business-logic changes. No new dependencies. No background imagery or toasts.
 
-No backend schema changes. No new tables. No notification pipeline. No item-level saving.
+## 1. `src/components/BrandCard.tsx`
 
-## Guiding decisions (from your answers)
+- Add a thin left-border accent (`border-l-2`) whose colour comes from a per-signal map → `var(--signal-buy|soon|hold|low)`. Apply via inline `style={{ borderLeftColor: ... }}` on the `<Link>` so we can use the CSS variables already in `styles.css`.
+- Bump house name from `text-2xl` → `text-[1.5rem]` (Instrument Serif already applied via `font-serif`).
+- Bump metric value from `text-lg` → `text-[1.1rem]` and add `font-variant-numeric: tabular-nums` (via a `tabular-nums` utility class).
+- Hover state: brighten left border (slightly higher-chroma oklch variant via a `:hover` style or a CSS custom property swap) + add `hover:shadow-[0_2px_12px_oklch(0_0_0/0.06)]`. Remove the existing `md:hover:-translate-y-px` transform per spec ("no scale transform").
 
-- Cover all 10 issues + terminology.
-- Hybrid terminology: keep `house` and `signal` editorially, anchor with plain words on first use and on action labels.
-- **No products in The Get.** Sales belong to a brand and cover many pieces; the user clicks through. Anywhere the UI implies item-level saving must be reframed as house-level.
-- Minimal first-run onboarding: require only 3 houses; everything else becomes optional/skippable.
+## 2. `src/components/SignalBadge.tsx`
 
-## Terminology map (user-facing only — code identifiers unchanged)
+- Replace the round bullet `<span class="rounded-full">` with a 6×6px filled square (`h-1.5 w-1.5`, no rounding), colour from `var(--signal-{signal})`.
+- For `buy`: keep the existing tinted bg/border/text using `--signal-buy` (already there, just verify the ~8% tint reads warm — current `/5` is fine).
+- For `low`: switch border from `border` solid → `border-dashed`.
+- Label typography is already 10px uppercase 0.18em tracking — confirm and leave.
 
-| Today | Becomes |
-|---|---|
-| House (first use) | Fashion house / brand |
-| House (subsequent) | House |
-| Signal (explainer copy) | Recommendation / read |
-| Buy now | Buy now |
-| Sale likely soon | Wait for sale |
-| Hold | Hold |
-| Low signal | No clear read |
-| Window | Expected sale window |
-| Depth | Expected discount |
-| Cadence | (kept, as supporting detail only) |
-| The read | Kept, always paired with a concrete action verb |
+## 3. `src/routes/_authenticated/dashboard.tsx`
 
-## Changes by file
+- Change eyebrow copy: `"Today's signals"` → `"The Read · Today"`.
+- After the headline paragraph and before the personalisation strip, add a hairline `<div class="hairline mt-10" />` followed by a one-line distribution summary in `.eyebrow` style: `"X BUY · Y SOON · Z HOLD · W LOW"`. Compute from `brands` in the existing `counts` useMemo (extend it to include `hold` and `low`).
+- Reduce the gap between the Department filter row and the Category filter row: drop the second row's `mt-4` to `mt-2` (or wrap both in a single `space-y-2` block).
+- Rename the `"Only my selections"` button label → `"My Houses"`.
 
-### 1. `src/components/SignalBadge.tsx` — action-first labels (issue #3)
-Relabel: `soon → "Wait for sale"`, `low → "No clear read"`. Keep `buy → "Buy now"`, `hold → "Hold"`. SignalKind values unchanged.
+## 4. `src/routes/brand.$id.tsx` (authenticated view only)
 
-### 2. `src/components/brand/SignalEditorial.tsx` and `src/components/RecommendationCard.tsx` (issues #1, #6)
-- Rewrite editorial copy so every block ends in a concrete next step ("Open the sale page", "Add to watchlist", "Check back in ~2 weeks").
-- **Remove the "Save signal" button** in `RecommendationCard` — it calls a no-op toast and confuses the user. Keep only the watchlist toggle as the primary action, plus a secondary `View at <House>` link to the brand's site if available, otherwise drop it.
+- Fix broken string at lines 153–154: render as `head to {brand.name} directly to browse what's on.` (add the missing space).
+- Replace the "Brand link coming soon" label (lines 167–169) with a disabled ghost button:
+  ```tsx
+  <button type="button" disabled
+    className="inline-flex h-11 items-center gap-2 border border-border px-5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground opacity-40 cursor-not-allowed">
+    → Visit {brand.name}
+  </button>
+  ```
 
-### 3. `src/routes/brand.$id.tsx` (issues #4, #5)
-- **Logged-out "Add to watchlist"**: replace the `toast(...)` call in `promptSignIn` with a direct `navigate({ to: "/login", search: { redirect: "/brand/" + brand.id } })`. No reliance on toasts (which are disabled).
-- **Remove the "Pieces you're watching" mock block** (`getWatchedPieces` and its render). Replace with a single editorial panel: "See the pieces" → external link to the house's sale page or homepage (use existing `house.url` field if present in the DTO; otherwise omit the button and show "Open <House>" as a disabled hint with copy explaining we link out once available). Delete `WatchedPiece` type and `getWatchedPieces` helper.
-- Audit copy on this page so "pieces" never appears as something The Get stores.
+## 5. `src/components/RecommendationCard.tsx` (the Editor's note pull-quote)
 
-### 4. `src/routes/_authenticated/watchlist.tsx` (issue #4)
-- Headline: `"The pieces you're waiting on."` → `"The houses you're watching."`
-- Subhead: `"We'll let you know — gently — when the signal turns."` → `"We'll surface the read when a sale window opens for any of them."`
-- Empty-state copy: `"add a house"` is already correct — keep, just align tone ("Start with a few favourite brands you'd buy on sale.").
-- Count chip: `"{n} brands"` → `"{n} houses"` for consistency.
+- Add a thin left rule using `--signal-soon`: `border-l-2` with `style={{ borderLeftColor: 'var(--signal-soon)' }}` (and increase left padding so content doesn't shift).
+- Bump headline from `text-3xl md:text-4xl` → `text-[2rem] md:text-[2rem]` Instrument Serif **italic** (add `italic`) so it reads as a pull-quote.
 
-### 5. `src/components/WatchlistCard.tsx` + `src/lib/watchlist.functions.ts` (issue #9)
-- Stop resolving via `getBrand()` from `src/data/brands.ts` mock. Resolve from the backend houses list already loaded in the watchlist route (pass the resolved house as a prop, or fetch by id via the brands server fn). Cards for unknown ids render a graceful "House no longer tracked — remove?" row instead of `return null`.
-- Note: this is a UI/data-wiring change only, no schema change. The mock file can stay as a dev seed but is no longer the source of truth for the watchlist UI.
+## 6. `src/routes/_authenticated/watchlist.tsx`
 
-### 6. `src/routes/_authenticated/dashboard.tsx` (issue #8)
-- Replace hardcoded `"Eight houses, watched closely. Three suggest waiting, two suggest acting now."` with a computed sentence derived from the loaded houses + signals, e.g. `"{n} houses, watched closely. {wait} suggest waiting, {buy} suggest acting now."` with graceful fallback when counts are 0.
-- Eyebrow stays `"Today's signals"`; add plain anchor on first paint: subhead opens with `"Your buy/wait read across the houses you follow."`
+- Change empty-state headline at line 401 from `"Your watchlist is empty."` → `"Nothing on your watchlist yet. Add the houses you're watching."` (keep surrounding CTA copy as-is).
 
-### 7. `src/routes/_authenticated/setup.tsx` (issue #7)
-- Change `valid` from `departments>=1 && houses>=3 && categories>=1` to **`houses.size >= 3`**.
-- Mark Departments, Categories, Styles, Notifications steps as **optional** in copy ("Skip for now — refine later in your profile").
-- Add a visible "Skip for now" button on each optional step that advances without selections.
-- Search placeholder: `"Search houses…"` → `"Search fashion houses & brands…"` (plain-English anchor on first encounter).
-- Keep the data model and persisted shape identical; only validation + copy changes.
+## 7. Handoff doc
 
-### 8. `src/routes/_authenticated/setup.tsx` notifications block (issue #10)
-- Relabel section: `"Notifications"` → `"Alert preferences (coming soon)"`.
-- Add a small italic note: `"We'll honour these once email and SMS alerts ship."`
-- **Hide the SMS toggle entirely** until a real pipeline exists (per workspace rule: don't promise undelivered features). Email + Weekly digest remain as preferences.
+- Append a short entry to `AI_PROJECT_HANDOFF.md` noting: editorial polish pass — per-signal left accents on BrandCard, square signal-badge markers + dashed border for `low`, dashboard masthead distribution line, "My Houses" rename, "The Read · Today" eyebrow, brand-detail copy + ghost-button fix, RecommendationCard pull-quote treatment, watchlist empty-state rewording.
 
-### 9. Landing / hero (`src/components/marketing/Hero.tsx`) (issue #1)
-- Keep the editorial headline.
-- Rewrite the sub-paragraph to lead with utility: `"Follow your favourite fashion houses. We'll tell you when a sale is likely, how deep it tends to go, and whether to buy now or wait."`
-- Add plain anchor "fashion houses & brands" on first mention in any other marketing section that currently says only "houses".
+## Out of scope (explicit)
 
-### 10. Global "no dead actions" sweep
-Grep for `toast(` in components and routes; any button whose only effect is a (now no-op) toast must either:
-- be removed, or
-- be wired to a real navigation / state change.
-Known hits to address as part of the above: `RecommendationCard` Save signal, `brand.$id` logged-out watchlist prompt. Any others found get the same treatment.
+- No changes to signal enum values, routing, server functions, or admin tab labels.
+- No `routeTree.gen.ts`, no `src/integrations/supabase/*`.
+- No `sonner` / `<Toaster />`.
+- No background images, video, or decorative photography.
 
-## Out of scope (explicitly)
+## Verification
 
-- No item/product saving, no new tables, no `saved_pieces`.
-- No email/SMS sending infrastructure.
-- No changes to `routeTree.gen.ts`, Supabase types, auth-middleware, or DB schema.
-- No re-enabling of `sonner` / `<Toaster />`.
-- No design-system overhaul; existing palette, fonts, spacing stay.
-
-## Update to `AI_PROJECT_HANDOFF.md`
-
-Append a short "Voice & terminology" subsection capturing the hybrid rule and the "no products in The Get" stance, and update the Known Debt section to mark the watchlist mock fallback (#9) and `getWatchedPieces` block as resolved once implemented.
-
-## Verification checklist (post-build)
-
-- Dashboard subhead reflects real counts on a seeded account.
-- Watchlist headline reads "houses", card count says "houses", removed-house row renders for an unknown id.
-- Brand detail: logged-out `Add to watchlist` navigates to `/login?redirect=...`; no "Save signal" button; no "Pieces you're watching" block.
-- Setup: can complete with only 3 houses selected; SMS toggle absent; notifications section labelled "coming soon".
-- `rg "toast\\("` shows no call site whose UX depends on a visible toast.
-- SignalBadge renders "Wait for sale" and "No clear read" for `soon`/`low`.
+- Capture `/dashboard` and `/brand/<id>` (authenticated, via existing preview session) before/after at the current viewport (1071px) to confirm: left accent renders per signal, badge square shows, `low` badge is dashed, distribution line reads correctly, hover lift has no transform, pull-quote left rule is amber-ish.
+- Tabular-nums check: confidence/window values align vertically across two stacked cards.

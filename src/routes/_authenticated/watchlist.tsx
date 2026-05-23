@@ -398,7 +398,7 @@ function WatchlistPage() {
 
       {items.length === 0 ? (
         <div className="border border-dashed border-border px-8 py-20 text-center">
-          <p className="font-serif text-2xl">Your watchlist is empty.</p>
+          <p className="font-serif text-2xl">Nothing on your watchlist yet. Add the houses you're watching.</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Add the brands you'd buy on sale. We'll tell you when to buy and when to wait.
           </p>

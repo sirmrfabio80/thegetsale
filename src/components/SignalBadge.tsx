@@ -11,8 +11,8 @@ const labels: Record<SignalKind, string> = {
 const tones: Record<SignalKind, string> = {
   soon: "border-[color:var(--signal-soon)]/40 text-[color:var(--signal-soon)] bg-[color:var(--signal-soon)]/5",
   hold: "border-[color:var(--signal-hold)]/40 text-[color:var(--signal-hold)] bg-[color:var(--signal-hold)]/5",
-  buy: "border-[color:var(--signal-buy)]/40 text-[color:var(--signal-buy)] bg-[color:var(--signal-buy)]/5",
-  low: "border-[color:var(--signal-low)]/50 text-muted-foreground bg-muted/40",
+  buy: "border-[color:var(--signal-buy)]/40 text-[color:var(--signal-buy)] bg-[color:var(--signal-buy)]/[0.08]",
+  low: "border-dashed border-[color:var(--signal-low)] text-muted-foreground bg-muted/40",
 };
 
 export function SignalBadge({ signal, className }: { signal: SignalKind; className?: string }) {
@@ -25,8 +25,9 @@ export function SignalBadge({ signal, className }: { signal: SignalKind; classNa
       )}
     >
       <span
-        className="h-1 w-1 rounded-full"
+        className="h-1.5 w-1.5"
         style={{ backgroundColor: `var(--signal-${signal})` }}
+        aria-hidden
       />
       {labels[signal]}
     </span>
