@@ -29,6 +29,7 @@ import {
   type PublicHouseDTO,
 } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
+import { resolveBrandUrl } from "@/lib/brand-links";
 
 function detailToBrand(h: HouseDetailDTO): Brand {
   return {
@@ -120,6 +121,7 @@ function BrandPage() {
 }
 
 function AuthenticatedBrand({ brand }: { brand: Brand }) {
+  const visitUrl = resolveBrandUrl(brand.websiteUrl, brand.links);
   return (
     <PageLayout>
       <div className="pt-12 md:pt-16">
@@ -155,9 +157,9 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
           range. When the window opens, head to {brand.name} directly to browse what's on.
         </p>
         <div className="mt-6">
-          {brand.websiteUrl ? (
+          {visitUrl ? (
             <a
-              href={brand.websiteUrl}
+              href={visitUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-11 items-center gap-2 border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
