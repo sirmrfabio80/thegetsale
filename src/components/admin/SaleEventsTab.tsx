@@ -243,7 +243,7 @@ export function SaleEventsTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-end md:justify-between">
-        <div className="grid w-full grid-cols-2 gap-3 md:w-auto md:grid-cols-4">
+        <div className="grid w-full grid-cols-2 gap-3 md:w-auto md:grid-cols-5">
           <div>
             <label className="eyebrow mb-1 block">Brand</label>
             <Select
