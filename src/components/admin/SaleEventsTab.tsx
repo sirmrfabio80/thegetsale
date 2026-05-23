@@ -105,6 +105,7 @@ export function SaleEventsTab() {
           category: filters.category ?? null,
           saleType: (filters.saleType as any) ?? null,
           status: (filters.status as any) ?? null,
+          countryCode: filters.countryCode ?? null,
         },
       }),
   });
