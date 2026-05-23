@@ -116,8 +116,7 @@ export function SaleEventsTab() {
       toast.success("Status updated");
       qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Couldn't update status"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Couldn't update status"),
     onSettled: () => setPendingStatusId(null),
   });
 
@@ -128,8 +127,7 @@ export function SaleEventsTab() {
       qc.invalidateQueries({ queryKey: ["admin", "sale_events"] });
       setToDelete(null);
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Couldn't delete"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Couldn't delete"),
   });
 
   const bulkStatusMut = useMutation({
@@ -166,8 +164,7 @@ export function SaleEventsTab() {
 
   const visibleIds = useMemo(() => rows.map((r) => r.id), [rows]);
   const selectedCount = selectedIds.size;
-  const allVisibleSelected =
-    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
   const someVisibleSelected = visibleIds.some((id) => selectedIds.has(id));
   const bulkBusy = bulkStatusMut.isPending || bulkDeleteMut.isPending;
 
@@ -229,10 +226,7 @@ export function SaleEventsTab() {
     const y = savedScrollRef.current;
     savedScrollRef.current = null;
     const raf = requestAnimationFrame(() => {
-      const max = Math.max(
-        0,
-        document.documentElement.scrollHeight - window.innerHeight,
-      );
+      const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       window.scrollTo({ top: Math.min(y, max) });
     });
     return () => cancelAnimationFrame(raf);
@@ -360,9 +354,7 @@ export function SaleEventsTab() {
             <span className="font-medium">
               {bulkBusy
                 ? bulkActionLabel(
-                    bulkStatusMut.isPending
-                      ? bulkStatusMut.variables?.status
-                      : "delete",
+                    bulkStatusMut.isPending ? bulkStatusMut.variables?.status : "delete",
                     selectedCount,
                   )
                 : `${selectedCount} selected`}
@@ -378,10 +370,8 @@ export function SaleEventsTab() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {(["published", "hidden", "draft"] as const).map((s) => {
-              const active =
-                bulkStatusMut.isPending && bulkStatusMut.variables?.status === s;
-              const label =
-                s === "published" ? "Publish" : s === "hidden" ? "Hide" : "Draft";
+              const active = bulkStatusMut.isPending && bulkStatusMut.variables?.status === s;
+              const label = s === "published" ? "Publish" : s === "hidden" ? "Hide" : "Draft";
               return (
                 <button
                   key={s}
@@ -447,9 +437,7 @@ export function SaleEventsTab() {
         {!listQ.isLoading && rows.length === 0 && (
           <div className="flex flex-col items-center gap-4 border border-border py-10 px-4 text-center">
             <p className="text-sm text-muted-foreground">
-              {hasFilters
-                ? "No sale events match these filters."
-                : "No sale events yet."}
+              {hasFilters ? "No sale events match these filters." : "No sale events yet."}
             </p>
             {hasFilters ? (
               <Button
@@ -476,8 +464,7 @@ export function SaleEventsTab() {
           <div
             key={r.id}
             className={
-              "border p-4 " +
-              (selectedIds.has(r.id) ? "border-foreground" : "border-border")
+              "border p-4 " + (selectedIds.has(r.id) ? "border-foreground" : "border-border")
             }
           >
             <div className="flex items-start justify-between gap-3">
@@ -488,9 +475,7 @@ export function SaleEventsTab() {
                   aria-label={`Select ${r.brandName ?? "sale event"}`}
                   className="mt-0.5"
                 />
-                <div className="font-medium">
-                  {r.brandName ?? brandMap.get(r.brandId) ?? "—"}
-                </div>
+                <div className="font-medium">{r.brandName ?? brandMap.get(r.brandId) ?? "—"}</div>
               </div>
               <span
                 className={
@@ -537,9 +522,7 @@ export function SaleEventsTab() {
                   type="button"
                   disabled={pendingStatusId === r.id}
                   className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
-                  onClick={() =>
-                    statusMut.mutate({ id: r.id, status: "draft" })
-                  }
+                  onClick={() => statusMut.mutate({ id: r.id, status: "draft" })}
                 >
                   {pendingStatusId === r.id ? "Updating…" : "Draft"}
                 </button>
@@ -549,9 +532,7 @@ export function SaleEventsTab() {
                   type="button"
                   disabled={pendingStatusId === r.id}
                   className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
-                  onClick={() =>
-                    statusMut.mutate({ id: r.id, status: "published" })
-                  }
+                  onClick={() => statusMut.mutate({ id: r.id, status: "published" })}
                 >
                   {pendingStatusId === r.id ? "Updating…" : "Publish"}
                 </button>
@@ -561,9 +542,7 @@ export function SaleEventsTab() {
                   type="button"
                   disabled={pendingStatusId === r.id}
                   className="h-10 border border-border px-3 text-[11px] uppercase tracking-[0.18em] text-foreground disabled:opacity-50"
-                  onClick={() =>
-                    statusMut.mutate({ id: r.id, status: "hidden" })
-                  }
+                  onClick={() => statusMut.mutate({ id: r.id, status: "hidden" })}
                 >
                   {pendingStatusId === r.id ? "Updating…" : "Hide"}
                 </button>
@@ -580,16 +559,10 @@ export function SaleEventsTab() {
         ))}
         {hasMoreMobile && (
           <>
-            <div
-              ref={sentinelRef}
-              aria-hidden
-              className="h-px w-full"
-            />
+            <div ref={sentinelRef} aria-hidden className="h-px w-full" />
             <button
               type="button"
-              onClick={() =>
-                setMobileLimit((n) => Math.min(n + MOBILE_PAGE_SIZE, rows.length))
-              }
+              onClick={() => setMobileLimit((n) => Math.min(n + MOBILE_PAGE_SIZE, rows.length))}
               className="h-11 w-full border border-border text-[11px] uppercase tracking-[0.18em] text-foreground"
             >
               Load more ({rows.length - mobileLimit} remaining)
@@ -603,7 +576,6 @@ export function SaleEventsTab() {
         )}
       </div>
 
-
       {/* Desktop: table */}
       <div className="hidden border border-border md:block">
         <Table>
@@ -612,11 +584,7 @@ export function SaleEventsTab() {
               <TableHead className="w-10">
                 <Checkbox
                   checked={
-                    allVisibleSelected
-                      ? true
-                      : someVisibleSelected
-                        ? "indeterminate"
-                        : false
+                    allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false
                   }
                   onCheckedChange={(v) => toggleAllVisible(v === true)}
                   aria-label="Select all visible sale events"
@@ -732,9 +700,7 @@ export function SaleEventsTab() {
                         type="button"
                         disabled={pendingStatusId === r.id}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50"
-                        onClick={() =>
-                          statusMut.mutate({ id: r.id, status: "draft" })
-                        }
+                        onClick={() => statusMut.mutate({ id: r.id, status: "draft" })}
                       >
                         {pendingStatusId === r.id ? "Updating…" : "Draft"}
                       </button>
@@ -744,9 +710,7 @@ export function SaleEventsTab() {
                         type="button"
                         disabled={pendingStatusId === r.id}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50"
-                        onClick={() =>
-                          statusMut.mutate({ id: r.id, status: "published" })
-                        }
+                        onClick={() => statusMut.mutate({ id: r.id, status: "published" })}
                       >
                         {pendingStatusId === r.id ? "Updating…" : "Publish"}
                       </button>
@@ -756,9 +720,7 @@ export function SaleEventsTab() {
                         type="button"
                         disabled={pendingStatusId === r.id}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-50"
-                        onClick={() =>
-                          statusMut.mutate({ id: r.id, status: "hidden" })
-                        }
+                        onClick={() => statusMut.mutate({ id: r.id, status: "hidden" })}
                       >
                         {pendingStatusId === r.id ? "Updating…" : "Hide"}
                       </button>
@@ -799,7 +761,6 @@ export function SaleEventsTab() {
           setDialogOpen(true);
         }}
       />
-
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>

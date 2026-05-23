@@ -38,7 +38,10 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
     await ensureAdmin(supabase, userId);
 
     const [{ data: profiles, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
-      supabase.from("profiles").select("id, display_name").order("display_name", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select("id, display_name")
+        .order("display_name", { ascending: true }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr) throw new Error(pErr.message);

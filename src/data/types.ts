@@ -1,11 +1,6 @@
 export type SignalKind = "soon" | "hold" | "buy" | "low";
 
-export type Category =
-  | "Womens"
-  | "Mens"
-  | "Accessories"
-  | "Footwear"
-  | "Jewellery";
+export type Category = "Womens" | "Mens" | "Accessories" | "Footwear" | "Jewellery";
 
 export interface SaleEvent {
   date: string; // ISO

@@ -23,7 +23,9 @@ function AuthCallback() {
     const decide = async () => {
       // Small grace period to let the Lovable broker complete setSession.
       for (let i = 0; i < 25; i++) {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           if (cancelled) return;
           // If a redirect was supplied, validate it; otherwise fall back to setup/dashboard.

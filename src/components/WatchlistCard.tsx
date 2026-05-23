@@ -64,7 +64,9 @@ export function WatchlistCard({
             />
           )}
           <div className="min-w-0">
-            <p className="eyebrow mb-2">{brand.category} · {brandDepartment(brand)}</p>
+            <p className="eyebrow mb-2">
+              {brand.category} · {brandDepartment(brand)}
+            </p>
             <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               Watching since {formatDate(item.addedAt)}
@@ -83,10 +85,10 @@ export function WatchlistCard({
           Why this is on top
         </p>
         <p className="mt-1 text-[12px] leading-relaxed text-foreground/80">
-          {signalPhrase(brand.signal)} · {brand.confidence}% confidence · {windowPhrase(brand.windowDays)}
+          {signalPhrase(brand.signal)} · {brand.confidence}% confidence ·{" "}
+          {windowPhrase(brand.windowDays)}
         </p>
       </div>
-
 
       <div className="mt-5 flex items-center justify-between text-[12px]">
         <Link

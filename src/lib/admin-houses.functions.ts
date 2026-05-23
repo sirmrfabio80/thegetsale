@@ -129,9 +129,7 @@ export const createHouse = createServerFn({ method: "POST" })
 
 export const updateHouse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).and(HouseInput).parse(input),
-  )
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).and(HouseInput).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await ensureAdmin(supabase, userId);

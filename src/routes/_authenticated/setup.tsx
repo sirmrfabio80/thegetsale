@@ -8,11 +8,7 @@ import { NotificationCard } from "@/components/setup/NotificationCard";
 import { ReviewRow } from "@/components/setup/ReviewRow";
 import { StepHeader } from "@/components/setup/StepHeader";
 import { Button } from "@/components/ui/button";
-import {
-  DEPARTMENT_OPTIONS,
-  type Department,
-  type StylePreference,
-} from "@/data/setupStorage";
+import { DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
 import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore";
 import { listSetupOptions } from "@/lib/setup-options.functions";
 
@@ -21,7 +17,6 @@ const setupOptionsQueryOptions = queryOptions({
   queryFn: () => listSetupOptions(),
   staleTime: 5 * 60_000,
 });
-
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({
@@ -91,7 +86,17 @@ function SetupPage() {
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
     });
-  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest, save]);
+  }, [
+    hydrated,
+    departments,
+    houses,
+    categories,
+    styles,
+    emailSignals,
+    smsDrops,
+    weeklyDigest,
+    save,
+  ]);
 
   const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
@@ -264,8 +269,7 @@ function SetupPage() {
           {options.houseGroups.map((group) => {
             const filteredHouses = group.houses.filter((h) => {
               const matchesQuery =
-                !houseQuery ||
-                h.name.toLowerCase().includes(houseQuery.toLowerCase());
+                !houseQuery || h.name.toLowerCase().includes(houseQuery.toLowerCase());
               const matchesSelected = !housesSelectedOnly || houses.has(h.name);
               return matchesQuery && matchesSelected;
             });
@@ -291,20 +295,14 @@ function SetupPage() {
               (acc, g) =>
                 acc +
                 g.houses.filter((h) => {
-                  const mq =
-                    !houseQuery ||
-                    h.name.toLowerCase().includes(houseQuery.toLowerCase());
+                  const mq = !houseQuery || h.name.toLowerCase().includes(houseQuery.toLowerCase());
                   const ms = !housesSelectedOnly || houses.has(h.name);
                   return mq && ms;
                 }).length,
               0,
             );
             if (totalVisible === 0) {
-              return (
-                <p className="text-sm text-muted-foreground">
-                  No houses match your filters.
-                </p>
-              );
+              return <p className="text-sm text-muted-foreground">No houses match your filters.</p>;
             }
             return null;
           })()}
@@ -364,8 +362,7 @@ function SetupPage() {
           {options.categories
             .filter((cat) => {
               const matchesQuery =
-                !categoryQuery ||
-                cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
+                !categoryQuery || cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
               const matchesSelected = !categoriesSelectedOnly || categories.has(cat.label);
               return matchesQuery && matchesSelected;
             })
@@ -380,8 +377,7 @@ function SetupPage() {
           {(() => {
             const visible = options.categories.filter((cat) => {
               const mq =
-                !categoryQuery ||
-                cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
+                !categoryQuery || cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
               const ms = !categoriesSelectedOnly || categories.has(cat.label);
               return mq && ms;
             });
@@ -456,7 +452,8 @@ function SetupPage() {
                 !styleQuery ||
                 opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
                 (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
-              const matchesSelected = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
+              const matchesSelected =
+                !stylesSelectedOnly || styles.has(opt.label as StylePreference);
               return matchesQuery && matchesSelected;
             })
             .map((opt) => {
@@ -521,7 +518,8 @@ function SetupPage() {
         />
 
         <p className="mt-2 max-w-xl text-sm italic text-muted-foreground">
-          We'll honour these once email alerts ship. Until then, check the dashboard for today's read.
+          We'll honour these once email alerts ship. Until then, check the dashboard for today's
+          read.
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-3">
@@ -540,7 +538,6 @@ function SetupPage() {
         </div>
       </section>
 
-
       <SectionRule />
 
       {/* Step 6 — Review */}
@@ -554,16 +551,11 @@ function SetupPage() {
             onEdit={() => scrollToStep("step-departments")}
           >
             {departments.size === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                None selected — pick at least one.
-              </p>
+              <p className="text-sm text-muted-foreground">None selected — pick at least one.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {[...departments].map((d) => (
-                  <span
-                    key={d}
-                    className="border border-border px-3 py-1 text-xs text-foreground"
-                  >
+                  <span key={d} className="border border-border px-3 py-1 text-xs text-foreground">
                     {d}
                   </span>
                 ))}
@@ -573,16 +565,11 @@ function SetupPage() {
 
           <ReviewRow title="Houses" count={houses.size} onEdit={() => scrollToStep("step-houses")}>
             {houses.size === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                None selected — pick at least three.
-              </p>
+              <p className="text-sm text-muted-foreground">None selected — pick at least three.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {[...houses].map((h) => (
-                  <span
-                    key={h}
-                    className="border border-border px-3 py-1 text-xs text-foreground"
-                  >
+                  <span key={h} className="border border-border px-3 py-1 text-xs text-foreground">
                     {h}
                   </span>
                 ))}
@@ -596,16 +583,11 @@ function SetupPage() {
             onEdit={() => scrollToStep("step-categories")}
           >
             {categories.size === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                None selected — pick at least one.
-              </p>
+              <p className="text-sm text-muted-foreground">None selected — pick at least one.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {[...categories].map((c) => (
-                  <span
-                    key={c}
-                    className="border border-border px-3 py-1 text-xs text-foreground"
-                  >
+                  <span key={c} className="border border-border px-3 py-1 text-xs text-foreground">
                     {c}
                   </span>
                 ))}
@@ -613,11 +595,7 @@ function SetupPage() {
             )}
           </ReviewRow>
 
-          <ReviewRow
-            title="Style"
-            count={styles.size}
-            onEdit={() => scrollToStep("step-styles")}
-          >
+          <ReviewRow title="Style" count={styles.size} onEdit={() => scrollToStep("step-styles")}>
             {styles.size === 0 ? (
               <p className="text-sm text-muted-foreground">
                 None selected — we'll show a balanced read.
@@ -625,18 +603,13 @@ function SetupPage() {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {[...styles].map((s) => (
-                  <span
-                    key={s}
-                    className="border border-border px-3 py-1 text-xs text-foreground"
-                  >
+                  <span key={s} className="border border-border px-3 py-1 text-xs text-foreground">
                     {s}
                   </span>
                 ))}
               </div>
             )}
           </ReviewRow>
-
-
 
           <ReviewRow title="Alerts (coming soon)" onEdit={() => scrollToStep("step-notifications")}>
             <dl className="space-y-2 text-sm">
@@ -658,7 +631,9 @@ function SetupPage() {
 
       <div className="flex flex-col items-stretch gap-3 pb-8 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
-          {valid ? "Ready when you are." : "Pick at least 3 fashion houses to continue. Everything else is optional."}
+          {valid
+            ? "Ready when you are."
+            : "Pick at least 3 fashion houses to continue. Everything else is optional."}
         </p>
         <Button
           onClick={handleStart}

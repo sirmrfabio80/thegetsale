@@ -199,9 +199,7 @@ function ProfilePage() {
     <PageLayout>
       <section className="pt-16 md:pt-24">
         <p className="eyebrow">Account</p>
-        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">
-          Your profile.
-        </h1>
+        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">Your profile.</h1>
         <p className="mt-4 max-w-xl text-muted-foreground">
           A quiet face for the houses you follow. Used only inside The Get.
         </p>
@@ -214,11 +212,7 @@ function ProfilePage() {
           <ProfileSkeleton />
         ) : (
           <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-10">
-            <AvatarBlock
-              url={profile.avatarUrl}
-              fallback={fallback}
-              loading={uploading}
-            />
+            <AvatarBlock url={profile.avatarUrl} fallback={fallback} loading={uploading} />
 
             <div className="flex-1">
               <p className="eyebrow">Signed in as</p>
@@ -294,11 +288,7 @@ function ProfilePage() {
                   disabled={uploading || removeMutation.isPending}
                   className="h-11 rounded-none px-5 text-[11px] uppercase tracking-[0.18em]"
                 >
-                  {uploading
-                    ? "Uploading…"
-                    : hasAvatar
-                    ? "Replace photo"
-                    : "Upload photo"}
+                  {uploading ? "Uploading…" : hasAvatar ? "Replace photo" : "Upload photo"}
                 </Button>
                 {hasAvatar && (
                   <button

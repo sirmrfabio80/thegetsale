@@ -39,9 +39,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm, busy }: Props) {
   if (!src) return null;
 
   // Baseline "cover" size: shortest side fills the viewport.
-  const cover = natural
-    ? VIEWPORT / Math.min(natural.w, natural.h)
-    : 1;
+  const cover = natural ? VIEWPORT / Math.min(natural.w, natural.h) : 1;
   const drawW = natural ? natural.w * cover * scale : 0;
   const drawH = natural ? natural.h * cover * scale : 0;
 

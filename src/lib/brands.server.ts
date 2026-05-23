@@ -61,9 +61,7 @@ function asLabel(raw: string | null | undefined): ConfidenceLabel {
 }
 
 function asSignal(raw: string | null | undefined): SignalKind | null {
-  return raw === "buy" || raw === "soon" || raw === "hold" || raw === "low"
-    ? raw
-    : null;
+  return raw === "buy" || raw === "soon" || raw === "hold" || raw === "low" ? raw : null;
 }
 
 function formatDepth(min: number | null, max: number | null): string {

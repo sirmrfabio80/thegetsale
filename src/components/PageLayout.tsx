@@ -32,10 +32,7 @@ function TopNav() {
   const normalize = (s: string | null | undefined) => (s && s.trim() ? s.trim() : null);
   const emailDerived = localPartFromEmail(profile?.email ?? auth.email);
   const displayName =
-    normalize(profile?.displayName) ??
-    normalize(auth.displayName) ??
-    emailDerived ??
-    null;
+    normalize(profile?.displayName) ?? normalize(auth.displayName) ?? emailDerived ?? null;
   const fallback = displayName ?? "?";
   const triggerLabel = displayName ?? "";
 

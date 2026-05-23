@@ -2,7 +2,9 @@ import { createFileRoute, Link, notFound, isRedirect, isNotFound } from "@tansta
 
 function isAuthShapedError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
-  return /Unauthorized|JWT|issued at future|AuthSession|Invalid token|Invalid Refresh Token/i.test(msg);
+  return /Unauthorized|JWT|issued at future|AuthSession|Invalid token|Invalid Refresh Token/i.test(
+    msg,
+  );
 }
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
@@ -79,17 +81,16 @@ export const Route = createFileRoute("/brand/$id")({
           ? loaderData.house.tagline
           : "";
     return {
-      meta: [
-        { title: `${name} — The Get` },
-        { name: "description", content: desc },
-      ],
+      meta: [{ title: `${name} — The Get` }, { name: "description", content: desc }],
     };
   },
   errorComponent: ({ error, reset }) => (
     <PageLayout>
       <div className="py-24 text-center">
         <p className="text-sm text-muted-foreground">{error.message}</p>
-        <button onClick={reset} className="mt-4 underline">Try again</button>
+        <button onClick={reset} className="mt-4 underline">
+          Try again
+        </button>
       </div>
     </PageLayout>
   ),
@@ -98,7 +99,9 @@ export const Route = createFileRoute("/brand/$id")({
       <div className="py-24 text-center">
         <p className="eyebrow">Not found</p>
         <h1 className="mt-3 font-serif text-3xl">This house isn't on our watch.</h1>
-        <Link to="/" className="mt-6 inline-block underline">Back to The Get</Link>
+        <Link to="/" className="mt-6 inline-block underline">
+          Back to The Get
+        </Link>
       </div>
     </PageLayout>
   ),
@@ -126,7 +129,8 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
 
       <section className="pt-8 md:pt-10">
         <p className="eyebrow">
-          {brand.category} <span className="text-muted-foreground/60">·</span> {brandDepartment(brand)}
+          {brand.category} <span className="text-muted-foreground/60">·</span>{" "}
+          {brandDepartment(brand)}
         </p>
         <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
         <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
@@ -143,8 +147,8 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       <SectionRule label={`See the pieces at ${brand.name}`} />
       <section className="border border-border bg-card px-6 py-8 md:px-10 md:py-10">
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          The Get doesn't store individual pieces — sales belong to the house and
-          cover their full range. When the window opens, head to {brand.name}
+          The Get doesn't store individual pieces — sales belong to the house and cover their full
+          range. When the window opens, head to {brand.name}
           directly to browse what's on.
         </p>
         <div className="mt-6">
@@ -198,8 +202,6 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
   const promptSignIn = () => {
     navigate({ to: "/login", search: signupSearch });
   };
-
-
 
   return (
     <MarketingLayout>
@@ -268,31 +270,24 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
           <div className="md:col-span-7">
             <p className="eyebrow">Editor's read</p>
             <p className="mt-4 font-serif text-2xl leading-snug text-foreground md:text-3xl">
-              We're tracking {brand.name}. The next move is taking shape — and
-              members will see it before the rest of the room.
+              We're tracking {brand.name}. The next move is taking shape — and members will see it
+              before the rest of the room.
             </p>
             <p className="mt-6 max-w-prose text-sm leading-relaxed text-muted-foreground">
-              Sign in to read the full signal: when to buy, when to wait, the
-              factors behind the call, and the complete sale archive for this
-              house.
+              Sign in to read the full signal: when to buy, when to wait, the factors behind the
+              call, and the complete sale archive for this house.
             </p>
           </div>
 
           {/* Redacted stat tiles */}
           <div className="md:col-span-5">
             <ul className="grid grid-cols-3 gap-px bg-border">
-              {[
-                { label: "Signal" },
-                { label: "Window" },
-                { label: "Depth" },
-              ].map((tile) => (
+              {[{ label: "Signal" }, { label: "Window" }, { label: "Depth" }].map((tile) => (
                 <li
                   key={tile.label}
                   className="flex flex-col items-start justify-between bg-background p-5"
                 >
-                  <span className="eyebrow text-muted-foreground">
-                    {tile.label}
-                  </span>
+                  <span className="eyebrow text-muted-foreground">{tile.label}</span>
                   <span
                     aria-hidden
                     className="mt-6 font-serif text-3xl leading-none tracking-tight text-foreground/15 select-none"
@@ -317,8 +312,8 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                 What you'll see after sign-in.
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                A closer look at the dossier we keep on {brand.name} — and
-                every house you choose to follow.
+                A closer look at the dossier we keep on {brand.name} — and every house you choose to
+                follow.
               </p>
             </div>
 
@@ -329,10 +324,9 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                     The signal — buy, hold, or wait
                   </AccordionTrigger>
                   <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                    A clear recommendation with a confidence score, the
-                    expected discount window, and how deep the markdown is
-                    likely to go. No guesswork, no scrolling through twenty
-                    tabs.
+                    A clear recommendation with a confidence score, the expected discount window,
+                    and how deep the markdown is likely to go. No guesswork, no scrolling through
+                    twenty tabs.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -341,10 +335,9 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                     Why we're calling it
                   </AccordionTrigger>
                   <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                    The factors behind the read — cadence, inventory
-                    movement, seasonal patterns, and house-specific tells —
-                    written in plain language by the editors who follow
-                    {" "}{brand.name}.
+                    The factors behind the read — cadence, inventory movement, seasonal patterns,
+                    and house-specific tells — written in plain language by the editors who follow{" "}
+                    {brand.name}.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -353,9 +346,8 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                     The full sale archive
                   </AccordionTrigger>
                   <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                    Every markdown {brand.name} has run, with dates, depths,
-                    and the name of each edit. Useful for spotting the rhythm
-                    before the next one lands.
+                    Every markdown {brand.name} has run, with dates, depths, and the name of each
+                    edit. Useful for spotting the rhythm before the next one lands.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -364,9 +356,8 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                     A private watchlist
                   </AccordionTrigger>
                   <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                    Follow {brand.name} alongside the other houses you care
-                    about. We'll keep an eye on the tempo so you don't have
-                    to refresh anything.
+                    Follow {brand.name} alongside the other houses you care about. We'll keep an eye
+                    on the tempo so you don't have to refresh anything.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -375,9 +366,8 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                     The pieces worth watching
                   </AccordionTrigger>
                   <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                    A shortlist of items from {brand.name} we think are
-                    likely to move — with prices, stock notes, and a quiet
-                    read on which ones tend to disappear first.
+                    A shortlist of items from {brand.name} we think are likely to move — with
+                    prices, stock notes, and a quiet read on which ones tend to disappear first.
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -393,8 +383,8 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
               "The shopping gets quieter once you can hear the tempo."
             </p>
             <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-              Join The Get to follow {brand.name} and the other houses you care
-              about. Free while we're in preview.
+              Join The Get to follow {brand.name} and the other houses you care about. Free while
+              we're in preview.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link

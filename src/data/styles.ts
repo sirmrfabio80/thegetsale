@@ -22,10 +22,7 @@ const STYLE_KEYWORDS: Record<StylePreference, string[]> = {
   Contemporary: ["contemporary", "modern", "daily", "wearable", "ready-to-wear"],
 };
 
-export function styleScore(
-  tagline: string,
-  styles: StylePreference[] | undefined,
-): number {
+export function styleScore(tagline: string, styles: StylePreference[] | undefined): number {
   if (!styles || styles.length === 0) return 0;
   const t = tagline.toLowerCase();
   let score = 0;

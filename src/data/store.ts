@@ -1,9 +1,4 @@
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback } from "react";
 import { toast } from "@/lib/toast";
@@ -57,17 +52,14 @@ export function useWatchlistMutations() {
         watchlistQueryOptions.queryKey,
       );
       if (previous && !previous.some((e) => e.brandId === slug)) {
-        queryClient.setQueryData<WatchlistEntryDTO[]>(
-          watchlistQueryOptions.queryKey,
-          [
-            {
-              brandId: slug,
-              brandUuid: "optimistic",
-              addedAt: new Date().toISOString(),
-            },
-            ...previous,
-          ],
-        );
+        queryClient.setQueryData<WatchlistEntryDTO[]>(watchlistQueryOptions.queryKey, [
+          {
+            brandId: slug,
+            brandUuid: "optimistic",
+            addedAt: new Date().toISOString(),
+          },
+          ...previous,
+        ]);
       }
       return { previous };
     },
@@ -169,9 +161,6 @@ export function useWatchlistMutations() {
     add,
     remove,
     removeMany,
-    isPending:
-      addMutation.isPending ||
-      removeMutation.isPending ||
-      removeManyMutation.isPending,
+    isPending: addMutation.isPending || removeMutation.isPending || removeManyMutation.isPending,
   };
 }

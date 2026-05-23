@@ -56,7 +56,14 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const FILTERS: Array<"All" | Category> = ["All", "Womens", "Mens", "Accessories", "Footwear", "Jewellery"];
+const FILTERS: Array<"All" | Category> = [
+  "All",
+  "Womens",
+  "Mens",
+  "Accessories",
+  "Footwear",
+  "Jewellery",
+];
 
 function Dashboard() {
   const { data: houseDTOs } = useSuspenseQuery(housesQueryOptions);
@@ -99,7 +106,6 @@ function Dashboard() {
     save({ departments: next });
   }, [hasSetup, departments, setup, save]);
 
-
   const matchedIds = useMemo(() => {
     const ids = new Set<string>();
     if (!hasSetup) return ids;
@@ -112,7 +118,10 @@ function Dashboard() {
   const filtered = useMemo(() => {
     const base = brands.filter((b) => {
       const matchCat = filter === "All" || b.category === filter;
-      const matchQ = !q || b.name.toLowerCase().includes(q.toLowerCase()) || b.tagline.toLowerCase().includes(q.toLowerCase());
+      const matchQ =
+        !q ||
+        b.name.toLowerCase().includes(q.toLowerCase()) ||
+        b.tagline.toLowerCase().includes(q.toLowerCase());
       const matchMine = !onlyMine || matchedIds.has(b.id);
       const matchDept = departments.size === 0 || departments.has(brandDepartment(b));
       return matchCat && matchQ && matchMine && matchDept;
@@ -136,7 +145,6 @@ function Dashboard() {
     });
   };
 
-
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
     const buy = brands.filter((b) => b.signal === "buy").length;
@@ -147,9 +155,7 @@ function Dashboard() {
     <PageLayout>
       <section className="pt-16 md:pt-24">
         <p className="eyebrow">Today's signals</p>
-        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">
-          Your buy/wait read.
-        </h1>
+        <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">Your buy/wait read.</h1>
         <p className="mt-4 max-w-xl text-muted-foreground">
           {counts.total > 0
             ? `${counts.total} ${counts.total === 1 ? "house" : "houses"}, watched closely. ${counts.wait} suggest waiting, ${counts.buy} suggest acting now.`
@@ -157,12 +163,14 @@ function Dashboard() {
         </p>
       </section>
 
-
       <div className="mt-10 flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         {hasSetup ? (
           <p>
-            Personalised · {houseCount} {houseCount === 1 ? "house" : "houses"} · {catCount} {catCount === 1 ? "category" : "categories"}
-            {styles.length > 0 ? ` · Tuned to ${styles.slice(0, 2).join(", ")}${styles.length > 2 ? "…" : ""}` : ""}
+            Personalised · {houseCount} {houseCount === 1 ? "house" : "houses"} · {catCount}{" "}
+            {catCount === 1 ? "category" : "categories"}
+            {styles.length > 0
+              ? ` · Tuned to ${styles.slice(0, 2).join(", ")}${styles.length > 2 ? "…" : ""}`
+              : ""}
           </p>
         ) : (
           <p>Personalise this feed</p>
@@ -174,7 +182,9 @@ function Dashboard() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Department</span>
+        <span className="mr-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          Department
+        </span>
         {DEPARTMENT_OPTIONS.map(({ value }) => {
           const active = departments.has(value);
           return (
@@ -204,7 +214,6 @@ function Dashboard() {
       </div>
 
       <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
@@ -249,7 +258,10 @@ function Dashboard() {
           {onlyMine ? (
             <p>
               Nothing in your selections today.{" "}
-              <button onClick={() => setOnlyMine(false)} className="underline underline-offset-4 hover:text-foreground">
+              <button
+                onClick={() => setOnlyMine(false)}
+                className="underline underline-offset-4 hover:text-foreground"
+              >
                 Loosen the filter
               </button>{" "}
               or{" "}

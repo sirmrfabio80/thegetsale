@@ -23,7 +23,10 @@ export function localPartFromEmail(email: string | null | undefined): string | n
   const trimmed = email.trim();
   const at = trimmed.indexOf("@");
   if (at <= 0) return null;
-  const local = trimmed.slice(0, at).replace(/[._-]+/g, " ").trim();
+  const local = trimmed
+    .slice(0, at)
+    .replace(/[._-]+/g, " ")
+    .trim();
   if (!local) return null;
   return local
     .split(/\s+/)
@@ -87,7 +90,9 @@ function ensureSubscribed() {
   // onAuthStateChange fires INITIAL_SESSION on subscribe, so no manual
   // getSession() call is needed — that would double-invalidate on boot.
   try {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       try {
         emit(fromUser(session?.user ?? null));
       } catch (err) {
@@ -165,7 +170,9 @@ async function signInWithProvider(
       redirect_uri: buildCallbackUrl(redirectTo),
     });
     if (result.error) {
-      return { error: result.error instanceof Error ? result.error : new Error(String(result.error)) };
+      return {
+        error: result.error instanceof Error ? result.error : new Error(String(result.error)),
+      };
     }
     if (result.redirected) return { redirected: true };
     // Tokens received and session already set — caller should navigate.
@@ -175,8 +182,11 @@ async function signInWithProvider(
   }
 }
 
-
-export type EmailAuthResult = { error?: Error; needsVerification?: boolean; authenticated?: boolean };
+export type EmailAuthResult = {
+  error?: Error;
+  needsVerification?: boolean;
+  authenticated?: boolean;
+};
 
 export async function signUpWithEmail(
   email: string,
@@ -232,5 +242,3 @@ export async function updatePassword(password: string): Promise<{ error?: Error 
     return { error: e instanceof Error ? e : new Error(String(e)) };
   }
 }
-
-

@@ -35,7 +35,10 @@ function LoginPage() {
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>
               Forgot your password?{" "}
-              <Link to="/forgot-password" className="text-foreground underline underline-offset-4 hover:opacity-70">
+              <Link
+                to="/forgot-password"
+                className="text-foreground underline underline-offset-4 hover:opacity-70"
+              >
                 Reset it
               </Link>
             </p>

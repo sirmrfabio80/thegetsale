@@ -13,10 +13,7 @@ const SlugListInput = z.object({
   slugs: z.array(z.string().min(1).max(120)).min(1).max(100),
 });
 
-async function resolveBrandId(
-  supabase: any,
-  slug: string,
-): Promise<string | null> {
+async function resolveBrandId(supabase: any, slug: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("brands")
     .select("id")

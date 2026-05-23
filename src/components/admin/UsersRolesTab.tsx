@@ -25,8 +25,7 @@ export function UsersRolesTab() {
   });
 
   const mut = useMutation({
-    mutationFn: (vars: { userId: string; isAdmin: boolean }) =>
-      setAdmin({ data: vars }),
+    mutationFn: (vars: { userId: string; isAdmin: boolean }) => setAdmin({ data: vars }),
     onSuccess: (_d, vars) => {
       toast.success(vars.isAdmin ? "Admin access granted" : "Admin access revoked");
       qc.invalidateQueries({ queryKey: ["admin", "users"] });
@@ -86,13 +85,9 @@ export function UsersRolesTab() {
                   <Button
                     variant="outline"
                     disabled={mut.isPending || (isSelf && u.isAdmin)}
-                    onClick={() =>
-                      mut.mutate({ userId: u.id, isAdmin: !u.isAdmin })
-                    }
+                    onClick={() => mut.mutate({ userId: u.id, isAdmin: !u.isAdmin })}
                     className="h-9 rounded-none px-3 text-[11px] uppercase tracking-[0.18em]"
-                    title={
-                      isSelf && u.isAdmin ? "You can't revoke your own admin" : undefined
-                    }
+                    title={isSelf && u.isAdmin ? "You can't revoke your own admin" : undefined}
                   >
                     {u.isAdmin ? "Revoke admin" : "Make admin"}
                   </Button>
