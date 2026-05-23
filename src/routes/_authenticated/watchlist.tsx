@@ -24,7 +24,9 @@ function toBrand(h: HouseDashboardDTO): Brand {
   return {
     id: h.id,
     name: h.name,
-    category: (h.category as Category) || "Womens",
+    categories: ((h.categories ?? []) as Category[]).length > 0
+      ? (h.categories as Category[])
+      : (["Womens"] as Category[]),
     tagline: h.tagline,
     signal: h.signal,
     headline: h.headline,

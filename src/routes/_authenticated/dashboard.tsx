@@ -21,7 +21,9 @@ function toBrand(h: HouseDashboardDTO): Brand {
   return {
     id: h.id,
     name: h.name,
-    category: (h.category as Category) || "Womens",
+    categories: ((h.categories ?? []) as Category[]).length > 0
+      ? (h.categories as Category[])
+      : (["Womens"] as Category[]),
     tagline: h.tagline,
     signal: h.signal,
     headline: h.headline,
@@ -117,7 +119,7 @@ function Dashboard() {
 
   const filtered = useMemo(() => {
     const base = brands.filter((b) => {
-      const matchCat = filter === "All" || b.category === filter;
+      const matchCat = filter === "All" || (b.categories ?? []).includes(filter);
       const matchQ =
         !q ||
         b.name.toLowerCase().includes(q.toLowerCase()) ||
