@@ -135,6 +135,12 @@ export const listSaleEvents = createServerFn({ method: "POST" })
         category: z.string().trim().max(80).optional().nullable(),
         saleType: z.enum(SALE_TYPES).optional().nullable(),
         status: z.enum(SALE_STATUSES).optional().nullable(),
+        // "" = filter to Global (NULL) rows only; 2-letter code = that market; null/undefined = no filter
+        countryCode: z
+          .string()
+          .regex(/^([a-z]{2})?$/, "Invalid market code")
+          .optional()
+          .nullable(),
       })
       .parse(input ?? {}),
   )
@@ -148,6 +154,8 @@ export const listSaleEvents = createServerFn({ method: "POST" })
     if (data.category) q = q.ilike("category", `%${data.category}%`);
     if (data.saleType) q = q.eq("sale_type", data.saleType);
     if (data.status) q = q.eq("status", data.status);
+    if (data.countryCode === "") q = q.is("country_code", null);
+    else if (data.countryCode) q = q.eq("country_code", data.countryCode);
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
