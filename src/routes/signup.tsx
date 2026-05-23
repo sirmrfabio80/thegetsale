@@ -49,7 +49,7 @@ function SignupPage() {
           </p>
           <Link
             to="/login"
-            search={redirectTo ? { redirect: redirectTo } : undefined}
+            search={redirectTo ? { redirect: redirectTo } : {}}
             className="mt-10 inline-flex h-12 items-center justify-center border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
           >
             Sign in
