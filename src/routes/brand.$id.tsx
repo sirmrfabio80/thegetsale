@@ -150,8 +150,7 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       <section className="border border-border bg-card px-6 py-8 md:px-10 md:py-10">
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
           The Get doesn't store individual pieces — sales belong to the house and cover their full
-          range. When the window opens, head to {brand.name}
-          directly to browse what's on.
+          range. When the window opens, head to {brand.name} directly to browse what's on.
         </p>
         <div className="mt-6">
           {brand.websiteUrl ? (
@@ -164,9 +163,13 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
               Open {brand.name}
             </a>
           ) : (
-            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Brand link coming soon
-            </p>
+            <button
+              type="button"
+              disabled
+              className="inline-flex h-11 cursor-not-allowed items-center gap-2 border border-border px-5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground opacity-40"
+            >
+              → Visit {brand.name}
+            </button>
           )}
         </div>
       </section>
