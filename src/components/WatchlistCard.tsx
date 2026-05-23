@@ -65,7 +65,7 @@ export function WatchlistCard({
           )}
           <div className="min-w-0">
             <p className="eyebrow mb-2">
-              {brand.category} · {brandDepartment(brand)}
+              {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
             </p>
             <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
             <p className="mt-1 text-xs text-muted-foreground">

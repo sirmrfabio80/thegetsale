@@ -1,60 +1,135 @@
-# Editorial polish: dashboard, brand cards, signal badges, brand detail
+# Brand categories + localised URLs — investigation & plan
 
-A pure UI/copy pass. No data, routing, or business-logic changes. No new dependencies. No background imagery or toasts.
+## 1. What I found
 
-## 1. `src/components/BrandCard.tsx`
+### `brands.category` is single-value
 
-- Add a thin left-border accent (`border-l-2`) whose colour comes from a per-signal map → `var(--signal-buy|soon|hold|low)`. Apply via inline `style={{ borderLeftColor: ... }}` on the `<Link>` so we can use the CSS variables already in `styles.css`.
-- Bump house name from `text-2xl` → `text-[1.5rem]` (Instrument Serif already applied via `font-serif`).
-- Bump metric value from `text-lg` → `text-[1.1rem]` and add `font-variant-numeric: tabular-nums` (via a `tabular-nums` utility class).
-- Hover state: brighten left border (slightly higher-chroma oklch variant via a `:hover` style or a CSS custom property swap) + add `hover:shadow-[0_2px_12px_oklch(0_0_0/0.06)]`. Remove the existing `md:hover:-translate-y-px` transform per spec ("no scale transform").
+- Schema: `brands.category text` (nullable). One value per brand.
+- `Category` TS union: `"Womens" | "Mens" | "Accessories" | "Footwear" | "Jewellery"` (`src/data/types.ts`).
+- Current data: 33 of 34 seeded houses are `"Womens"`, 1 is `"Mens"`. No brand currently expresses multi-category reality (e.g. Reiss = womens + mens + accessories; lululemon = womens + mens; Marni / Acne / Isabel Marant = womens + mens + accessories; etc.).
+- Read sites:
+  - `src/lib/brands.functions.ts` — `BRAND_COLS`, `toBrand()` mapper, `searchBrands()` admin query
+  - `src/data/categoryMap.ts` — `brandDepartment(b)` (Womens→Womenswear, Mens→Menswear, else Unisex) and `matchesSelection()` (checks `mappedCategories.has(brand.category)`)
+  - `src/routes/_authenticated/dashboard.tsx` — filter chips: `b.category === filter`; "1 category / N categories" copy
+  - `src/components/BrandCard.tsx`, `src/components/WatchlistCard.tsx`, `src/routes/brand.$id.tsx` — display `{brand.category} · {brandDepartment(brand)}`
+- `product_categories.maps_to text[]` already uses the array pattern as the canonical taxonomy bridge (e.g. `Bags → {Accessories}`, `Ready-to-wear → {Womens, Mens}`).
+- `sale_events.category` is per-sale (which slice of the brand is on sale) and is a separate concern — **do not change**.
 
-## 2. `src/components/SignalBadge.tsx`
+### `website_url` has US-defaulted entries
 
-- Replace the round bullet `<span class="rounded-full">` with a 6×6px filled square (`h-1.5 w-1.5`, no rounding), colour from `var(--signal-{signal})`.
-- For `buy`: keep the existing tinted bg/border/text using `--signal-buy` (already there, just verify the ~8% tint reads warm — current `/5` is fine).
-- For `low`: switch border from `border` solid → `border-dashed`.
-- Label typography is already 10px uppercase 0.18em tracking — confirm and leave.
+Stored URLs that force a US destination:
 
-## 3. `src/routes/_authenticated/dashboard.tsx`
+- Claudie Pierlot → `https://us.claudiepierlot.com`
+- Maje → `https://us.maje.com`
+- ME+EM → `https://us.meandem.com`
+- Sandro → `https://us.sandro-paris.com`
+- lululemon → `https://shop.lululemon.com` (this one is the actual global storefront — leave)
 
-- Change eyebrow copy: `"Today's signals"` → `"The Read · Today"`.
-- After the headline paragraph and before the personalisation strip, add a hairline `<div class="hairline mt-10" />` followed by a one-line distribution summary in `.eyebrow` style: `"X BUY · Y SOON · Z HOLD · W LOW"`. Compute from `brands` in the existing `counts` useMemo (extend it to include `hold` and `low`).
-- Reduce the gap between the Department filter row and the Category filter row: drop the second row's `mt-4` to `mt-2` (or wrap both in a single `space-y-2` block).
-- Rename the `"Only my selections"` button label → `"My Houses"`.
+There is no locale-resolution layer. UI just renders `brand.websiteUrl` as the "Visit site" link.
 
-## 4. `src/routes/brand.$id.tsx` (authenticated view only)
+## 2. Is this a real bug?
 
-- Fix broken string at lines 153–154: render as `head to {brand.name} directly to browse what's on.` (add the missing space).
-- Replace the "Brand link coming soon" label (lines 167–169) with a disabled ghost button:
-  ```tsx
-  <button type="button" disabled
-    className="inline-flex h-11 items-center gap-2 border border-border px-5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground opacity-40 cursor-not-allowed">
-    → Visit {brand.name}
-  </button>
-  ```
+**Yes — two real bugs.**
 
-## 5. `src/components/RecommendationCard.tsx` (the Editor's note pull-quote)
+1. **Single `category` mis-models reality.** Most premium houses sell across womenswear, menswear, and accessories simultaneously. The current shape forces a wrong choice, breaks dashboard filtering (a user filtering "Mens" sees only 1 house even though many of the seeded houses sell menswear), and prevents accurate personalisation against `user_setup.categories`.
+2. **US-defaulted URLs** route non-US users to the wrong storefront. This is a UX and trust regression for a premium-fashion product positioned for an international audience.
 
-- Add a thin left rule using `--signal-soon`: `border-l-2` with `style={{ borderLeftColor: 'var(--signal-soon)' }}` (and increase left padding so content doesn't shift).
-- Bump headline from `text-3xl md:text-4xl` → `text-[2rem] md:text-[2rem]` Instrument Serif **italic** (add `italic`) so it reads as a pull-quote.
+## 3. Recommended data model
 
-## 6. `src/routes/_authenticated/watchlist.tsx`
+### Categories → `text[]` on `brands`
 
-- Change empty-state headline at line 401 from `"Your watchlist is empty."` → `"Nothing on your watchlist yet. Add the houses you're watching."` (keep surrounding CTA copy as-is).
+Pick `categories text[] not null default '{}'` over a join table because:
 
-## 7. Handoff doc
+- Categories are a small closed enum (5 values), no per-relationship metadata needed.
+- The codebase already uses `text[]` for the same shape elsewhere (`product_categories.maps_to`, `user_setup.categories/styles/houses/departments`).
+- Filtering stays a one-liner (`.contains('categories', [filter])` server-side, `arr.includes(filter)` client-side); no joins, no N+1.
+- A `brand_categories` join would add ceremony with no payoff at this scale.
 
-- Append a short entry to `AI_PROJECT_HANDOFF.md` noting: editorial polish pass — per-signal left accents on BrandCard, square signal-badge markers + dashed border for `low`, dashboard masthead distribution line, "My Houses" rename, "The Read · Today" eyebrow, brand-detail copy + ghost-button fix, RecommendationCard pull-quote treatment, watchlist empty-state rewording.
+Keep the old `category` column during migration to preserve data, then drop in a follow-up once code is cut over. Research each brand and add the missing categories. Add also the brand **Weekend Max Mara.**
 
-## Out of scope (explicit)
+### URLs → keep canonical + add `brand_links` for locales
 
-- No changes to signal enum values, routing, server functions, or admin tab labels.
-- No `routeTree.gen.ts`, no `src/integrations/supabase/*`.
-- No `sonner` / `<Toaster />`.
-- No background images, video, or decorative photography.
+- `brands.website_url` stays as the **canonical/global URL** (no `/us`, no country subdomain when a global one exists).
+- New table `brand_links (brand_id uuid, country_code text, url text, primary key (brand_id, country_code))` for per-country overrides.
+- Resolution helper picks: `brand_links` for user locale → else canonical `website_url`.
+- User locale: read from browser `navigator.language` for now (cheap, no extra deps); leave a clean seam to swap to a stored `profiles.country_code` later.
 
-## Verification
+## 4. Migration plan
 
-- Capture `/dashboard` and `/brand/<id>` (authenticated, via existing preview session) before/after at the current viewport (1071px) to confirm: left accent renders per signal, badge square shows, `low` badge is dashed, distribution line reads correctly, hover lift has no transform, pull-quote left rule is amber-ish.
-- Tabular-nums check: confidence/window values align vertically across two stacked cards.
+**DB migration (single migration file):**
+
+1. `alter table brands add column categories text[] not null default '{}';`
+2. Backfill: `update brands set categories = array[category] where category is not null and category <> '';`
+3. Create `brand_links` table + RLS (read for authenticated, admin-manage), matching the `brands` policy pattern.
+4. Index: `create index brands_categories_gin on brands using gin (categories);`
+5. Leave `brands.category` in place for one release as a deprecated mirror. Drop in a follow-up migration after code is verified.
+
+**Data fix (insert tool, separate step):**
+
+- Rewrite the 4 US-defaulted `website_url` values to canonical globals:
+  - Claudie Pierlot → `https://www.claudiepierlot.com`
+  - Maje → `https://www.maje.com`
+  - ME+EM → `https://meandem.com`
+  - Sandro → `https://www.sandro-paris.com`
+- Seed `brands.categories` with realistic multi-values for the 34 seeded houses (e.g. Reiss = Womens, Mens, Accessories; Marni = Womens, Mens, Accessories, Footwear; pure womenswear houses stay `{Womens}`).
+- Optional: seed `brand_links` with `us` overrides where the US site is meaningfully different from the canonical.
+
+## 5. Files likely affected
+
+- `src/data/types.ts` — `Brand.category: Category` → `categories: Category[]`
+- `src/lib/brands.functions.ts` — `BRAND_COLS`, Zod row schema, `toBrand()` mapper, `searchBrands` select
+- `src/data/categoryMap.ts` — `brandDepartment()` (derive from array; if both Womens+Mens → "Unisex"), `matchesSelection()` (set intersection)
+- `src/routes/_authenticated/dashboard.tsx` — filter chip predicate, "N categories" counter
+- `src/components/BrandCard.tsx`, `src/components/WatchlistCard.tsx`, `src/routes/brand.$id.tsx` — render joined list ("Womens · Mens · Accessories") with `brandDepartment` derived from array
+- New: `src/lib/brand-links.ts` (resolver helper) — pure client util, no new server fn needed for v1
+- Admin: no admin UI currently edits `brand.category`, so admin forms are unaffected for v1. (Editing categories from the admin UI can be a follow-up.)
+- **Unchanged**: `sale_events.category`, `admin-sales.functions.ts`, `SaleEventDrawer`, `product_categories` taxonomy, generated `types.ts` (auto-regens).
+
+## 6. Risks & regression checks
+
+**Risks**
+
+- Dashboard filter logic change could double-count a house under multiple chips. Counter must use distinct house IDs.
+- `brandDepartment()` semantics shift: `{Womens, Mens}` should map to "Unisex" — verify existing copy on BrandCard / WatchlistCard / detail still reads cleanly.
+- During the transition window both `category` (singular) and `categories` (array) coexist — UI must read only `categories`.
+- URL changes for 4 houses: verify each canonical actually serves the brand's global homepage (no redirect loop to `/us`).
+
+**Regression checks**
+
+- Dashboard renders with old single-category data backfilled into array (should look identical before reseed).
+- Filter chips: "Womens" still shows all womenswear houses; "Mens" now shows every house that includes Mens.
+- Watchlist + brand detail render category list without layout break on long lists.
+- `matchesSelection()` against `user_setup.categories` still returns the same set for users who selected a single category.
+- "Visit site" link on brand detail opens the canonical URL; if `navigator.language` starts with `en-US` and a `brand_links` US row exists, it picks the US URL.
+- No console errors; types compile after `types.ts` regen.
+
+## 7. Implementation plan (for approval)
+
+**Step A — DB migration** (one migration call)
+
+- Add `brands.categories text[] not null default '{}'` + GIN index
+- Backfill from existing `category`
+- Create `brand_links` table + RLS policies (auth read, admin manage) + updated_at trigger
+
+**Step B — Data update** (insert tool)
+
+- Rewrite the 4 US-defaulted `website_url` values
+- Populate `brands.categories` for the 34 seeded houses with realistic multi-category values
+- (Optional) seed a handful of `brand_links` US overrides where genuinely needed
+
+**Step C — Code cutover** (small, surgical edits)
+
+1. `src/data/types.ts`: `Brand.categories: Category[]`
+2. `src/lib/brands.functions.ts`: select `categories`, map to `categories`; keep returning array
+3. `src/data/categoryMap.ts`: `brandDepartment` derives from array (W+M ⇒ Unisex), `matchesSelection` uses array intersection
+4. `BrandCard` / `WatchlistCard` / `brand.$id.tsx`: render `categories.join(" · ")` with `brandDepartment(brand)`
+5. `dashboard.tsx`: filter predicate `b.categories.includes(filter)`; counter uses distinct brand IDs
+6. New `src/lib/brand-links.ts`: `resolveBrandUrl(brand, links, locale)` pure helper; wire into the "Visit site" CTA on brand detail
+7. Fetch `brand_links` rows for the current brand alongside the brand fetch in the detail route loader/server fn
+
+**Step D — Follow-up (separate PR, not in this plan)**
+
+- Drop `brands.category` once code has been live for one release
+- Admin UI for editing `categories` and `brand_links`
+
+If you approve, I'll execute A → B → C in that order, in a single build pass, with regression checks against the dashboard, watchlist, and a brand detail page.

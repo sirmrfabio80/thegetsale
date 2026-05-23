@@ -2,8 +2,12 @@ import type { Brand, Category } from "./types";
 import type { Department } from "./setupStorage";
 
 export function brandDepartment(b: Brand): Department {
-  if (b.category === "Womens") return "Womenswear";
-  if (b.category === "Mens") return "Menswear";
+  const cats = b.categories ?? [];
+  const hasW = cats.includes("Womens");
+  const hasM = cats.includes("Mens");
+  if (hasW && hasM) return "Unisex";
+  if (hasW) return "Womenswear";
+  if (hasM) return "Menswear";
   return "Unisex";
 }
 
@@ -31,6 +35,8 @@ export function matchesSelection(
   mappedCategories: Set<Category>,
 ): boolean {
   if (selectedHouses.has(brand.name)) return true;
-  if (mappedCategories.has(brand.category)) return true;
+  for (const c of brand.categories ?? []) {
+    if (mappedCategories.has(c)) return true;
+  }
   return false;
 }

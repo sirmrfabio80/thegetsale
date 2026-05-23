@@ -13,10 +13,15 @@ export interface SignalFactor {
   note: string;
 }
 
+export interface BrandLink {
+  countryCode: string; // ISO 3166-1 alpha-2, lowercase (e.g. "us", "gb")
+  url: string;
+}
+
 export interface Brand {
   id: string;
   name: string;
-  category: Category;
+  categories: Category[];
   tagline: string;
   signal: SignalKind;
   headline: string; // short recommendation
@@ -28,6 +33,7 @@ export interface Brand {
   factors: SignalFactor[];
   history: SaleEvent[];
   websiteUrl?: string | null;
+  links?: BrandLink[];
 }
 
 export interface WatchlistItem {

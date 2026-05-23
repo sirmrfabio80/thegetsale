@@ -10,6 +10,7 @@ export type BrandRow = {
   slug: string;
   name: string;
   category: string | null;
+  categories: string[] | null;
   tagline: string | null;
   editorial_copy: string | null;
 };

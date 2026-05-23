@@ -29,12 +29,15 @@ import {
   type PublicHouseDTO,
 } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
+import { resolveBrandUrl } from "@/lib/brand-links";
 
 function detailToBrand(h: HouseDetailDTO): Brand {
   return {
     id: h.id,
     name: h.name,
-    category: (h.category as Category) || "Womens",
+    categories: ((h.categories ?? []) as Category[]).length > 0
+      ? (h.categories as Category[])
+      : (["Womens"] as Category[]),
     tagline: h.tagline,
     signal: h.signal,
     headline: h.headline,
@@ -46,6 +49,7 @@ function detailToBrand(h: HouseDetailDTO): Brand {
     factors: h.factors,
     history: h.history,
     websiteUrl: h.websiteUrl,
+    links: h.links.map((l) => ({ countryCode: l.countryCode, url: l.url })),
   };
 }
 
@@ -117,6 +121,7 @@ function BrandPage() {
 }
 
 function AuthenticatedBrand({ brand }: { brand: Brand }) {
+  const visitUrl = resolveBrandUrl(brand.websiteUrl, brand.links);
   return (
     <PageLayout>
       <div className="pt-12 md:pt-16">
@@ -131,8 +136,7 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
 
       <section className="pt-8 md:pt-10">
         <p className="eyebrow">
-          {brand.category} <span className="text-muted-foreground/60">·</span>{" "}
-          {brandDepartment(brand)}
+          {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
         </p>
         <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
         <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
@@ -153,9 +157,9 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
           range. When the window opens, head to {brand.name} directly to browse what's on.
         </p>
         <div className="mt-6">
-          {brand.websiteUrl ? (
+          {visitUrl ? (
             <a
-              href={brand.websiteUrl}
+              href={visitUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-11 items-center gap-2 border border-foreground bg-foreground px-5 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
@@ -193,9 +197,12 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
   );
 }
 
-function publicDepartment(category: string): "Womenswear" | "Menswear" | "Unisex" {
-  if (category === "Womens") return "Womenswear";
-  if (category === "Mens") return "Menswear";
+function publicDepartment(categories: string[]): "Womenswear" | "Menswear" | "Unisex" {
+  const hasW = categories.includes("Womens");
+  const hasM = categories.includes("Mens");
+  if (hasW && hasM) return "Unisex";
+  if (hasW) return "Womenswear";
+  if (hasM) return "Menswear";
   return "Unisex";
 }
 
@@ -264,11 +271,13 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
             <dl className="space-y-5 text-[13px] leading-relaxed">
               <div>
                 <dt className="eyebrow text-muted-foreground">House</dt>
-                <dd className="mt-1 text-foreground">{brand.category}</dd>
+                <dd className="mt-1 text-foreground">
+                  {(brand.categories ?? []).join(" · ") || "—"}
+                </dd>
               </div>
               <div>
                 <dt className="eyebrow text-muted-foreground">Department</dt>
-                <dd className="mt-1 text-foreground">{publicDepartment(brand.category)}</dd>
+                <dd className="mt-1 text-foreground">{publicDepartment(brand.categories ?? [])}</dd>
               </div>
               <div>
                 <dt className="eyebrow text-muted-foreground">Cadence</dt>
