@@ -460,3 +460,9 @@ Implications enforced in the UI:
     (2rem Instrument Serif italic) with a left rule in `--signal-soon`.
   - Watchlist empty-state headline: `Nothing on your watchlist yet. Add
     the houses you're watching.`
+- **Brand database seed — 18 new houses added** (May 2026):
+  Acne Studios, Bec + Bridge, CAMILLA AND MARC, Damson Madder, FARM Rio,
+  FRAME, GANNI, Isabel Marant, Isabel Marant Étoile, JOSEPH, Marni,
+  Never Fully Dressed, RIXO, Samsøe Samsøe, Soeur, Theory, TOTEME,
+  Zimmermann. All fully populated with slug, category (Womens), tagline,
+  website URL, country, description, house group, and editorial copy.
