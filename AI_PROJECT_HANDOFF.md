@@ -441,3 +441,22 @@ Implications enforced in the UI:
   instead of relying on a (disabled) toast.
 - Onboarding gate relaxed to just 3 houses; SMS toggle hidden until a real
   alert pipeline exists; notifications section labelled "coming soon".
+- Editorial polish pass (BrandCard, SignalBadge, dashboard, brand detail,
+  RecommendationCard, watchlist empty state):
+  - `BrandCard` now has a per-signal left-border accent (`--signal-{buy|soon|hold|low}`),
+    larger serif house name (1.5rem), tabular-nums metric values (1.1rem),
+    and a subtle hover shadow (no transform).
+  - `SignalBadge` uses a 6×6 filled square marker (not a dot); `buy` reads
+    as a warm tinted pill (`/[0.08]`); `low` uses a dashed border to signal
+    uncertainty through form.
+  - Dashboard eyebrow renamed `Today's signals` → `The Read · Today`; a
+    hairline + distribution line (`X Buy · Y Soon · Z Hold · W Low`,
+    tabular-nums) sits beneath the headline. Department/category filter
+    rows tightened (`mt-2`). "Only my selections" → "My Houses".
+  - Brand detail: fixed broken `Maison Ardoisedirectly` string; replaced
+    "Brand link coming soon" label with a disabled ghost button
+    `→ Visit {brand.name}` (opacity-40, cursor-not-allowed).
+  - `RecommendationCard` Editor's Note headline reads as a pull-quote
+    (2rem Instrument Serif italic) with a left rule in `--signal-soon`.
+  - Watchlist empty-state headline: `Nothing on your watchlist yet. Add
+    the houses you're watching.`
