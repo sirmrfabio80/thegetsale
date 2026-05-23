@@ -4,7 +4,7 @@ export const brands: Brand[] = [
   {
     id: "maison-ardoise",
     name: "Maison Ardoise",
-    category: "Womens",
+    categories: ["Womens"],
     tagline: "Parisian ready-to-wear, archival cuts.",
     signal: "soon",
     headline: "Wait — a markdown window is likely within two weeks.",
@@ -28,7 +28,7 @@ export const brands: Brand[] = [
   {
     id: "north-room",
     name: "North Room",
-    category: "Mens",
+    categories: ["Mens"],
     tagline: "Quiet tailoring from Copenhagen.",
     signal: "hold",
     headline: "Hold. No clear signal in the next month.",
@@ -52,7 +52,7 @@ export const brands: Brand[] = [
   {
     id: "verre-atelier",
     name: "Verre Atelier",
-    category: "Accessories",
+    categories: ["Accessories"],
     tagline: "Hand-finished leather, Florence.",
     signal: "buy",
     headline: "Buy now — this item rarely discounts.",
@@ -76,7 +76,7 @@ export const brands: Brand[] = [
   {
     id: "halden",
     name: "Halden",
-    category: "Footwear",
+    categories: ["Footwear"],
     tagline: "British shoemaking, modern last.",
     signal: "soon",
     headline: "A discreet sale is likely within the month.",
@@ -100,7 +100,7 @@ export const brands: Brand[] = [
   {
     id: "ostra",
     name: "Östra",
-    category: "Womens",
+    categories: ["Womens"],
     tagline: "Stockholm minimalism, considered fabrics.",
     signal: "low",
     headline: "No strong signal. Watching quietly.",
@@ -124,7 +124,7 @@ export const brands: Brand[] = [
   {
     id: "ferrum-co",
     name: "Ferrum & Co.",
-    category: "Jewellery",
+    categories: ["Jewellery"],
     tagline: "Solid-gold essentials, made to order.",
     signal: "buy",
     headline: "Buy now — pricing tied to materials, not season.",
@@ -148,7 +148,7 @@ export const brands: Brand[] = [
   {
     id: "branwell",
     name: "Branwell",
-    category: "Mens",
+    categories: ["Mens"],
     tagline: "Heritage knitwear, Scottish mills.",
     signal: "soon",
     headline: "An end-of-season cut is likely within three weeks.",
@@ -172,7 +172,7 @@ export const brands: Brand[] = [
   {
     id: "lune-prive",
     name: "Lune Privé",
-    category: "Accessories",
+    categories: ["Accessories"],
     tagline: "Silk scarves and small leather goods.",
     signal: "hold",
     headline: "Hold. Signals are mixed for the next month.",
