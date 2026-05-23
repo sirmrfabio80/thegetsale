@@ -164,7 +164,11 @@ export function SaleEventsTab() {
   const rows = listQ.data ?? [];
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
   const hasFilters =
-    !!filters.brandId || !!filters.category || !!filters.saleType || !!filters.status;
+    !!filters.brandId ||
+    !!filters.category ||
+    !!filters.saleType ||
+    !!filters.status ||
+    filters.countryCode !== undefined;
 
   const visibleIds = useMemo(() => rows.map((r) => r.id), [rows]);
   const selectedCount = selectedIds.size;
