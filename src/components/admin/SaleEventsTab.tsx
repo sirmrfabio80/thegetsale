@@ -683,14 +683,14 @@ export function SaleEventsTab() {
               ))}
             {listQ.isLoading && (
               <TableRow>
-                <TableCell colSpan={9} className="sr-only">
+                <TableCell colSpan={10} className="sr-only">
                   Loading sale events…
                 </TableCell>
               </TableRow>
             )}
             {!listQ.isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={10} className="py-8 text-center text-sm text-muted-foreground">
                   No sale events yet.
                 </TableCell>
               </TableRow>
