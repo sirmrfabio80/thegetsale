@@ -48,15 +48,18 @@ import {
 } from "@/lib/admin-sales.functions";
 import { SaleEventDrawer } from "./SaleEventDrawer";
 import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
+import { MARKETS, marketLabel } from "@/lib/markets";
 
 type Filters = {
   brandId?: string;
   category?: string;
   saleType?: string;
   status?: string;
+  countryCode?: string; // "" = Global only, undefined = any
 };
 
 const ANY = "__any__";
+const GLOBAL = "__global__";
 
 export function SaleEventsTab() {
   const qc = useQueryClient();
