@@ -87,8 +87,9 @@ export const Route = createFileRoute("/brand/$id")({
   errorComponent: ({ error, reset }) => (
     <PageLayout>
       <div className="py-24 text-center">
-        <p className="text-sm text-muted-foreground">{error.message}</p>
-        <button onClick={reset} className="mt-4 underline">
+        <p className="eyebrow text-muted-foreground">Couldn't load this brand</p>
+        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
+        <button onClick={reset} className="mt-4 underline underline-offset-4">
           Try again
         </button>
       </div>
@@ -98,7 +99,7 @@ export const Route = createFileRoute("/brand/$id")({
     <PageLayout>
       <div className="py-24 text-center">
         <p className="eyebrow">Not found</p>
-        <h1 className="mt-3 font-serif text-3xl">This house isn't on our watch.</h1>
+        <h1 className="mt-3 font-serif text-3xl">We don't track this brand yet.</h1>
         <Link to="/" className="mt-6 inline-block underline">
           Back to The Get
         </Link>
@@ -163,7 +164,7 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
             </a>
           ) : (
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              House link coming soon
+              Brand link coming soon
             </p>
           )}
         </div>

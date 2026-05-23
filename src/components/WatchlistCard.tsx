@@ -25,12 +25,12 @@ export function WatchlistCard({
   if (!brand) {
     return (
       <article className="border border-dashed border-border bg-card px-5 py-6">
-        <p className="eyebrow text-muted-foreground">No longer tracked</p>
+        <p className="eyebrow text-muted-foreground">Removed from tracking</p>
         <h3 className="mt-2 font-serif text-2xl leading-tight">
-          This house has been removed from our index.
+          We're no longer following this brand.
         </h3>
         <p className="mt-2 text-xs text-muted-foreground">
-          Watching since {formatDate(item.addedAt)}
+          On your watchlist since {formatDate(item.addedAt)}
         </p>
         <div className="mt-5 text-[12px]">
           <button

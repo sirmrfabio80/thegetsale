@@ -246,7 +246,7 @@ function Dashboard() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search a house…"
+          placeholder="Search a brand…"
           className="w-full border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-foreground focus:outline-none md:w-64"
         />
       </div>
@@ -257,12 +257,12 @@ function Dashboard() {
         <div className="py-16 text-center text-sm text-muted-foreground">
           {onlyMine ? (
             <p>
-              Nothing in your selections today.{" "}
+              None of your brands match right now.{" "}
               <button
                 onClick={() => setOnlyMine(false)}
                 className="underline underline-offset-4 hover:text-foreground"
               >
-                Loosen the filter
+                See all brands
               </button>{" "}
               or{" "}
               <Link to="/setup" className="underline underline-offset-4 hover:text-foreground">
@@ -271,7 +271,7 @@ function Dashboard() {
               .
             </p>
           ) : (
-            <p>No houses match that read.</p>
+            <p>No brands match — try a different filter or search.</p>
           )}
         </div>
       ) : (
