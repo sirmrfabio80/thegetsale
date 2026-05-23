@@ -249,7 +249,7 @@ function Dashboard() {
                   : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
               )}
             >
-              Only my selections
+              My Houses
             </button>
           )}
         </div>
