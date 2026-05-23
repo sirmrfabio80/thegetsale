@@ -58,7 +58,9 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
 
 function WatchlistPage() {
   const items = useWatchlist();
-  const { data: houseDTOs } = useSuspenseQuery(housesQueryOptions);
+  const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
+  const houseDTOs = dashboard.houses;
+  const needsMarket = dashboard.needsMarket;
   const brandsBySlug = useMemo(() => {
     const m = new Map<string, Brand>();
     for (const h of houseDTOs) m.set(h.id, toBrand(h));
