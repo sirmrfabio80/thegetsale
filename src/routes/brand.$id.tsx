@@ -253,7 +253,7 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
                 )}
               </button>
               <p className="text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:text-left">
-                Free while in preview
+                Complimentary during preview
               </p>
             </div>
           </div>
