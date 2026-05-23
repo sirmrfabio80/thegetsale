@@ -34,7 +34,9 @@ function detailToBrand(h: HouseDetailDTO): Brand {
   return {
     id: h.id,
     name: h.name,
-    category: (h.category as Category) || "Womens",
+    categories: ((h.categories ?? []) as Category[]).length > 0
+      ? (h.categories as Category[])
+      : (["Womens"] as Category[]),
     tagline: h.tagline,
     signal: h.signal,
     headline: h.headline,
@@ -46,6 +48,7 @@ function detailToBrand(h: HouseDetailDTO): Brand {
     factors: h.factors,
     history: h.history,
     websiteUrl: h.websiteUrl,
+    links: h.links.map((l) => ({ countryCode: l.countryCode, url: l.url })),
   };
 }
 
@@ -131,7 +134,8 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
 
       <section className="pt-8 md:pt-10">
         <p className="eyebrow">
-          {brand.category} <span className="text-muted-foreground/60">·</span>{" "}
+          {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
+          <span className="text-muted-foreground/60"> · </span>
           {brandDepartment(brand)}
         </p>
         <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
