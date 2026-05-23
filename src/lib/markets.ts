@@ -16,24 +16,31 @@ export type MarketCode =
   | "ca"
   | "jp";
 
-export const MARKETS: { code: MarketCode; label: string }[] = [
-  { code: "us", label: "United States" },
-  { code: "gb", label: "United Kingdom" },
-  { code: "fr", label: "France" },
-  { code: "de", label: "Germany" },
-  { code: "it", label: "Italy" },
-  { code: "es", label: "Spain" },
-  { code: "nl", label: "Netherlands" },
-  { code: "se", label: "Sweden" },
-  { code: "dk", label: "Denmark" },
-  { code: "au", label: "Australia" },
-  { code: "ca", label: "Canada" },
-  { code: "jp", label: "Japan" },
+export type MarketEntry = { code: MarketCode; label: string; flag: string };
+
+export const MARKETS: MarketEntry[] = [
+  { code: "us", label: "United States", flag: "🇺🇸" },
+  { code: "gb", label: "United Kingdom", flag: "🇬🇧" },
+  { code: "fr", label: "France", flag: "🇫🇷" },
+  { code: "de", label: "Germany", flag: "🇩🇪" },
+  { code: "it", label: "Italy", flag: "🇮🇹" },
+  { code: "es", label: "Spain", flag: "🇪🇸" },
+  { code: "nl", label: "Netherlands", flag: "🇳🇱" },
+  { code: "se", label: "Sweden", flag: "🇸🇪" },
+  { code: "dk", label: "Denmark", flag: "🇩🇰" },
+  { code: "au", label: "Australia", flag: "🇦🇺" },
+  { code: "ca", label: "Canada", flag: "🇨🇦" },
+  { code: "jp", label: "Japan", flag: "🇯🇵" },
 ];
 
 const MARKET_LABEL = new Map<string, string>(MARKETS.map((m) => [m.code, m.label]));
+const MARKET_CODES = new Set<string>(MARKETS.map((m) => m.code));
 
 export function marketLabel(code: string | null | undefined): string {
   if (!code) return "Global";
   return MARKET_LABEL.get(code) ?? code.toUpperCase();
+}
+
+export function isMarketCode(code: string | null | undefined): code is MarketCode {
+  return !!code && MARKET_CODES.has(code);
 }

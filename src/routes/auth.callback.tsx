@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMySetup } from "@/lib/setup.functions";
 import { resolveRedirect } from "@/lib/safeRedirect";
+import { getMyProfile, setMyMarket } from "@/lib/profile.functions";
+import { clearPendingMarket, readPendingMarket } from "@/lib/detect-market";
 
 export const Route = createFileRoute("/auth/callback")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
@@ -28,6 +30,22 @@ function AuthCallback() {
         } = await supabase.auth.getSession();
         if (session) {
           if (cancelled) return;
+
+          // If a pending market was stashed before OAuth, persist it now
+          // (only when the profile doesn't already have one set).
+          const pendingMarket = readPendingMarket();
+          if (pendingMarket) {
+            try {
+              const profile = await getMyProfile();
+              if (!profile.market) {
+                await setMyMarket({ data: { market: pendingMarket } });
+              }
+            } catch {
+              /* non-blocking — user can set market from profile */
+            }
+            clearPendingMarket();
+          }
+
           // If a redirect was supplied, validate it; otherwise fall back to setup/dashboard.
           if (redirectTo !== undefined) {
             const resolved = resolveRedirect(redirectTo, "/dashboard");

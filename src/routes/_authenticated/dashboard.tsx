@@ -68,7 +68,9 @@ const FILTERS: Array<"All" | Category> = [
 ];
 
 function Dashboard() {
-  const { data: houseDTOs } = useSuspenseQuery(housesQueryOptions);
+  const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
+  const houseDTOs = dashboard.houses;
+  const needsMarket = dashboard.needsMarket;
   const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
   const { setup } = useSetup();
   const { save } = useSetupMutation();
@@ -157,7 +159,23 @@ function Dashboard() {
 
   return (
     <PageLayout>
+      {needsMarket && (
+        <section className="mt-10 border border-foreground/20 bg-muted/40 p-5 md:p-6">
+          <p className="eyebrow">Set your market</p>
+          <p className="mt-2 max-w-xl text-sm text-foreground">
+            Sale windows differ by country. Choose your market in your profile to see the right
+            read.
+          </p>
+          <Link
+            to="/profile"
+            className="mt-4 inline-flex h-10 items-center border border-foreground px-4 text-[11px] uppercase tracking-[0.18em] hover:bg-foreground hover:text-background"
+          >
+            Set your market
+          </Link>
+        </section>
+      )}
       <section className="pt-16 md:pt-24">
+
         <p className="eyebrow">The Read · Today</p>
         <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">Your buy/wait read.</h1>
         <p className="mt-4 max-w-xl text-muted-foreground">

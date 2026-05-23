@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import {
@@ -8,6 +8,9 @@ import {
   signUpWithEmail,
   type OAuthResult,
 } from "@/lib/auth";
+import { MarketSelect } from "@/components/MarketSelect";
+import { detectMarketFromLocale, stashPendingMarket } from "@/lib/detect-market";
+import type { MarketCode } from "@/lib/markets";
 
 type Mode = "signup" | "signin";
 
@@ -40,7 +43,25 @@ export function GoogleAuthCard({
   const [notice, setNotice] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [market, setMarket] = useState<MarketCode | null>(null);
   const navigate = useNavigate();
+
+  const isSignup = mode === "signup";
+
+  // Pre-fill from browser locale on mount (signup only). Runs client-side
+  // only — never blocks render or signup if detection fails.
+  useEffect(() => {
+    if (!isSignup) return;
+    const detected = detectMarketFromLocale();
+    if (detected) setMarket(detected);
+  }, [isSignup]);
+
+  // Keep sessionStorage in sync so OAuth callbacks can persist the choice
+  // after the user returns from Google/Apple.
+  useEffect(() => {
+    if (!isSignup) return;
+    stashPendingMarket(market);
+  }, [isSignup, market]);
 
   const goAfterAuth = () => {
     if (redirectTo) {
@@ -50,12 +71,21 @@ export function GoogleAuthCard({
     }
   };
 
+  const requireMarket = () => {
+    if (isSignup && !market) {
+      setError("Choose your market to continue.");
+      return false;
+    }
+    return true;
+  };
+
   const run = async (
     provider: "google" | "apple",
     fn: (redirectTo?: string) => Promise<OAuthResult>,
   ) => {
     setError(null);
     setNotice(null);
+    if (!requireMarket()) return;
     setPending(provider);
     try {
       const result = await fn(redirectTo);
@@ -79,6 +109,7 @@ export function GoogleAuthCard({
     e.preventDefault();
     setError(null);
     setNotice(null);
+    if (!requireMarket()) return;
     const parsed = credentialsSchema.safeParse({ email, password });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Check your details and try again.");
@@ -130,11 +161,31 @@ export function GoogleAuthCard({
       <h1 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">{heading}</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{supporting}</p>
 
+      {isSignup && (
+        <div className="mt-10">
+          <label
+            htmlFor="signup-market"
+            className="mb-2 block text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
+          >
+            Market
+          </label>
+          <MarketSelect
+            id="signup-market"
+            value={market}
+            onChange={setMarket}
+            disabled={busy}
+          />
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            We'll tailor sale windows to this market. You can change it anytime.
+          </p>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={() => run("google", signInWithGoogle)}
         disabled={busy}
-        className="mt-10 inline-flex h-12 w-full items-center justify-center gap-3 border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+        className={`${isSignup ? "mt-6" : "mt-10"} inline-flex h-12 w-full items-center justify-center gap-3 border border-foreground bg-foreground px-6 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 disabled:opacity-60`}
       >
         <GoogleGlyph />
         {pending === "google" ? "Connecting…" : buttonLabel}

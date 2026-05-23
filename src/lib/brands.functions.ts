@@ -11,6 +11,12 @@ import {
 
 export type BrandLinkDTO = { countryCode: string; url: string };
 
+export type DashboardResultDTO = {
+  houses: HouseDashboardDTO[];
+  needsMarket: boolean;
+  market: string | null;
+};
+
 export type HouseDashboardDTO = {
   id: string; // slug
   brandId: string; // uuid
@@ -37,6 +43,8 @@ export type HouseDetailDTO = HouseDashboardDTO & {
   factors: { title: string; note: string }[];
   algorithmVersion: string;
   links: BrandLinkDTO[];
+  needsMarket: boolean;
+  market: string | null;
 };
 
 export type PublicHouseDTO = {
@@ -100,10 +108,32 @@ const EVENT_COLS = "brand_id, start_date, discount_min, discount_max, admin_note
 const PREDICTION_COLS =
   "brand_id, predicted_start_date, confidence_score, confidence_label, signal, reasoning_summary, algorithm_version, status";
 
+async function getUserMarket(
+  supabase: { from: (t: string) => any },
+  userId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("market")
+    .eq("id", userId)
+    .maybeSingle();
+  return (data as { market?: string | null } | null)?.market ?? null;
+}
+
+function applyMarketFilter<T extends { or: (expr: string) => T }>(
+  query: T,
+  market: string,
+): T {
+  // Show events for the user's market plus global (NULL) events.
+  return query.or(`country_code.eq.${market},country_code.is.null`);
+}
+
 export const listHousesForDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<HouseDashboardDTO[]> => {
-    const { supabase } = context;
+  .handler(async ({ context }): Promise<DashboardResultDTO> => {
+    const { supabase, userId } = context;
+
+    const market = await getUserMarket(supabase, userId);
 
     const { data: brands, error: bErr } = await supabase
       .from("brands")
@@ -111,12 +141,26 @@ export const listHousesForDashboard = createServerFn({ method: "GET" })
       .eq("is_active", true)
       .order("name", { ascending: true });
     if (bErr) throw new Error(bErr.message);
-    if (!brands || brands.length === 0) return [];
+    if (!brands || brands.length === 0) {
+      return { houses: [], needsMarket: !market, market };
+    }
 
     const ids = brands.map((b: any) => b.id);
 
+    // If the user has no market set, return brand cards without any sale
+    // event data so the UI can show a "set your market" prompt.
+    if (!market) {
+      const houses = (brands as any[]).map((b) =>
+        toDashboardDTO(b as unknown as BrandRow, [], null),
+      );
+      return { houses, needsMarket: true, market: null };
+    }
+
     const [{ data: events }, { data: preds }] = await Promise.all([
-      supabase.from("sale_events").select(EVENT_COLS).in("brand_id", ids).eq("status", "published"),
+      applyMarketFilter(
+        supabase.from("sale_events").select(EVENT_COLS).in("brand_id", ids).eq("status", "published"),
+        market,
+      ),
       supabase
         .from("sale_predictions")
         .select(PREDICTION_COLS)
@@ -137,13 +181,15 @@ export const listHousesForDashboard = createServerFn({ method: "GET" })
       predsByBrand.set(p.brand_id, arr);
     }
 
-    return (brands as any[]).map((b) =>
+    const houses = (brands as any[]).map((b) =>
       toDashboardDTO(
         b as unknown as BrandRow,
         eventsByBrand.get(b.id) ?? [],
         pickLatestPrediction(predsByBrand.get(b.id) ?? null),
       ),
     );
+
+    return { houses, needsMarket: false, market };
   });
 
 const SlugInput = z.object({ slug: z.string().min(1).max(120) });
@@ -167,7 +213,9 @@ export const getHouseDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => SlugInput.parse(input))
   .handler(async ({ data, context }): Promise<HouseDetailDTO | null> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+
+    const market = await getUserMarket(supabase, userId);
 
     const { data: brand, error } = await supabase
       .from("brands")
@@ -179,13 +227,17 @@ export const getHouseDetail = createServerFn({ method: "POST" })
 
     const brandId = (brand as any).id;
 
-    const [{ data: events }, { data: preds }, links] = await Promise.all([
-      supabase
-        .from("sale_events")
-        .select(EVENT_COLS)
-        .eq("brand_id", brandId)
-        .eq("status", "published")
-        .order("start_date", { ascending: false }),
+    const [eventsResult, { data: preds }, links] = await Promise.all([
+      market
+        ? applyMarketFilter(
+            supabase
+              .from("sale_events")
+              .select(EVENT_COLS)
+              .eq("brand_id", brandId)
+              .eq("status", "published"),
+            market,
+          ).order("start_date", { ascending: false })
+        : Promise.resolve({ data: [] as any[] }),
       supabase
         .from("sale_predictions")
         .select(PREDICTION_COLS)
@@ -194,7 +246,7 @@ export const getHouseDetail = createServerFn({ method: "POST" })
       fetchBrandLinks(supabase, brandId),
     ]);
 
-    const eventRows = (events ?? []) as EventRow[];
+    const eventRows = ((eventsResult?.data ?? []) as EventRow[]);
     const prediction = pickLatestPrediction(((preds ?? []) as PredictionRow[]) || null);
     const base = toDashboardDTO(brand as unknown as BrandRow, eventRows, prediction);
 
@@ -211,8 +263,11 @@ export const getHouseDetail = createServerFn({ method: "POST" })
       factors: [],
       algorithmVersion: prediction?.algorithm_version ?? "none",
       links,
+      needsMarket: !market,
+      market,
     };
   });
+
 
 // Public preview — no auth, strictly trimmed.
 export const getPublicHouseDetail = createServerFn({ method: "POST" })

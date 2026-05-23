@@ -10,6 +10,7 @@ export type ProfileDTO = {
   displayName: string | null;
   avatarPath: string | null;
   avatarUrl: string | null;
+  market: string | null;
 };
 
 async function signAvatar(
@@ -37,7 +38,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_path")
+      .select("id, display_name, avatar_path, market")
       .eq("id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -52,6 +53,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
       displayName: data?.display_name ?? null,
       avatarPath,
       avatarUrl,
+      market: (data as { market?: string | null } | null)?.market ?? null,
     };
   });
 
@@ -83,7 +85,7 @@ export const setAvatarPath = createServerFn({ method: "POST" })
     const avatarUrl = await signAvatar(supabase, data.path);
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name")
+      .select("display_name, market")
       .eq("id", userId)
       .maybeSingle();
 
@@ -93,6 +95,7 @@ export const setAvatarPath = createServerFn({ method: "POST" })
       displayName: profile?.display_name ?? null,
       avatarPath: data.path,
       avatarUrl,
+      market: (profile as { market?: string | null } | null)?.market ?? null,
     };
   });
 
@@ -103,7 +106,7 @@ export const removeAvatar = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name, avatar_path")
+      .select("display_name, avatar_path, market")
       .eq("id", userId)
       .maybeSingle();
 
@@ -122,6 +125,7 @@ export const removeAvatar = createServerFn({ method: "POST" })
       displayName: profile?.display_name ?? null,
       avatarPath: null,
       avatarUrl: null,
+      market: (profile as { market?: string | null } | null)?.market ?? null,
     };
   });
 
@@ -148,7 +152,7 @@ export const updateDisplayName = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name, avatar_path")
+      .select("display_name, avatar_path, market")
       .eq("id", userId)
       .maybeSingle();
 
@@ -161,5 +165,44 @@ export const updateDisplayName = createServerFn({ method: "POST" })
       displayName: profile?.display_name ?? data.displayName,
       avatarPath,
       avatarUrl,
+      market: (profile as { market?: string | null } | null)?.market ?? null,
+    };
+  });
+
+export const setMyMarket = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        market: z
+          .string()
+          .regex(/^[a-z]{2}$/, "Invalid market code"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<ProfileDTO> => {
+    const { supabase, userId, claims } = context;
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: userId, market: data.market }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name, avatar_path, market")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const avatarPath = profile?.avatar_path ?? null;
+    const avatarUrl = await signAvatar(supabase, avatarPath);
+
+    return {
+      id: userId,
+      email: (claims?.email as string | undefined) ?? null,
+      displayName: profile?.display_name ?? null,
+      avatarPath,
+      avatarUrl,
+      market: (profile as { market?: string | null } | null)?.market ?? data.market,
     };
   });

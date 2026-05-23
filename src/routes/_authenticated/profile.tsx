@@ -8,15 +8,18 @@ import { AvatarBlock } from "@/components/profile/AvatarBlock";
 import { ConnectedAccounts } from "@/components/profile/ConnectedAccounts";
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { Button } from "@/components/ui/button";
+import { MarketSelect } from "@/components/MarketSelect";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getMyProfile,
   removeAvatar,
   setAvatarPath,
+  setMyMarket,
   updateDisplayName,
   type ProfileDTO,
 } from "@/lib/profile.functions";
 import { useProfile } from "@/hooks/use-profile";
+import { isMarketCode, type MarketCode } from "@/lib/markets";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -95,7 +98,17 @@ function ProfilePage() {
   const setPath = useServerFn(setAvatarPath);
   const remove = useServerFn(removeAvatar);
   const updateName = useServerFn(updateDisplayName);
+  const saveMarket = useServerFn(setMyMarket);
   const refetchProfile = useServerFn(getMyProfile);
+
+  const marketMutation = useMutation({
+    mutationFn: (market: MarketCode) => saveMarket({ data: { market } }),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["me", "profile", next.id], next);
+      queryClient.invalidateQueries({ queryKey: ["houses", "dashboard"] });
+      toast.success("Market updated");
+    },
+  });
 
   const writeCache = (next: ProfileDTO) => {
     queryClient.setQueryData(["me", "profile", next.id], next);
@@ -338,9 +351,35 @@ function ProfilePage() {
         )}
       </section>
 
+      <SectionRule />
+
+      <section className="border border-border bg-card p-6 md:p-10">
+        <p className="eyebrow">Market</p>
+        <h2 className="mt-2 font-serif text-2xl">Your shopping market.</h2>
+        <p className="mt-2 max-w-lg text-sm text-muted-foreground">
+          We tailor sale windows and depth to the houses that ship to your market.
+        </p>
+        <div className="mt-5 max-w-sm">
+          <MarketSelect
+            value={isMarketCode(profile?.market) ? profile?.market : null}
+            disabled={marketMutation.isPending || !profile}
+            onChange={(next) => marketMutation.mutate(next)}
+          />
+          {marketMutation.isPending && (
+            <p className="mt-2 text-xs text-muted-foreground">Saving…</p>
+          )}
+          {marketMutation.isError && (
+            <p className="mt-2 text-xs text-destructive" role="alert">
+              Couldn't save your market. Try again.
+            </p>
+          )}
+        </div>
+      </section>
+
       <div className="mt-10">
         <ConnectedAccounts email={profile?.email ?? null} />
       </div>
+
 
       {pendingFile && (
         <AvatarCropModal
