@@ -32,8 +32,41 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_links: {
+        Row: {
+          brand_id: string
+          country_code: string
+          created_at: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          brand_id: string
+          country_code: string
+          created_at?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          brand_id?: string
+          country_code?: string
+          created_at?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_links_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
+          categories: string[]
           category: string | null
           country: string | null
           created_at: string
@@ -49,6 +82,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          categories?: string[]
           category?: string | null
           country?: string | null
           created_at?: string
@@ -64,6 +98,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          categories?: string[]
           category?: string | null
           country?: string | null
           created_at?: string
