@@ -714,7 +714,7 @@ export function SaleEventsTab() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{r.category ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  {r.saleType.replace("_", " ")}
+                  {SALE_TYPE_LABELS[r.saleType as keyof typeof SALE_TYPE_LABELS] ?? r.saleType}
                 </TableCell>
                 <TableCell>{fmt(r.startDate)}</TableCell>
                 <TableCell>{r.endDate ? fmt(r.endDate) : "—"}</TableCell>
