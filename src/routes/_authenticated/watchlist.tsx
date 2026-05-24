@@ -486,8 +486,12 @@ function WatchlistPage() {
               </>
             ) : (
               <>
-                <span>
-                  {visible.length} {visible.length === 1 ? "house" : "houses"}
+                <span className="[font-variant-numeric:tabular-nums]">
+                  {visible.length === 0
+                    ? "0 houses"
+                    : totalPages > 1
+                      ? `${rangeStart}–${rangeEnd} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`
+                      : `${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
                 </span>
                 <span aria-hidden className="text-muted-foreground/50">
                   ·
@@ -506,7 +510,10 @@ function WatchlistPage() {
                 )}
                 {sortBy !== "signal" && (
                   <button
-                    onClick={() => setSortBy("signal")}
+                    onClick={() => {
+                      setSortBy("signal");
+                      resetPage();
+                    }}
                     className="underline-offset-4 hover:text-foreground hover:underline"
                   >
                     Reset sort
