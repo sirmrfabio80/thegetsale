@@ -528,7 +528,7 @@ export function SaleEventsTab() {
               </span>
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              {marketLabel(r.countryCode) + " · " + (r.category ?? "—") + " · " + r.saleType.replace("_", " ")}
+              {marketLabel(r.countryCode) + " · " + (r.category ?? "—") + " · " + (SALE_TYPE_LABELS[r.saleType as keyof typeof SALE_TYPE_LABELS] ?? r.saleType)}
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 text-sm">
               <span>
