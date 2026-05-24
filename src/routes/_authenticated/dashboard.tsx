@@ -63,6 +63,10 @@ function toBrand(h: HouseDashboardDTO): Brand {
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  validateSearch: (raw: Record<string, unknown>): DashboardSearch => {
+    const n = Number((raw as { page?: unknown })?.page);
+    return { page: Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1 };
+  },
   head: () => ({
     meta: [
       { title: "Signals — The Get" },
