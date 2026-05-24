@@ -293,7 +293,7 @@ export function SaleEventsTab() {
                 <SelectItem value={ANY}>Any type</SelectItem>
                 {SALE_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>
-                    {t.replace("_", " ")}
+                    {SALE_TYPE_LABELS[t]}
                   </SelectItem>
                 ))}
               </SelectContent>
