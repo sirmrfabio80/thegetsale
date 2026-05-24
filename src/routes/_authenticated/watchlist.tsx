@@ -10,10 +10,46 @@ import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore
 import { cn } from "@/lib/utils";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // Single source of truth so the "Updating list…" flash settles cleanly
 // after a bulk department toggle.
 const BULK_TOGGLE_DEBOUNCE_MS = 300;
+const PAGE_SIZE = 12;
+
+const CATEGORY_FILTERS: Array<"All" | Category> = [
+  "All",
+  "Womens",
+  "Mens",
+  "Accessories",
+  "Footwear",
+  "Jewellery",
+];
+
+type WatchlistSearch = { page: number; q: string; cat: "All" | Category };
+
+function buildPageItems(
+  current: number,
+  total: number,
+): Array<number | "ellipsis-l" | "ellipsis-r"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const items: Array<number | "ellipsis-l" | "ellipsis-r"> = [1];
+  const left = Math.max(2, current - 1);
+  const right = Math.min(total - 1, current + 1);
+  if (left > 2) items.push("ellipsis-l");
+  for (let i = left; i <= right; i++) items.push(i);
+  if (right < total - 1) items.push("ellipsis-r");
+  items.push(total);
+  return items;
+}
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
@@ -42,6 +78,17 @@ function toBrand(h: HouseDashboardDTO): Brand {
 }
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
+  validateSearch: (raw: Record<string, unknown>): WatchlistSearch => {
+    const r = raw as { page?: unknown; q?: unknown; cat?: unknown };
+    const n = Number(r?.page);
+    const page = Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+    const q = typeof r?.q === "string" ? r.q : "";
+    const catRaw = typeof r?.cat === "string" ? r.cat : "All";
+    const cat = (CATEGORY_FILTERS as readonly string[]).includes(catRaw)
+      ? (catRaw as "All" | Category)
+      : "All";
+    return { page, q, cat };
+  },
   head: () => ({
     meta: [
       { title: "Watchlist — The Get" },
@@ -70,6 +117,37 @@ function WatchlistPage() {
   const { removeMany } = useWatchlistMutations();
   const { setup } = useSetup();
   const { save: saveSetupMutation } = useSetupMutation();
+  const { page, q, cat } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const gridTopRef = useRef<HTMLDivElement>(null);
+
+  const resetPage = () => {
+    navigate({ search: (prev: WatchlistSearch) => ({ ...prev, page: 1 }), replace: true });
+  };
+  const setQuery = (value: string) => {
+    navigate({
+      search: (prev: WatchlistSearch) => ({ ...prev, q: value, page: 1 }),
+      replace: true,
+    });
+  };
+  const setCategory = (value: "All" | Category) => {
+    navigate({
+      search: (prev: WatchlistSearch) => ({ ...prev, cat: value, page: 1 }),
+      replace: true,
+    });
+  };
+  const goToPage = (next: number) => {
+    navigate({ search: (prev: WatchlistSearch) => ({ ...prev, page: next }) });
+    requestAnimationFrame(() => {
+      gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+  const clearSearchAndCategory = () => {
+    navigate({
+      search: (prev: WatchlistSearch) => ({ ...prev, q: "", cat: "All", page: 1 }),
+      replace: true,
+    });
+  };
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -114,7 +192,7 @@ function WatchlistPage() {
     });
   }, [setup]);
 
-  const { visible, hiddenCount, orphans } = useMemo(() => {
+  const { visible, hiddenCount, orphans, filteredOutByQuery } = useMemo(() => {
     const withMaybeBrand = items.map((it) => ({
       it,
       brand: brandsBySlug.get(it.brandId) ?? null,
@@ -123,10 +201,19 @@ function WatchlistPage() {
       (x): x is { it: (typeof items)[number]; brand: Brand } => !!x.brand,
     );
     const orphanItems = withMaybeBrand.filter((x) => !x.brand).map((x) => x.it);
-    const filtered =
+    const byDept =
       departments.size === 0
         ? known
         : known.filter((x) => departments.has(brandDepartment(x.brand)));
+    const qLower = q.trim().toLowerCase();
+    const filtered = byDept.filter((x) => {
+      const matchCat = cat === "All" || (x.brand.categories ?? []).includes(cat);
+      const matchQ =
+        !qLower ||
+        x.brand.name.toLowerCase().includes(qLower) ||
+        x.brand.tagline.toLowerCase().includes(qLower);
+      return matchCat && matchQ;
+    });
     const rank: Record<string, number> = { soon: 0, buy: 1, hold: 2, low: 3 };
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "confidence") {
@@ -143,10 +230,11 @@ function WatchlistPage() {
     });
     return {
       visible: sorted.map((x) => x.it),
-      hiddenCount: known.length - filtered.length,
+      hiddenCount: known.length - byDept.length,
       orphans: orphanItems,
+      filteredOutByQuery: byDept.length - filtered.length,
     };
-  }, [items, brandsBySlug, departments, sortBy]);
+  }, [items, brandsBySlug, departments, sortBy, q, cat]);
 
   const deptLabel = [...departments].join(", ");
 
@@ -163,7 +251,37 @@ function WatchlistPage() {
     return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
   }, [items, brandsBySlug, departments]);
 
-  const visibleIds = useMemo(() => visible.map((v) => v.brandId), [visible]);
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const pagedVisible = visible.slice(startIdx, startIdx + PAGE_SIZE);
+  const rangeStart = visible.length === 0 ? 0 : startIdx + 1;
+  const rangeEnd = startIdx + pagedVisible.length;
+  const pageItems = buildPageItems(safePage, totalPages);
+
+  // Clamp out-of-range ?page=N deep links.
+  useEffect(() => {
+    if (page !== safePage) {
+      navigate({
+        search: (prev: WatchlistSearch) => ({ ...prev, page: safePage }),
+        replace: true,
+      });
+    }
+  }, [page, safePage, navigate]);
+
+  // Reset to page 1 when filters that affect the visible list shrink it.
+  // (Sort changes don't shrink, but the page may now feel off; reset for clarity.)
+  useEffect(() => {
+    if (page !== 1 && (safePage - 1) * PAGE_SIZE >= visible.length) {
+      navigate({
+        search: (prev: WatchlistSearch) => ({ ...prev, page: 1 }),
+        replace: true,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [departments, sortBy]);
+
+  const visibleIds = useMemo(() => pagedVisible.map((v) => v.brandId), [pagedVisible]);
   const selectedVisibleCount = useMemo(
     () => visibleIds.filter((id) => selected.has(id)).length,
     [visibleIds, selected],
@@ -317,7 +435,38 @@ function WatchlistPage() {
         </div>
       )}
 
+      {items.length > 0 && (
+        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setCategory(f)}
+                aria-pressed={cat === f}
+                className={cn(
+                  "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
+                  cat === f
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <input
+            value={q}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search your watchlist…"
+            className="w-full border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-foreground focus:outline-none md:w-64"
+            aria-label="Search watchlist"
+          />
+        </div>
+      )}
+
       <SectionRule />
+
+      <div ref={gridTopRef} className="scroll-mt-24" />
 
       {items.length > 0 && (visible.length > 0 || selectMode) && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -337,8 +486,12 @@ function WatchlistPage() {
               </>
             ) : (
               <>
-                <span>
-                  {visible.length} {visible.length === 1 ? "house" : "houses"}
+                <span className="[font-variant-numeric:tabular-nums]">
+                  {visible.length === 0
+                    ? "0 houses"
+                    : totalPages > 1
+                      ? `${rangeStart}–${rangeEnd} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`
+                      : `${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
                 </span>
                 <span aria-hidden className="text-muted-foreground/50">
                   ·
@@ -357,7 +510,10 @@ function WatchlistPage() {
                 )}
                 {sortBy !== "signal" && (
                   <button
-                    onClick={() => setSortBy("signal")}
+                    onClick={() => {
+                      setSortBy("signal");
+                      resetPage();
+                    }}
                     className="underline-offset-4 hover:text-foreground hover:underline"
                   >
                     Reset sort
@@ -394,7 +550,10 @@ function WatchlistPage() {
                   <span className="hidden sm:inline">Sort</span>
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    onChange={(e) => {
+                      setSortBy(e.target.value as typeof sortBy);
+                      resetPage();
+                    }}
                     className="border border-border bg-transparent px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-foreground focus:border-foreground focus:outline-none"
                     aria-label="Sort watchlist"
                   >
@@ -429,45 +588,131 @@ function WatchlistPage() {
           </Link>
         </div>
       ) : visible.length === 0 ? (
-        <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
-          <p className="eyebrow text-muted-foreground">Filtered out</p>
-          <p className="mt-4 font-serif text-3xl leading-tight">No brands in {deptLabel}.</p>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other
-            departments
-            {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={clearDepartmentFilters}
-              className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
-            >
-              Clear filters
-            </button>
-            <Link
-              to="/setup"
-              className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-            >
-              Adjust in setup
-            </Link>
+        (q.trim() !== "" || cat !== "All") && filteredOutByQuery > 0 ? (
+          <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
+            <p className="eyebrow text-muted-foreground">No matches</p>
+            <p className="mt-4 font-serif text-3xl leading-tight">
+              No houses match your search.
+            </p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+              Try a different category or clear the search to see your full watchlist.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={clearSearchAndCategory}
+                className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+              >
+                Clear search & filters
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
+            <p className="eyebrow text-muted-foreground">Filtered out</p>
+            <p className="mt-4 font-serif text-3xl leading-tight">No brands in {deptLabel}.</p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+              {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other
+              departments
+              {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={clearDepartmentFilters}
+                className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+              >
+                Clear filters
+              </button>
+              <Link
+                to="/setup"
+                className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                Adjust in setup
+              </Link>
+            </div>
+          </div>
+        )
       ) : (
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {visible.map((it) => (
-            <WatchlistCard
-              key={it.brandId}
-              item={it}
-              brand={brandsBySlug.get(it.brandId) ?? null}
-              selectable={selectMode}
-              selected={selected.has(it.brandId)}
-              onToggleSelect={toggleSelect}
-            />
-          ))}
-          {orphans.map((it) => (
-            <WatchlistCard key={it.brandId} item={it} brand={null} />
-          ))}
-        </section>
+        <>
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {pagedVisible.map((it) => (
+              <WatchlistCard
+                key={it.brandId}
+                item={it}
+                brand={brandsBySlug.get(it.brandId) ?? null}
+                selectable={selectMode}
+                selected={selected.has(it.brandId)}
+                onToggleSelect={toggleSelect}
+              />
+            ))}
+            {safePage === totalPages &&
+              orphans.map((it) => (
+                <WatchlistCard key={it.brandId} item={it} brand={null} />
+              ))}
+          </section>
+
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <p className="eyebrow [font-variant-numeric:tabular-nums]">
+                Showing {rangeStart}–{rangeEnd} of {visible.length} houses
+              </p>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      aria-disabled={safePage === 1}
+                      tabIndex={safePage === 1 ? -1 : undefined}
+                      className={
+                        safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage > 1) goToPage(safePage - 1);
+                      }}
+                    />
+                  </PaginationItem>
+                  {pageItems.map((item) =>
+                    typeof item === "number" ? (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === safePage}
+                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (item !== safePage) goToPage(item);
+                          }}
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      aria-disabled={safePage === totalPages}
+                      tabIndex={safePage === totalPages ? -1 : undefined}
+                      className={
+                        safePage === totalPages
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage < totalPages) goToPage(safePage + 1);
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </>
       )}
     </PageLayout>
   );
