@@ -1,108 +1,124 @@
+## Plan: Client-side pagination for the dashboard brand list
 
-# Memory investigation + profile route fix — The Get
+Scope: paginate the already filtered + personalised list on the client. No server, query, or `BrandCard` changes. URL-driven page state, 12 cards per page.
 
-## What the screenshots show
+### 1. Files modified
 
-1. **Dashboard reload (Safari)** — "This web page was reloaded because it was using significant memory." Safari's per-tab memory guard. Fires when a tab's footprint grows past Safari's threshold over time, not because a single render is doing something catastrophic.
-2. **Profile page (`/profile`)** — branded `__root.tsx` `ErrorComponent` ("This page didn't load") instead of the actual profile. The route is throwing during `beforeLoad`/loader, the root error boundary catches it, and the user sees the generic fallback.
+- `src/routes/_authenticated/dashboard.tsx` — only file touched.
 
-Both URLs are `preview--thegetsale.lovable.app` — the **deployed preview**, not local Vite dev. The runtime error `Failed to fetch dynamically imported module: virtual:tanstack-start-client-entry` is the classic symptom of Safari evicting the tab and then trying to re-import chunks from a build that has since been replaced. It is a consequence of the reload, not the cause.
+No new files, no new deps. Reuses `src/components/ui/pagination.tsx` as-is.
 
-## Likely contributors to memory — ranked by suspicion
+### 2. Route-level `validateSearch`
 
-### 1. Double `onAuthStateChange` subscription with full query-cache invalidation (high)
+Add to the existing `createFileRoute("/_authenticated/dashboard")` config:
 
-`src/router.tsx:39` and `src/lib/auth.ts:95` both call `supabase.auth.onAuthStateChange`. Every auth event (INITIAL_SESSION, TOKEN_REFRESHED — roughly hourly and on every focus/visibility regain) triggers in the router branch:
+- Install `@tanstack/zod-adapter` is unnecessary if it's already present; if not, use a plain `validateSearch` function (no new dep allowed). Schema:
+  - `page`: coerce to integer; if missing, `NaN`, `<1`, or non-finite → `1`.
+- Output type: `{ page: number }`.
 
-- `queryClient.invalidateQueries()` over **every** query in the cache
-- `router.invalidate()` (refetches every active route loader)
+Implementation will be a hand-rolled `validateSearch: (raw): { page: number } => { const n = Number((raw as any)?.page); return { page: Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1 }; }` to avoid a new dependency.
 
-`PERFORMANCE.md §2/§3` already flagged this. The auth store fix landed; the router-side duplicate is still there. On a long-lived tab, that's a steady stream of refetches, new response objects retained in the query cache, and re-rendered React trees — exactly the shape that pushes Safari over its ceiling.
+### 3. Reading & writing page state
 
-### 2. Query cache with no `defaultOptions` (high)
+- Read: `const { page } = Route.useSearch();`
+- Write: `const navigate = Route.useNavigate();` then `navigate({ search: (prev) => ({ ...prev, page: next }), replace: true })`.
+  - `replace: true` for filter-driven resets (don't pollute history).
+  - Default `replace: false` for user-driven page clicks (back button works).
 
-`getRouter()` creates a `QueryClient` with no defaults and sets `defaultPreloadStaleTime: 0` on the router. Effects:
+### 4. Filter-change → reset-to-1
 
-- `gcTime` defaults to 5 minutes, but on a backgrounded Safari tab timers throttle — cached responses linger far longer than expected.
-- `defaultPreloadStaleTime: 0` means every link-hover prefetch is instantly stale, so the actual navigation refetches even though data just arrived. Each refetch creates a new response object and keeps the previous one around until React unmounts the consumer.
-- Combined with §1, every TOKEN_REFRESHED re-runs `listHousesForDashboard`, `watchlistQueryOptions`, `setupQueryOptions`, etc., and retains the prior payloads.
+Avoid a `useEffect` chain that races with `filtered.length`. Approach:
 
-### 3. `lucide-react` barrel import (medium)
+- Wrap each filter setter in a small handler that updates the filter state AND calls `navigate({ search: { page: 1 }, replace: true })` in the same handler. Setters affected: category filter buttons, search input `onChange`, `onlyMine` toggle, `toggleDepartment`, and the `Clear` departments button.
+- This eliminates the need for a `useEffect` watching `[filter, q, onlyMine, departments]` and so avoids render loops.
 
-`package.json` pulls all of `lucide-react` (~1100 icons). Production builds tree-shake per-icon, but the dev/preview build ships more eagerly and the parsed-but-unused modules sit in memory, inflating baseline heap.
+### 5. Pagination derivation
 
-### 4. 27 Radix packages + `vaul` + `tw-animate-css` (medium)
+After `filtered` is computed:
 
-Anything actually rendered (Dialog, Select, Dropdown, Tooltip, Popover, ScrollArea) brings Radix runtime + Floating UI state. Several admin and setup screens mount multiple primitives simultaneously, and Radix portals can retain detached DOM after route transitions if a popover was open during navigation.
-
-### 5. `lib/error-capture.ts` global listeners (low)
-
-`globalThis.addEventListener("error", …)` and `unhandledrejection` registered at module scope, never removed. Single-slot, 5s TTL — not a growing list, but flagging it as one of the few persistent globals.
-
-### 6. Lovable preview iframe overhead (informational)
-
-Safari accounts iframe memory against the parent tab. Part of the "significant memory" reading is the Lovable preview chrome itself, not The Get. The same app at a custom domain reports noticeably less. Outside our control — investigation here targets the app's own heap.
-
-## What's wrong with `/profile`
-
-`src/routes/_authenticated/profile.tsx` has its own `beforeLoad`:
-
-```ts
-beforeLoad: async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) throw redirect({ to: "/login" });
-}
+```text
+const PAGE_SIZE = 12;
+const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+const safePage = Math.min(Math.max(1, page), totalPages); // clamp
+const startIdx = (safePage - 1) * PAGE_SIZE;
+const visible = filtered.slice(startIdx, startIdx + PAGE_SIZE);
+const rangeStart = filtered.length === 0 ? 0 : startIdx + 1;
+const rangeEnd = startIdx + visible.length;
 ```
 
-Three problems:
+Render `visible` instead of `filtered` in the grid.
 
-1. **It's redundant.** The parent `_authenticated.tsx` layout already gates on `context.auth.status`. This second check duplicates the gate and adds a network round-trip on every navigation into `/profile`.
-2. **It runs during SSR.** Profile is under `_authenticated/`, but `_authenticated.tsx` only filters by `context.auth` (which is `"loading"` during SSR — it does NOT throw during SSR, it just lets the layout render `HydratingShell`). The profile's `beforeLoad` then fires `supabase.auth.getUser()` on the server with no session, returns `{ data: { user: null }, error: ... }`, and throws `redirect({ to: "/login" })`. If the redirect resolves cleanly it's silent — but any failure mode (network blip, transient Supabase error, the redirect throw being swallowed by an unrelated try/catch upstream) surfaces as a thrown error and the root `errorComponent` renders "This page didn't load".
-3. **Other authenticated routes don't do this.** `dashboard.tsx`, `watchlist.tsx`, `setup.tsx`, etc. rely on the parent layout gate only. Profile is the odd one out, and it's the only route currently showing the error.
+If `page !== safePage` (e.g. deep link to `?page=99`), call `navigate({ search: (p) => ({ ...p, page: safePage }), replace: true })` inside a `useEffect` keyed on `[page, safePage]`. Clamp rather than redirect to a 404 — keeps the UX calm.
 
-The fix is to delete the `beforeLoad` on the profile route and rely on `_authenticated.tsx` like every other protected page. The `useProfile()` query inside the component already handles the authenticated/unauthenticated split via `enabled: auth.status === "authenticated"`, so removing the gate doesn't expose anything to anonymous users.
+### 6. Pagination control JSX
 
-## What to verify before fixing memory
+Rendered below the grid, only when `totalPages > 1`:
 
-Diagnostic steps to run before any code change so we don't fix the wrong thing:
+```text
+<div ref={gridTopRef} />   // placed just above <section> grid
+...grid...
+{totalPages > 1 && (
+  <div className="mt-10 flex flex-col items-center gap-3">
+    <p className="eyebrow [font-variant-numeric:tabular-nums]">
+      Showing {rangeStart}–{rangeEnd} of {filtered.length} brands
+    </p>
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            onClick={...} aria-disabled={safePage === 1}
+            className={safePage === 1 ? "pointer-events-none opacity-50" : ""}
+          />
+        </PaginationItem>
+        {/* page numbers with ellipses — see below */}
+        <PaginationItem>
+          <PaginationNext ... />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  </div>
+)}
+```
 
-1. **Heap snapshot in Safari.** Sit on `/dashboard` for 2 minutes, then dashboard → watchlist → brand detail → back, 3×. A growing heap across identical navigations confirms a leak; flat-but-high points to baseline bloat.
-2. **Query cache count** at idle vs after 5 minutes. If it grows, §1+§2 confirmed.
-3. **Detached DOM** in Heap Snapshot → filter "Detached". High count = Radix portal cleanup issue.
-4. **Reproduce in Chrome.** Chrome's DevTools Performance Monitor shows JS heap trend. If Chrome stays flat and Safari grows, it's Safari background-tab throttling + query refetch storm.
+Page-number rendering rule (compact, with `PaginationEllipsis`):
+- Always show page 1, current ± 1, and last.
+- Insert `PaginationEllipsis` between non-adjacent groups.
+- For `totalPages ≤ 7`, show all numbers without ellipses.
 
-## Proposed fixes (ordered, smallest first)
+Each `PaginationLink` uses `onClick` + `href="#"` with `preventDefault` (the shadcn component is an `<a>`). `isActive` set when `n === safePage`.
 
-1. **Remove the duplicate `beforeLoad` on `/_authenticated/profile`.** Delete the block; keep `errorComponent` and `pendingComponent`. This is the profile error fix and is independent of the memory work.
-2. **Remove the duplicate auth subscription in `src/router.tsx`.** The module-scoped store in `src/lib/auth.ts` already handles auth state. Drive router context off the same store instead of opening a second `onAuthStateChange`. Kills the full-cache invalidation on every TOKEN_REFRESHED.
-3. **Tighten `QueryClient` defaults.** In `getRouter()`:
-   ```ts
-   new QueryClient({
-     defaultOptions: {
-       queries: {
-         staleTime: 60_000,
-         gcTime: 5 * 60_000,
-         refetchOnWindowFocus: false,
-       },
-     },
-   })
-   ```
-   and raise `defaultPreloadStaleTime` to e.g. `30_000` so hover prefetches aren't instantly thrown away.
-4. **Audit `lucide-react` usage.** Either switch hot paths to per-icon imports or run `bunx knip`; if <50 distinct icons used, per-icon imports are a clear win.
-5. **Verify Radix portal cleanup** on routes that open menus/popovers (admin, profile, setup). Confirm open popovers close before route navigation, or rely on `<Outlet />` unmount. Detached-DOM count from step 3 above tells us if this is real.
-6. **(Optional) Drop unused Radix packages** via `bunx depcheck`. Trims install size, doesn't directly reduce runtime memory; lowest priority.
+### 7. Scroll behaviour
 
-## What this plan does NOT change
+- Add `const gridTopRef = useRef<HTMLDivElement>(null);` placed immediately above the brand `<section>` grid.
+- On page click (Prev/Next/number), after navigating, call `gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });`.
+- Do not scroll on the filter-driven reset (user is already interacting with the filter bar at the top).
+- Do not scroll on first mount / refresh (avoid hijacking native scroll restoration).
 
-- No product, routing, terminology, or UX changes.
-- No backend or RLS changes.
-- No new dependencies.
-- The Lovable preview iframe overhead is outside our control.
+### 8. Edge cases
 
-## Deliverable order if approved
+- **Zero results:** `totalPages = 1`, pager hidden, existing empty state renders unchanged.
+- **Single page:** pager hidden; range text also hidden (no value at 1–N of N when N ≤ 12).
+- **`?page=99` (beyond last):** clamp to `totalPages` and rewrite the URL with `replace: true`. No 404.
+- **`?page=abc` / `?page=-3` / `?page=1.7`:** `validateSearch` normalises to 1.
+- **Filter shrinks pages while on page 4:** filter handlers already reset to 1 (§4), so this is handled before the clamp ever fires.
+- **SSR / loader:** no change — `listHousesForDashboard` still returns the full set; slicing happens in the component after `useSuspenseQuery` resolves.
 
-1. Land fix #1 (profile `beforeLoad` removal) — smallest, fixes the visible error immediately, zero risk to other routes.
-2. Run the verification steps and report which memory contributors are confirmed.
-3. Land fix #2 (router auth dedupe) — most likely single-cause win for memory, low risk.
-4. Land fix #3 (QueryClient defaults).
-5. Re-measure. Only proceed to #4–#6 if memory is still elevated.
+### 9. Test plan (manual)
+
+1. Load `/dashboard` with no filters → page 1, 12 cards, pager shows `1 2 … N`.
+2. Click `2` → URL becomes `?page=2`, grid top scrolls into view, cards 13–24 shown.
+3. Refresh on `?page=3` → still on page 3, correct slice.
+4. While on page 4, click a Department chip → URL becomes `?page=1` (replace, no extra history entry), grid resets.
+5. Type in the search box → resets to page 1 on each keystroke (acceptable; debounce is out of scope).
+6. Deep-link `?page=99` → clamps to last page, URL rewrites to actual last page, no error.
+7. Apply a filter that returns ≤ 12 results → pager and range text both hidden.
+8. Apply a filter that returns 0 results → existing empty state renders, no pager.
+9. Browser back after paging 1 → 2 → 3 returns to page 2 then page 1 (history preserved for user-driven page clicks).
+10. Keyboard: Tab into Prev/Next/numbers, Enter activates; disabled Prev on page 1 and disabled Next on last page are not focusable / have `aria-disabled`.
+
+### Risks / notes
+
+- Existing `useEffect` that persists `departments` back to setup is unaffected — it only watches `[hasSetup, departments, setup, save]`.
+- Personalised sort runs over the full `brands` array before slicing, so "matched first" ordering is preserved across pages.
+- No change to the query cache shape, so the memory fixes from the previous turn still hold.
+- If you later want filters in the URL too, this same `validateSearch` schema extends cleanly — out of scope here.
