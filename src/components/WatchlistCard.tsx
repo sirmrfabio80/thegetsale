@@ -45,10 +45,17 @@ export function WatchlistCard({
     );
   }
 
+  const stop = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
-    <article
+    <Link
+      to="/brand/$id"
+      params={{ id: brand.id }}
       className={cn(
-        "group relative border bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
+        "group block border bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
         selected ? "border-foreground" : "border-border",
       )}
     >
@@ -59,6 +66,7 @@ export function WatchlistCard({
               type="checkbox"
               checked={!!selected}
               onChange={() => onToggleSelect?.(item.brandId)}
+              onClick={stop}
               aria-label={`Select ${brand.name}`}
               className="mt-1 h-4 w-4 cursor-pointer accent-foreground"
             />
@@ -67,15 +75,7 @@ export function WatchlistCard({
             <p className="eyebrow mb-2">
               {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
             </p>
-            <h3 className="truncate font-serif text-2xl leading-tight">
-              <Link
-                to="/brand/$id"
-                params={{ id: brand.id }}
-                className="underline-offset-4 hover:underline focus-visible:underline focus:outline-none"
-              >
-                {brand.name}
-              </Link>
-            </h3>
+            <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               Watching since {formatDate(item.addedAt)}
             </p>
@@ -98,23 +98,20 @@ export function WatchlistCard({
         </p>
       </div>
 
-      <div className="mt-5 flex items-center justify-between text-[12px]">
-        <Link
-          to="/brand/$id"
-          params={{ id: brand.id }}
-          className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
-        >
-          View the read
-        </Link>
+      <div className="mt-5 flex items-center justify-end text-[12px]">
         <button
-          onClick={() => remove(item.brandId, brand.name)}
+          type="button"
+          onClick={(e) => {
+            stop(e);
+            remove(item.brandId, brand.name);
+          }}
           disabled={isPending}
           className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
         >
           Remove
         </button>
       </div>
-    </article>
+    </Link>
   );
 }
 
