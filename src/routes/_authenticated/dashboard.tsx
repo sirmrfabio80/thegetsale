@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { BrandCard } from "@/components/BrandCard";
@@ -11,6 +11,31 @@ import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/ca
 import { styleScore } from "@/data/styles";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+const PAGE_SIZE = 12;
+
+type DashboardSearch = { page: number };
+
+function buildPageItems(current: number, total: number): Array<number | "ellipsis-l" | "ellipsis-r"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const items: Array<number | "ellipsis-l" | "ellipsis-r"> = [1];
+  const left = Math.max(2, current - 1);
+  const right = Math.min(total - 1, current + 1);
+  if (left > 2) items.push("ellipsis-l");
+  for (let i = left; i <= right; i++) items.push(i);
+  if (right < total - 1) items.push("ellipsis-r");
+  items.push(total);
+  return items;
+}
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
