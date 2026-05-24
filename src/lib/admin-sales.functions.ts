@@ -12,15 +12,57 @@ async function ensureAdmin(supabase: any, userId: string) {
 }
 
 export const SALE_TYPES = [
-  "seasonal",
-  "mid_season",
-  "private",
-  "flash",
-  "archive",
+  "summer_sale",
+  "winter_sale",
+  "mid_season_sale",
+  "black_friday",
+  "boxing_day",
+  "archive_sale",
+  "private_sale",
+  "retailer_markdown",
+  "further_reductions",
+  "outlet_sale",
   "other",
 ] as const;
 
+export const SALE_TYPE_LABELS: Record<(typeof SALE_TYPES)[number], string> = {
+  summer_sale: "Summer sale",
+  winter_sale: "Winter sale",
+  mid_season_sale: "Mid-season sale",
+  black_friday: "Black Friday",
+  boxing_day: "Boxing Day",
+  archive_sale: "Archive sale",
+  private_sale: "Private sale",
+  retailer_markdown: "Retailer markdown",
+  further_reductions: "Further reductions",
+  outlet_sale: "Outlet sale",
+  other: "Other",
+};
+
+export const SOURCE_TYPES = [
+  "admin_confirmed",
+  "brand_site",
+  "email_archive",
+  "wayback",
+  "retailer",
+  "press",
+  "price_tracker",
+  "manual_research",
+] as const;
+
+export const SOURCE_TYPE_LABELS: Record<(typeof SOURCE_TYPES)[number], string> = {
+  admin_confirmed: "Admin confirmed",
+  brand_site: "Brand site",
+  email_archive: "Email archive",
+  wayback: "Wayback Machine",
+  retailer: "Retailer",
+  press: "Press",
+  price_tracker: "Price tracker",
+  manual_research: "Manual research",
+};
+
 export const SALE_STATUSES = ["draft", "published", "hidden"] as const;
+
 
 export type SaleEventDTO = {
   id: string;
