@@ -93,14 +93,15 @@ const SaleInput = z
       .optional()
       .nullable(),
     saleType: z.enum(SALE_TYPES),
+    sourceType: z.enum(SOURCE_TYPES).optional(),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     endDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
       .nullable(),
-    discountMin: z.number().int().min(0).max(90).optional().nullable(),
-    discountMax: z.number().int().min(0).max(90).optional().nullable(),
+    discountMin: z.number().int().min(0).max(100).optional().nullable(),
+    discountMax: z.number().int().min(0).max(100).optional().nullable(),
     status: z.enum(SALE_STATUSES),
     adminNotes: z.string().max(2000).optional().nullable(),
   })
@@ -112,6 +113,7 @@ const SaleInput = z
     message: "Max discount can't be lower than min",
     path: ["discountMax"],
   });
+
 
 function mapRow(r: any, brandName: string | null): SaleEventDTO {
   return {
