@@ -143,7 +143,8 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
         brandId: editing.brandId,
         category: editing.category ?? "",
         countryCode: editing.countryCode ?? "",
-        saleType: (editing.saleType as FormState["saleType"]) ?? "seasonal",
+        saleType: (editing.saleType as FormState["saleType"]) ?? "summer_sale",
+        sourceType: (editing.sourceType as FormState["sourceType"]) ?? "admin_confirmed",
         startDate: editing.startDate,
         endDate: editing.endDate ?? "",
         discountMin: editing.discountMin?.toString() ?? "",
@@ -151,6 +152,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
         status: (editing.status as FormState["status"]) ?? "draft",
         adminNotes: editing.adminNotes ?? "",
       });
+
     } else {
       setForm(empty);
     }
