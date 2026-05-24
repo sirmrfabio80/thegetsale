@@ -394,7 +394,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
                 id="discountMin"
                 type="number"
                 min={0}
-                max={90}
+                max={100}
                 value={form.discountMin}
                 aria-invalid={!!errors.discountMin}
                 onChange={(e) => setField("discountMin", e.target.value)}
@@ -407,7 +407,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
                 id="discountMax"
                 type="number"
                 min={0}
-                max={90}
+                max={100}
                 value={form.discountMax}
                 aria-invalid={!!errors.discountMax}
                 onChange={(e) => setField("discountMax", e.target.value)}
@@ -417,17 +417,34 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
 
             <div className="md:col-span-2">
               <Field id="adminNotes" label="Admin notes" error={errors.adminNotes}>
+                <div className="mb-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setField(
+                        "adminNotes",
+                        form.adminNotes
+                          ? `${form.adminNotes.replace(/\s*$/, "")}\n\n${EVIDENCE_TEMPLATE}`
+                          : EVIDENCE_TEMPLATE,
+                      )
+                    }
+                    className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+                  >
+                    Insert evidence template
+                  </button>
+                </div>
                 <Textarea
                   id="adminNotes"
                   value={form.adminNotes}
                   maxLength={2000}
                   aria-invalid={!!errors.adminNotes}
                   onChange={(e) => setField("adminNotes", e.target.value)}
-                  className="min-h-[100px] rounded-none"
-                  placeholder="Private notes for the team."
+                  className="min-h-[160px] rounded-none font-mono text-xs"
+                  placeholder="Private notes for the team. Use the evidence template above for sources."
                 />
               </Field>
             </div>
+
           </div>
         </div>
 
