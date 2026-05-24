@@ -10,10 +10,46 @@ import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore
 import { cn } from "@/lib/utils";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // Single source of truth so the "Updating list…" flash settles cleanly
 // after a bulk department toggle.
 const BULK_TOGGLE_DEBOUNCE_MS = 300;
+const PAGE_SIZE = 12;
+
+const CATEGORY_FILTERS: Array<"All" | Category> = [
+  "All",
+  "Womens",
+  "Mens",
+  "Accessories",
+  "Footwear",
+  "Jewellery",
+];
+
+type WatchlistSearch = { page: number; q: string; cat: "All" | Category };
+
+function buildPageItems(
+  current: number,
+  total: number,
+): Array<number | "ellipsis-l" | "ellipsis-r"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const items: Array<number | "ellipsis-l" | "ellipsis-r"> = [1];
+  const left = Math.max(2, current - 1);
+  const right = Math.min(total - 1, current + 1);
+  if (left > 2) items.push("ellipsis-l");
+  for (let i = left; i <= right; i++) items.push(i);
+  if (right < total - 1) items.push("ellipsis-r");
+  items.push(total);
+  return items;
+}
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
@@ -42,6 +78,17 @@ function toBrand(h: HouseDashboardDTO): Brand {
 }
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
+  validateSearch: (raw: Record<string, unknown>): WatchlistSearch => {
+    const r = raw as { page?: unknown; q?: unknown; cat?: unknown };
+    const n = Number(r?.page);
+    const page = Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+    const q = typeof r?.q === "string" ? r.q : "";
+    const catRaw = typeof r?.cat === "string" ? r.cat : "All";
+    const cat = (CATEGORY_FILTERS as readonly string[]).includes(catRaw)
+      ? (catRaw as "All" | Category)
+      : "All";
+    return { page, q, cat };
+  },
   head: () => ({
     meta: [
       { title: "Watchlist — The Get" },
