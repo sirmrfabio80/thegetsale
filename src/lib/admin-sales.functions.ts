@@ -236,7 +236,7 @@ export const createSaleEvent = createServerFn({ method: "POST" })
       status: data.status,
       admin_notes: data.adminNotes ?? null,
       created_by: userId,
-      source_type: "admin_confirmed",
+      source_type: data.sourceType ?? "admin_confirmed",
     });
     if (error) throw new Error(error.message);
     return { ok: true };
