@@ -8,8 +8,13 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { SaleEventDTO } from "@/lib/admin-sales.functions";
+import {
+  SALE_TYPE_LABELS,
+  SOURCE_TYPE_LABELS,
+  type SaleEventDTO,
+} from "@/lib/admin-sales.functions";
 import { marketLabel } from "@/lib/markets";
+
 
 type Props = {
   event: SaleEventDTO | null;
