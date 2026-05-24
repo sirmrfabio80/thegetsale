@@ -25,16 +25,10 @@ const ALLOWED = ["image/png", "image/jpeg", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export const Route = createFileRoute("/_authenticated/profile")({
-  beforeLoad: async () => {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) throw redirect({ to: "/login" });
-    } catch (e) {
-      // Re-throw redirects so TanStack handles navigation
-      if (e && typeof e === "object" && "to" in (e as any)) throw e;
-      throw redirect({ to: "/login" });
-    }
-  },
+  // Auth gating is handled by the parent `_authenticated` layout route — no
+  // need for a per-route `beforeLoad` here. The previous extra check called
+  // `supabase.auth.getUser()` on every navigation (and during SSR with no
+  // session), which surfaced the root error boundary instead of the profile.
   head: () => ({
     meta: [
       { title: "Your profile — The Get" },
