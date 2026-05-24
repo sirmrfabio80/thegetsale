@@ -145,6 +145,18 @@ export function useAuth(): AuthState {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
+// Lets the router subscribe to the same auth source the store uses, instead
+// of opening its own `supabase.auth.onAuthStateChange` (which would double
+// every `queryClient.invalidateQueries()` + `router.invalidate()` on every
+// TOKEN_REFRESHED event — a known memory/perf hotspot).
+export function subscribeToUser(callback: (user: User | null) => void): () => void {
+  const listener = () => callback(currentState.user);
+  const unsubscribe = subscribe(listener);
+  // Emit the current snapshot once so callers don't need a separate priming step.
+  callback(currentState.user);
+  return unsubscribe;
+}
+
 export type OAuthResult = { error?: Error; redirected?: boolean; authenticated?: boolean };
 
 export async function signInWithGoogle(redirectTo?: string): Promise<OAuthResult> {
