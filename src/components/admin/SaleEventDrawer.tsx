@@ -303,12 +303,35 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
                 <SelectContent>
                   {SALE_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>
-                      {t.replace("_", " ")}
+                      {SALE_TYPE_LABELS[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
+
+            <Field id="sourceType" label="Source" error={errors.sourceType}>
+              <Select
+                value={form.sourceType}
+                onValueChange={(v) => setField("sourceType", v as FormState["sourceType"])}
+              >
+                <SelectTrigger
+                  id="sourceType"
+                  aria-invalid={!!errors.sourceType}
+                  className="h-10 rounded-none"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCE_TYPES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {SOURCE_TYPE_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
 
             <Field id="category" label="Category" error={errors.category}>
               <Input
