@@ -117,6 +117,37 @@ function WatchlistPage() {
   const { removeMany } = useWatchlistMutations();
   const { setup } = useSetup();
   const { save: saveSetupMutation } = useSetupMutation();
+  const { page, q, cat } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const gridTopRef = useRef<HTMLDivElement>(null);
+
+  const resetPage = () => {
+    navigate({ search: (prev: WatchlistSearch) => ({ ...prev, page: 1 }), replace: true });
+  };
+  const setQuery = (value: string) => {
+    navigate({
+      search: (prev: WatchlistSearch) => ({ ...prev, q: value, page: 1 }),
+      replace: true,
+    });
+  };
+  const setCategory = (value: "All" | Category) => {
+    navigate({
+      search: (prev: WatchlistSearch) => ({ ...prev, cat: value, page: 1 }),
+      replace: true,
+    });
+  };
+  const goToPage = (next: number) => {
+    navigate({ search: (prev: WatchlistSearch) => ({ ...prev, page: next }) });
+    requestAnimationFrame(() => {
+      gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+  const clearSearchAndCategory = () => {
+    navigate({
+      search: (prev: WatchlistSearch) => ({ ...prev, q: "", cat: "All", page: 1 }),
+      replace: true,
+    });
+  };
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
