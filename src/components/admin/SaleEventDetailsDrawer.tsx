@@ -31,7 +31,9 @@ export function SaleEventDetailsDrawer({ event, open, onOpenChange, onEdit }: Pr
           <DrawerTitle>{event?.brandName ?? "Sale event"}</DrawerTitle>
           <DrawerDescription>
             {event
-              ? (event.category ?? "Uncategorised") + " · " + event.saleType.replace("_", " ")
+              ? (event.category ?? "Uncategorised") +
+                " · " +
+                (SALE_TYPE_LABELS[event.saleType as keyof typeof SALE_TYPE_LABELS] ?? event.saleType)
               : ""}
           </DrawerDescription>
         </DrawerHeader>
@@ -43,7 +45,15 @@ export function SaleEventDetailsDrawer({ event, open, onOpenChange, onEdit }: Pr
               <Field label="Brand" value={event.brandName ?? "—"} />
               <Field label="Market" value={marketLabel(event.countryCode)} />
               <Field label="Category" value={event.category ?? "—"} />
-              <Field label="Sale type" value={event.saleType.replace("_", " ")} />
+              <Field
+                label="Sale type"
+                value={SALE_TYPE_LABELS[event.saleType as keyof typeof SALE_TYPE_LABELS] ?? event.saleType}
+              />
+              <Field
+                label="Source"
+                value={SOURCE_TYPE_LABELS[event.sourceType as keyof typeof SOURCE_TYPE_LABELS] ?? event.sourceType}
+              />
+
               <Field label="Start date" value={fmt(event.startDate)} />
               <Field label="End date" value={event.endDate ? fmt(event.endDate) : "—"} />
               <Field
