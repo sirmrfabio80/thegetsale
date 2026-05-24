@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { BrandCard } from "@/components/BrandCard";
@@ -11,6 +11,31 @@ import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/ca
 import { styleScore } from "@/data/styles";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+const PAGE_SIZE = 12;
+
+type DashboardSearch = { page: number };
+
+function buildPageItems(current: number, total: number): Array<number | "ellipsis-l" | "ellipsis-r"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const items: Array<number | "ellipsis-l" | "ellipsis-r"> = [1];
+  const left = Math.max(2, current - 1);
+  const right = Math.min(total - 1, current + 1);
+  if (left > 2) items.push("ellipsis-l");
+  for (let i = left; i <= right; i++) items.push(i);
+  if (right < total - 1) items.push("ellipsis-r");
+  items.push(total);
+  return items;
+}
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
@@ -38,6 +63,10 @@ function toBrand(h: HouseDashboardDTO): Brand {
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  validateSearch: (raw: Record<string, unknown>): DashboardSearch => {
+    const n = Number((raw as { page?: unknown })?.page);
+    return { page: Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1 };
+  },
   head: () => ({
     meta: [
       { title: "Signals — The Get" },
@@ -69,6 +98,9 @@ const FILTERS: Array<"All" | Category> = [
 
 function Dashboard() {
   const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
+  const { page } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const gridTopRef = useRef<HTMLDivElement>(null);
   const houseDTOs = dashboard.houses;
   const needsMarket = dashboard.needsMarket;
   const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
@@ -84,6 +116,19 @@ function Dashboard() {
   const [onlyMine, setOnlyMine] = useState(false);
   const [styles, setStyles] = useState<StylePreference[]>([]);
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
+
+  const resetPage = () => {
+    navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: 1 }), replace: true });
+  };
+
+  const goToPage = (next: number) => {
+    navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: next }) });
+    requestAnimationFrame(() => {
+      gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+
 
   // Sync derived filter state from the backend-backed setup record.
   useEffect(() => {
@@ -147,7 +192,42 @@ function Dashboard() {
       else next.add(d);
       return next;
     });
+    resetPage();
   };
+
+  const handleSetFilter = (f: "All" | Category) => {
+    setFilter(f);
+    resetPage();
+  };
+
+  const handleSearchChange = (value: string) => {
+    setQ(value);
+    resetPage();
+  };
+
+  const handleToggleOnlyMine = () => {
+    setOnlyMine((v) => !v);
+    resetPage();
+  };
+
+  const handleClearDepartments = () => {
+    setDepartments(new Set());
+    resetPage();
+  };
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const visible = filtered.slice(startIdx, startIdx + PAGE_SIZE);
+  const rangeStart = filtered.length === 0 ? 0 : startIdx + 1;
+  const rangeEnd = startIdx + visible.length;
+
+  // Clamp out-of-range ?page=N deep links.
+  useEffect(() => {
+    if (page !== safePage) {
+      navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: safePage }), replace: true });
+    }
+  }, [page, safePage, navigate]);
 
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
@@ -156,6 +236,9 @@ function Dashboard() {
     const low = brands.filter((b) => b.signal === "low").length;
     return { total: brands.length, wait, buy, hold, low };
   }, [brands]);
+
+  const pageItems = buildPageItems(safePage, totalPages);
+
 
   return (
     <PageLayout>
@@ -235,7 +318,7 @@ function Dashboard() {
         })}
         {departments.size > 0 && (
           <button
-            onClick={() => setDepartments(new Set())}
+            onClick={handleClearDepartments}
             className="px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             Clear
@@ -248,7 +331,7 @@ function Dashboard() {
           {FILTERS.map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => handleSetFilter(f)}
               className={cn(
                 "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
                 filter === f
@@ -261,7 +344,7 @@ function Dashboard() {
           ))}
           {hasSetup && (
             <button
-              onClick={() => setOnlyMine((v) => !v)}
+              onClick={handleToggleOnlyMine}
               className={cn(
                 "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
                 onlyMine
@@ -275,7 +358,7 @@ function Dashboard() {
         </div>
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search a brand…"
           className="w-full border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-foreground focus:outline-none md:w-64"
         />
@@ -283,13 +366,15 @@ function Dashboard() {
 
       <SectionRule />
 
+      <div ref={gridTopRef} className="scroll-mt-24" />
+
       {filtered.length === 0 ? (
         <div className="py-16 text-center text-sm text-muted-foreground">
           {onlyMine ? (
             <p>
               None of your brands match right now.{" "}
               <button
-                onClick={() => setOnlyMine(false)}
+                onClick={handleToggleOnlyMine}
                 className="underline underline-offset-4 hover:text-foreground"
               >
                 See all brands
@@ -305,12 +390,78 @@ function Dashboard() {
           )}
         </div>
       ) : (
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {filtered.map((b) => (
-            <BrandCard key={b.id} brand={b} forYou={hasSetup && matchedIds.has(b.id)} />
-          ))}
-        </section>
+        <>
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {visible.map((b) => (
+              <BrandCard key={b.id} brand={b} forYou={hasSetup && matchedIds.has(b.id)} />
+            ))}
+          </section>
+
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <p className="eyebrow [font-variant-numeric:tabular-nums]">
+                Showing {rangeStart}–{rangeEnd} of {filtered.length} brands
+              </p>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      aria-disabled={safePage === 1}
+                      tabIndex={safePage === 1 ? -1 : undefined}
+                      className={
+                        safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage > 1) goToPage(safePage - 1);
+                      }}
+                    />
+                  </PaginationItem>
+                  {pageItems.map((item) =>
+                    typeof item === "number" ? (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === safePage}
+                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (item !== safePage) goToPage(item);
+                          }}
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      aria-disabled={safePage === totalPages}
+                      tabIndex={safePage === totalPages ? -1 : undefined}
+                      className={
+                        safePage === totalPages
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage < totalPages) goToPage(safePage + 1);
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </>
       )}
+
     </PageLayout>
   );
 }
