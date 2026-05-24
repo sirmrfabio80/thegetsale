@@ -67,7 +67,15 @@ export function WatchlistCard({
             <p className="eyebrow mb-2">
               {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
             </p>
-            <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
+            <h3 className="truncate font-serif text-2xl leading-tight">
+              <Link
+                to="/brand/$id"
+                params={{ id: brand.id }}
+                className="underline-offset-4 hover:underline focus-visible:underline focus:outline-none"
+              >
+                {brand.name}
+              </Link>
+            </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               Watching since {formatDate(item.addedAt)}
             </p>
