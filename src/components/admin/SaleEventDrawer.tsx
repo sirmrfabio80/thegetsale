@@ -25,11 +25,28 @@ import {
   createSaleEvent,
   updateSaleEvent,
   SALE_TYPES,
+  SALE_TYPE_LABELS,
   SALE_STATUSES,
+  SOURCE_TYPES,
+  SOURCE_TYPE_LABELS,
   type BrandOption,
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
 import { MARKETS } from "@/lib/markets";
+
+const EVIDENCE_TEMPLATE = `Evidence
+- Source:
+- URL:
+- Archived URL:
+- Observed date:
+- Sale copy:
+- Discount range:
+- Date confidence:
+- Notes:
+
+Confidence: low | medium | high
+`;
+
 
 type Props = {
   open: boolean;
