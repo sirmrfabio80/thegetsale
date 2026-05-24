@@ -104,6 +104,7 @@ const saleFormSchema = z
   .object({
     brandId: z.string().uuid({ message: "Brand is required" }),
     saleType: z.enum(SALE_TYPES as unknown as [string, ...string[]]),
+    sourceType: z.enum(SOURCE_TYPES as unknown as [string, ...string[]]),
     status: z.enum(SALE_STATUSES as unknown as [string, ...string[]]),
     category: z.string().max(80, "Keep under 80 characters"),
     startDate: z.string().regex(dateRe, "Start date is required"),
@@ -112,6 +113,7 @@ const saleFormSchema = z
     discountMax: discountField,
     adminNotes: z.string().max(2000, "Keep under 2000 characters"),
   })
+
   .superRefine((val, ctx) => {
     if (val.endDate && val.startDate && val.endDate < val.startDate) {
       ctx.addIssue({
