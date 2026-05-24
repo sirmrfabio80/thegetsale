@@ -192,7 +192,42 @@ function Dashboard() {
       else next.add(d);
       return next;
     });
+    resetPage();
   };
+
+  const handleSetFilter = (f: "All" | Category) => {
+    setFilter(f);
+    resetPage();
+  };
+
+  const handleSearchChange = (value: string) => {
+    setQ(value);
+    resetPage();
+  };
+
+  const handleToggleOnlyMine = () => {
+    setOnlyMine((v) => !v);
+    resetPage();
+  };
+
+  const handleClearDepartments = () => {
+    setDepartments(new Set());
+    resetPage();
+  };
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const visible = filtered.slice(startIdx, startIdx + PAGE_SIZE);
+  const rangeStart = filtered.length === 0 ? 0 : startIdx + 1;
+  const rangeEnd = startIdx + visible.length;
+
+  // Clamp out-of-range ?page=N deep links.
+  useEffect(() => {
+    if (page !== safePage) {
+      navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: safePage }), replace: true });
+    }
+  }, [page, safePage, navigate]);
 
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
@@ -201,6 +236,9 @@ function Dashboard() {
     const low = brands.filter((b) => b.signal === "low").length;
     return { total: brands.length, wait, buy, hold, low };
   }, [brands]);
+
+  const pageItems = buildPageItems(safePage, totalPages);
+
 
   return (
     <PageLayout>
