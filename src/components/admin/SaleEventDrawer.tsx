@@ -484,6 +484,8 @@ function buildPayload(form: FormState) {
     category: form.category.trim() || null,
     countryCode: form.countryCode === "" ? null : form.countryCode,
     saleType: form.saleType,
+    sourceType: form.sourceType,
+
     startDate: form.startDate,
     endDate: form.endDate || null,
     discountMin: form.discountMin === "" ? null : Number(form.discountMin),
