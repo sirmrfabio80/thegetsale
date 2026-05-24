@@ -118,15 +118,16 @@ function Dashboard() {
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
 
   const resetPage = () => {
-    navigate({ search: (prev) => ({ ...prev, page: 1 }), replace: true });
+    navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: 1 }), replace: true });
   };
 
   const goToPage = (next: number) => {
-    navigate({ search: (prev) => ({ ...prev, page: next }) });
+    navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: next }) });
     requestAnimationFrame(() => {
       gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
+
 
 
   // Sync derived filter state from the backend-backed setup record.
