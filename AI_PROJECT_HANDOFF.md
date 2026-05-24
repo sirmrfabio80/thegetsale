@@ -503,6 +503,28 @@ Implications enforced in the UI:
     market, omitted = no filter); create/update map it to `country_code`.
   - User-facing locale filtering (dashboard, brand detail, predictions)
     intentionally **not** wired yet — follow-up once admins seed per-market
-    data.
+     data.
+- **UK sale-event seed import** (May 2026):
+  - Imported 91 UK (`country_code='gb'`) sale events across all 35 active
+    brands from external research (`uk_sale_events_found_2026-05-24-2.csv`).
+    51 rows inserted as `draft` (originally `needs_review`), 40 as
+    `published` (originally `verified`). Source attributions kept in
+    `admin_notes`.
+  - Extended `SALE_TYPES` / `SALE_TYPE_LABELS` in
+    `src/lib/admin-sales.functions.ts` with 30 new types observed in the
+    data (e.g. `cyber_monday`, `friday_sale`, `winter_archives`, UK
+    bank-holiday variants, `sample_sale`, `outlet`). The original 11
+    types are preserved at the top of the list. No DB constraint exists
+    on `sale_type`, so no migration was needed; the admin drawer
+    dropdown picks them up automatically.
+  - Source-type mapping applied on import: `official→brand_site`,
+    `editorial→press`, `social→manual_research`, `deal_site→price_tracker`,
+    `retailer→retailer`.
+  - 3 CSV rows had no `start_date`. ARKET `summer_sale` and Massimo
+    Dutti `friday_sale` were inserted with inferred dates (noted in
+    `admin_notes`). Anine Bing `sale_notification` (permanent signup
+    page, not an event) was skipped.
+
+
 
 
