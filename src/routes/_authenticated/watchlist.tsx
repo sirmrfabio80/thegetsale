@@ -192,7 +192,7 @@ function WatchlistPage() {
     });
   }, [setup]);
 
-  const { visible, hiddenCount, orphans } = useMemo(() => {
+  const { visible, hiddenCount, orphans, filteredOutByQuery } = useMemo(() => {
     const withMaybeBrand = items.map((it) => ({
       it,
       brand: brandsBySlug.get(it.brandId) ?? null,
@@ -201,10 +201,19 @@ function WatchlistPage() {
       (x): x is { it: (typeof items)[number]; brand: Brand } => !!x.brand,
     );
     const orphanItems = withMaybeBrand.filter((x) => !x.brand).map((x) => x.it);
-    const filtered =
+    const byDept =
       departments.size === 0
         ? known
         : known.filter((x) => departments.has(brandDepartment(x.brand)));
+    const qLower = q.trim().toLowerCase();
+    const filtered = byDept.filter((x) => {
+      const matchCat = cat === "All" || (x.brand.categories ?? []).includes(cat);
+      const matchQ =
+        !qLower ||
+        x.brand.name.toLowerCase().includes(qLower) ||
+        x.brand.tagline.toLowerCase().includes(qLower);
+      return matchCat && matchQ;
+    });
     const rank: Record<string, number> = { soon: 0, buy: 1, hold: 2, low: 3 };
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "confidence") {
@@ -221,10 +230,11 @@ function WatchlistPage() {
     });
     return {
       visible: sorted.map((x) => x.it),
-      hiddenCount: known.length - filtered.length,
+      hiddenCount: known.length - byDept.length,
       orphans: orphanItems,
+      filteredOutByQuery: byDept.length - filtered.length,
     };
-  }, [items, brandsBySlug, departments, sortBy]);
+  }, [items, brandsBySlug, departments, sortBy, q, cat]);
 
   const deptLabel = [...departments].join(", ");
 
