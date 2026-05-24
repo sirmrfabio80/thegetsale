@@ -435,7 +435,38 @@ function WatchlistPage() {
         </div>
       )}
 
+      {items.length > 0 && (
+        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setCategory(f)}
+                aria-pressed={cat === f}
+                className={cn(
+                  "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
+                  cat === f
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <input
+            value={q}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search your watchlist…"
+            className="w-full border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-foreground focus:outline-none md:w-64"
+            aria-label="Search watchlist"
+          />
+        </div>
+      )}
+
       <SectionRule />
+
+      <div ref={gridTopRef} className="scroll-mt-24" />
 
       {items.length > 0 && (visible.length > 0 || selectMode) && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
