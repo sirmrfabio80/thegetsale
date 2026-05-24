@@ -71,6 +71,7 @@ export type SaleEventDTO = {
   category: string | null;
   countryCode: string | null;
   saleType: string;
+  sourceType: string;
   startDate: string;
   endDate: string | null;
   discountMin: number | null;
@@ -78,6 +79,7 @@ export type SaleEventDTO = {
   status: string;
   adminNotes: string | null;
 };
+
 
 export type BrandOption = { id: string; name: string };
 
