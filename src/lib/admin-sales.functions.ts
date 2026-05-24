@@ -12,15 +12,57 @@ async function ensureAdmin(supabase: any, userId: string) {
 }
 
 export const SALE_TYPES = [
-  "seasonal",
-  "mid_season",
-  "private",
-  "flash",
-  "archive",
+  "summer_sale",
+  "winter_sale",
+  "mid_season_sale",
+  "black_friday",
+  "boxing_day",
+  "archive_sale",
+  "private_sale",
+  "retailer_markdown",
+  "further_reductions",
+  "outlet_sale",
   "other",
 ] as const;
 
+export const SALE_TYPE_LABELS: Record<(typeof SALE_TYPES)[number], string> = {
+  summer_sale: "Summer sale",
+  winter_sale: "Winter sale",
+  mid_season_sale: "Mid-season sale",
+  black_friday: "Black Friday",
+  boxing_day: "Boxing Day",
+  archive_sale: "Archive sale",
+  private_sale: "Private sale",
+  retailer_markdown: "Retailer markdown",
+  further_reductions: "Further reductions",
+  outlet_sale: "Outlet sale",
+  other: "Other",
+};
+
+export const SOURCE_TYPES = [
+  "admin_confirmed",
+  "brand_site",
+  "email_archive",
+  "wayback",
+  "retailer",
+  "press",
+  "price_tracker",
+  "manual_research",
+] as const;
+
+export const SOURCE_TYPE_LABELS: Record<(typeof SOURCE_TYPES)[number], string> = {
+  admin_confirmed: "Admin confirmed",
+  brand_site: "Brand site",
+  email_archive: "Email archive",
+  wayback: "Wayback Machine",
+  retailer: "Retailer",
+  press: "Press",
+  price_tracker: "Price tracker",
+  manual_research: "Manual research",
+};
+
 export const SALE_STATUSES = ["draft", "published", "hidden"] as const;
+
 
 export type SaleEventDTO = {
   id: string;
@@ -29,6 +71,7 @@ export type SaleEventDTO = {
   category: string | null;
   countryCode: string | null;
   saleType: string;
+  sourceType: string;
   startDate: string;
   endDate: string | null;
   discountMin: number | null;
@@ -36,6 +79,7 @@ export type SaleEventDTO = {
   status: string;
   adminNotes: string | null;
 };
+
 
 export type BrandOption = { id: string; name: string };
 
@@ -49,14 +93,15 @@ const SaleInput = z
       .optional()
       .nullable(),
     saleType: z.enum(SALE_TYPES),
+    sourceType: z.enum(SOURCE_TYPES).optional(),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     endDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
       .nullable(),
-    discountMin: z.number().int().min(0).max(90).optional().nullable(),
-    discountMax: z.number().int().min(0).max(90).optional().nullable(),
+    discountMin: z.number().int().min(0).max(100).optional().nullable(),
+    discountMax: z.number().int().min(0).max(100).optional().nullable(),
     status: z.enum(SALE_STATUSES),
     adminNotes: z.string().max(2000).optional().nullable(),
   })
@@ -69,6 +114,7 @@ const SaleInput = z
     path: ["discountMax"],
   });
 
+
 function mapRow(r: any, brandName: string | null): SaleEventDTO {
   return {
     id: r.id,
@@ -77,6 +123,7 @@ function mapRow(r: any, brandName: string | null): SaleEventDTO {
     category: r.category ?? null,
     countryCode: r.country_code ?? null,
     saleType: r.sale_type,
+    sourceType: r.source_type ?? "admin_confirmed",
     startDate: r.start_date,
     endDate: r.end_date,
     discountMin: r.discount_min,
@@ -85,6 +132,7 @@ function mapRow(r: any, brandName: string | null): SaleEventDTO {
     adminNotes: r.admin_notes,
   };
 }
+
 
 export const listBrandOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -188,7 +236,7 @@ export const createSaleEvent = createServerFn({ method: "POST" })
       status: data.status,
       admin_notes: data.adminNotes ?? null,
       created_by: userId,
-      source_type: "admin_confirmed",
+      source_type: data.sourceType ?? "admin_confirmed",
     });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -207,6 +255,8 @@ export const updateSaleEvent = createServerFn({ method: "POST" })
         category: data.category ?? null,
         country_code: data.countryCode ?? null,
         sale_type: data.saleType,
+        ...(data.sourceType ? { source_type: data.sourceType } : {}),
+
         start_date: data.startDate,
         end_date: data.endDate ?? null,
         discount_min: data.discountMin ?? null,

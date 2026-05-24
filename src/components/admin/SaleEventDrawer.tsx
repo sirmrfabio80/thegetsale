@@ -25,11 +25,28 @@ import {
   createSaleEvent,
   updateSaleEvent,
   SALE_TYPES,
+  SALE_TYPE_LABELS,
   SALE_STATUSES,
+  SOURCE_TYPES,
+  SOURCE_TYPE_LABELS,
   type BrandOption,
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
 import { MARKETS } from "@/lib/markets";
+
+const EVIDENCE_TEMPLATE = `Evidence
+- Source:
+- URL:
+- Archived URL:
+- Observed date:
+- Sale copy:
+- Discount range:
+- Date confidence:
+- Notes:
+
+Confidence: low | medium | high
+`;
+
 
 type Props = {
   open: boolean;
@@ -44,6 +61,7 @@ type FormState = {
   category: string;
   countryCode: string; // "" = Global
   saleType: (typeof SALE_TYPES)[number];
+  sourceType: (typeof SOURCE_TYPES)[number];
   startDate: string;
   endDate: string;
   discountMin: string;
@@ -58,7 +76,8 @@ const empty: FormState = {
   brandId: "",
   category: "",
   countryCode: "",
-  saleType: "seasonal",
+  saleType: "summer_sale",
+  sourceType: "admin_confirmed",
   startDate: "",
   endDate: "",
   discountMin: "",
@@ -70,20 +89,22 @@ const empty: FormState = {
 const dateRe = /^\d{4}-\d{2}-\d{2}$/;
 const discountField = z
   .string()
-  .refine((v) => v === "" || /^\d+$/.test(v), { message: "Whole number 0–90" })
+  .refine((v) => v === "" || /^\d+$/.test(v), { message: "Whole number 0–100" })
   .refine(
     (v) => {
       if (v === "") return true;
       const n = Number(v);
-      return n >= 0 && n <= 90;
+      return n >= 0 && n <= 100;
     },
-    { message: "Must be between 0 and 90" },
+    { message: "Must be between 0 and 100" },
   );
+
 
 const saleFormSchema = z
   .object({
     brandId: z.string().uuid({ message: "Brand is required" }),
     saleType: z.enum(SALE_TYPES as unknown as [string, ...string[]]),
+    sourceType: z.enum(SOURCE_TYPES as unknown as [string, ...string[]]),
     status: z.enum(SALE_STATUSES as unknown as [string, ...string[]]),
     category: z.string().max(80, "Keep under 80 characters"),
     startDate: z.string().regex(dateRe, "Start date is required"),
@@ -92,6 +113,7 @@ const saleFormSchema = z
     discountMax: discountField,
     adminNotes: z.string().max(2000, "Keep under 2000 characters"),
   })
+
   .superRefine((val, ctx) => {
     if (val.endDate && val.startDate && val.endDate < val.startDate) {
       ctx.addIssue({
@@ -123,7 +145,8 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
         brandId: editing.brandId,
         category: editing.category ?? "",
         countryCode: editing.countryCode ?? "",
-        saleType: (editing.saleType as FormState["saleType"]) ?? "seasonal",
+        saleType: (editing.saleType as FormState["saleType"]) ?? "summer_sale",
+        sourceType: (editing.sourceType as FormState["sourceType"]) ?? "admin_confirmed",
         startDate: editing.startDate,
         endDate: editing.endDate ?? "",
         discountMin: editing.discountMin?.toString() ?? "",
@@ -131,6 +154,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
         status: (editing.status as FormState["status"]) ?? "draft",
         adminNotes: editing.adminNotes ?? "",
       });
+
     } else {
       setForm(empty);
     }
@@ -279,12 +303,35 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
                 <SelectContent>
                   {SALE_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>
-                      {t.replace("_", " ")}
+                      {SALE_TYPE_LABELS[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
+
+            <Field id="sourceType" label="Source" error={errors.sourceType}>
+              <Select
+                value={form.sourceType}
+                onValueChange={(v) => setField("sourceType", v as FormState["sourceType"])}
+              >
+                <SelectTrigger
+                  id="sourceType"
+                  aria-invalid={!!errors.sourceType}
+                  className="h-10 rounded-none"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCE_TYPES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {SOURCE_TYPE_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
 
             <Field id="category" label="Category" error={errors.category}>
               <Input
@@ -347,7 +394,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
                 id="discountMin"
                 type="number"
                 min={0}
-                max={90}
+                max={100}
                 value={form.discountMin}
                 aria-invalid={!!errors.discountMin}
                 onChange={(e) => setField("discountMin", e.target.value)}
@@ -360,7 +407,7 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
                 id="discountMax"
                 type="number"
                 min={0}
-                max={90}
+                max={100}
                 value={form.discountMax}
                 aria-invalid={!!errors.discountMax}
                 onChange={(e) => setField("discountMax", e.target.value)}
@@ -370,17 +417,34 @@ export function SaleEventDrawer({ open, onOpenChange, brands, editing, onSaved }
 
             <div className="md:col-span-2">
               <Field id="adminNotes" label="Admin notes" error={errors.adminNotes}>
+                <div className="mb-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setField(
+                        "adminNotes",
+                        form.adminNotes
+                          ? `${form.adminNotes.replace(/\s*$/, "")}\n\n${EVIDENCE_TEMPLATE}`
+                          : EVIDENCE_TEMPLATE,
+                      )
+                    }
+                    className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+                  >
+                    Insert evidence template
+                  </button>
+                </div>
                 <Textarea
                   id="adminNotes"
                   value={form.adminNotes}
                   maxLength={2000}
                   aria-invalid={!!errors.adminNotes}
                   onChange={(e) => setField("adminNotes", e.target.value)}
-                  className="min-h-[100px] rounded-none"
-                  placeholder="Private notes for the team."
+                  className="min-h-[160px] rounded-none font-mono text-xs"
+                  placeholder="Private notes for the team. Use the evidence template above for sources."
                 />
               </Field>
             </div>
+
           </div>
         </div>
 
@@ -420,6 +484,8 @@ function buildPayload(form: FormState) {
     category: form.category.trim() || null,
     countryCode: form.countryCode === "" ? null : form.countryCode,
     saleType: form.saleType,
+    sourceType: form.sourceType,
+
     startDate: form.startDate,
     endDate: form.endDate || null,
     discountMin: form.discountMin === "" ? null : Number(form.discountMin),

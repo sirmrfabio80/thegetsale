@@ -43,9 +43,11 @@ import {
   bulkSetSaleEventStatus,
   bulkDeleteSaleEvents,
   SALE_TYPES,
+  SALE_TYPE_LABELS,
   SALE_STATUSES,
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
+
 import { SaleEventDrawer } from "./SaleEventDrawer";
 import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
 import { MARKETS, marketLabel } from "@/lib/markets";
@@ -291,7 +293,7 @@ export function SaleEventsTab() {
                 <SelectItem value={ANY}>Any type</SelectItem>
                 {SALE_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>
-                    {t.replace("_", " ")}
+                    {SALE_TYPE_LABELS[t]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -526,7 +528,7 @@ export function SaleEventsTab() {
               </span>
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              {marketLabel(r.countryCode) + " · " + (r.category ?? "—") + " · " + r.saleType.replace("_", " ")}
+              {marketLabel(r.countryCode) + " · " + (r.category ?? "—") + " · " + (SALE_TYPE_LABELS[r.saleType as keyof typeof SALE_TYPE_LABELS] ?? r.saleType)}
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 text-sm">
               <span>
@@ -712,7 +714,7 @@ export function SaleEventsTab() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{r.category ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  {r.saleType.replace("_", " ")}
+                  {SALE_TYPE_LABELS[r.saleType as keyof typeof SALE_TYPE_LABELS] ?? r.saleType}
                 </TableCell>
                 <TableCell>{fmt(r.startDate)}</TableCell>
                 <TableCell>{r.endDate ? fmt(r.endDate) : "—"}</TableCell>

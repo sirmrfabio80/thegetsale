@@ -1,104 +1,238 @@
-# Market selector — signup, profile, sale-event filtering
 
-## 1. Data model
+# Prepare `sale_events` for UK manual sale-history research
 
-Add a `market` column to `public.profiles`:
+Investigation only — no code, no migrations applied. All recommendations below are incremental, reversible, and assume the current `sale_events` table is **empty** (verified: 0 rows for status / source_type / sale_type).
 
-- `market text` — nullable, lowercase ISO-3166-1 alpha-2, CHECK `^[a-z]{2}$`.
-- Reuse the existing `MarketCode` curated list in `src/lib/markets.ts` (already used for `sale_events.country_code`) so signup, profile, and admin all share one vocabulary.
+---
 
-RLS already covers profiles (users read/update their own row); no policy change needed.
+## 1. Current findings
 
-## 2. Shared UI component
+### Schema (verified from migrations)
+`sale_events` was created in `20260519220503_*.sql`:
+- `status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','archived'))`
+- `source_type text NOT NULL DEFAULT 'admin_confirmed' CHECK (source_type IN ('admin_confirmed','admin_observed','imported'))`
+- `sale_type text NOT NULL` — **no CHECK** (free text), confirmed
+- `discount_min` / `discount_max` — `integer`, no DB CHECK on range
+- `country_code` added in `20260523220517_*.sql` with `CHECK (country_code IS NULL OR country_code ~ '^[a-z]{2}$')` and composite index `(brand_id, country_code, start_date)` — matches what was described
+- RLS: non-admins limited to `status = 'published'`
+- `sale_predictions` shares the same `status` CHECK (`draft|published|archived`)
 
-New `src/components/MarketSelect.tsx`:
+### TypeScript / app code
+- `src/lib/admin-sales.functions.ts`
+  - `SALE_STATUSES = ['draft','published','hidden']` ← **mismatch with DB**
+  - `SALE_TYPES = ['seasonal','mid_season','private','flash','archive','other']`
+  - Zod: discount 0–90, `discountMax ≥ discountMin`, `endDate ≥ startDate` — all present and correct
+  - `country_code` is part of `SaleInput` and filter input
+- `src/components/admin/SaleEventDrawer.tsx` — form uses `SALE_STATUSES` and `SALE_TYPES`, exposes `countryCode` via a Select bound to `MARKETS` (Global = NULL). No `source_type` field.
+- `src/components/admin/SaleEventsTab.tsx` — bulk actions and per-row buttons hardcode `"draft" | "published" | "hidden"`; filter dropdown also uses those three.
+- `src/components/admin/SaleEventDetailsDrawer.tsx` — displays `event.status` as-is.
+- `src/lib/brands.functions.ts` — user-facing queries filter `status = 'published'` only.
+- `src/integrations/supabase/types.ts` — auto-generated; will refresh after migration.
 
-- Searchable combobox (shadcn `Command` + `Popover`, already in the project) over `MARKETS` from `src/lib/markets.ts`.
-- Each row shows country flag emoji + label + ISO code.
-- Controlled `value: MarketCode | null`, `onChange`.
-- Accessible, keyboard-navigable, mobile-friendly. Calm/editorial styling consistent with existing fields.
+### Confirmation of described state
+- Status mismatch: **confirmed** (DB allows `archived`, app uses `hidden`). Any attempt today to send `status: 'hidden'` would fail the DB CHECK. No row has `archived` (table empty).
+- `country_code` column, CHECK, index, and admin UI exposure: **confirmed**.
+- `markets.ts` `MarketCode` union & `MARKETS` list: **confirmed** in place; `gb` present.
+- Discount/date Zod validation: **confirmed** in `SaleInput`.
 
-## 3. Auto-detection helper
+---
 
-New `src/lib/detect-market.ts`:
+## 2. `status` mismatch — fix
 
-- `detectMarket(): MarketCode | null`
-- First try `navigator.language` / `navigator.languages` → parse region tag (e.g. `en-GB` → `gb`); only return if in the curated `MARKETS` allow-list.
-- Fallback to a lightweight IP lookup via a server function `detectMarketFromIp` (`createServerFn`) that reads the request's `cf-ipcountry` / `x-vercel-ip-country` header (available on the worker runtime) — no external API call, no extra dependency. Returns `null` on miss.
-- Never blocks the UI: locale runs synchronously, IP runs in the background and only sets the field if the user hasn't touched it yet.
+Adopt `draft | published | hidden` everywhere. `hidden` reads better for curated history than `archived`.
 
-## 4. Signup flow
+Required changes:
+1. Drop existing CHECK on `sale_events.status` and `sale_predictions.status`; re-add with `('draft','published','hidden')`.
+2. Default stays `'draft'`. RLS policy text doesn't need to change (still keys off `'published'`).
+3. No data migration needed — both tables are empty for `status`.
+4. App code already uses `hidden`; types regenerate automatically.
 
-The signup page currently uses OAuth (Google/Apple) and email/password through `GoogleAuthCard`. Two surfaces need the selector:
+Risk: zero (no rows). Reversible: re-run a migration swapping the CHECK back.
 
-**a. Email/password signup (in-page):**
-- Add `MarketSelect` to `GoogleAuthCard`'s signup mode, above the email field, pre-filled from `detectMarket()`.
-- Required for the email "Create account" button — disabled until a market is chosen.
-- Pass the selected market into `signUpWithEmail` and persist it to `profiles.market` immediately after `auth.signUp` succeeds (new server fn `setMyMarket`).
+---
 
-**b. OAuth signup (Google/Apple — leaves the site):**
-- Capture the chosen market on the signup page into `sessionStorage` (`theget.pendingMarket`) before redirecting to the provider.
-- In `auth.callback.tsx`, after session is established, if `profiles.market` is null and `sessionStorage` has a value, call `setMyMarket` and clear the key.
-- The selector on the signup page is **required** before the Google/Apple buttons enable too, matching the spec ("must confirm or change the pre-selected value before completing signup").
+## 3. Final recommended values
 
-This is the minimal way to honour the requirement without touching auth logic itself — the OAuth call signatures are unchanged; only the page that wraps them gates the buttons and stashes the value.
+**`status`** (DB CHECK + TS union):
+`draft | published | hidden`
 
-## 5. Profile page
+**`sale_type`** — replace the existing `SALE_TYPES` constant in `admin-sales.functions.ts` with:
+```
+summer_sale
+winter_sale
+mid_season_sale
+black_friday
+boxing_day
+archive_sale
+private_sale
+retailer_markdown
+further_reductions
+outlet_sale
+other
+```
+Notes / pushback:
+- Keep `other` as an explicit escape hatch so researchers aren't blocked when a real-world sale doesn't fit the taxonomy.
+- `boxing_day` is UK-specific; fine for now since this phase is UK-only.
+- `further_reductions` overlaps semantically with the second half of `summer_sale`/`winter_sale`. Recommend keeping it — UK retailers explicitly market it as a distinct phase and researchers will want to log it as such.
+- **DB CHECK on `sale_type`: defer.** Rely on the TS/Zod enum only for this phase. Reasons: (a) taxonomy is likely to evolve once real research starts, (b) adding a DB CHECK now means another migration the first time the list changes, (c) the enum at the API boundary already blocks bad values. Re-evaluate before opening write access beyond admins.
+- Admin UI: display human labels (e.g. "Mid-season sale", "Black Friday", "Further reductions") mapped from machine values.
 
-In `src/routes/_authenticated/profile.tsx` (account settings section):
+**`source_type`** — widen DB CHECK to:
+```
+admin_confirmed
+brand_site
+email_archive
+wayback
+retailer
+press
+price_tracker
+manual_research
+```
+- Migration **is** required (CHECK is on the column). Empty table → safe.
+- Default stays `'admin_confirmed'`.
+- Add a `SOURCE_TYPES` constant + Zod enum in `admin-sales.functions.ts`, surface as a Select in `SaleEventDrawer` (currently not exposed).
+- Recommend widening the CHECK now rather than deferring — `source_type` already has a CHECK so the migration cost is the same either way, and provenance is core to the research workflow.
 
-- Add a "Market" row with `MarketSelect`, hydrated from the profile.
-- On change, call `setMyMarket` (new server fn) and invalidate the profile query. Calm inline saved state, no toast (per project guardrails).
+---
 
-New server fn in `src/lib/profile.functions.ts`:
+## 4. Category — recommendation
 
-```ts
-export const setMyMarket = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ market: z.string().regex(/^[a-z]{2}$/).nullable() }).parse)
-  .handler(...)
+**Defer.** Keep `category text` nullable as-is for this phase.
+
+Reasons:
+- The brand-level `categories text[]` already exists on `brands` and covers discovery/filtering.
+- Sale-level category at the row is informational; a free-text field with a convention (`null` = whole house, otherwise lowercase slug like `womenswear`, `menswear`, `accessories`, `beauty`) is enough.
+- Promoting to `text[]` or a relation now is speculative until research surfaces real need (e.g. "this sale covered womenswear + accessories but not menswear").
+
+Action: document the convention in `admin_notes` template / drawer helper text; no schema change.
+
+---
+
+## 5. Evidence tracking — `admin_notes` template
+
+Stay with `admin_notes`. Do **not** add `sale_event_sources` this phase.
+
+Proposed template (rendered as placeholder text in the Admin notes textarea, and offered via a "Insert template" button next to the field):
+
+```
+Evidence
+- Source:
+- URL:
+- Archived URL:
+- Observed date:
+- Sale copy:
+- Discount range:
+- Date confidence:
+- Notes:
+
+Confidence: low | medium | high
 ```
 
-Extend `ProfileDTO` with `market: string | null` and `getMyProfile` to select it.
+Conventions:
+- One evidence block per source; researchers can paste multiple blocks separated by a blank line.
+- `Date confidence` and trailing `Confidence` line are intentionally separate: the first qualifies the dates, the second qualifies the overall record.
+- Keep machine parsing out of scope — text only.
 
-## 6. Server-side sale-event filtering
+---
 
-Update the two user-facing reads in `src/lib/brands.functions.ts`:
+## 6. Discount bounds
 
-- `listBrandsWithSignals` (dashboard / watchlist): the `.from("sale_events")` query at line 119.
-- The brand-detail history/timeline queries at lines 184 and 232.
+**Widen to 0–100.** Recommendation: change Zod `discount_min`/`discount_max` upper bound from 90 to 100.
 
-Both functions already run under `requireSupabaseAuth`. Steps:
+Reasons:
+- Archive sales and final clearance can legitimately reach 90%+ and occasionally 95%. Capping at 90 forces researchers to misrecord.
+- Keep the cross-field `discount_max ≥ discount_min` refine unchanged.
+- No DB CHECK to add — column stays plain `integer`, validation lives in Zod.
 
-1. Load `profiles.market` for the current user once at the top of each handler (cheap; same supabase client).
-2. If `market` is set, add `.or(\`country_code.eq.${market},country_code.is.null\`)` so the user sees their market's events plus global/unscoped ones (matches how admins author "Global" as `NULL`).
-3. If `market` is `null`, return an empty events list along with a `needsMarket: true` flag in the DTO so the UI can render the prompt.
+`end_date ≥ start_date` validation is already present in `SaleInput` — confirmed, no change.
 
-Dashboard (`src/routes/_authenticated/dashboard.tsx`), watchlist, and brand detail render an empty state with a CTA linking to `/profile` when `needsMarket` is true. No other UI changes.
+---
 
-Admin surfaces (`SaleEventsTab`, drawers) are unaffected — admins still see all markets.
+## 7. Migration steps (in order)
 
-## 7. Files
+One migration file, applied as a single transaction:
 
-- New: `supabase/migrations/<ts>_add_profiles_market.sql`, `src/components/MarketSelect.tsx`, `src/lib/detect-market.ts`.
-- Edited: `src/lib/markets.ts` (export `MARKETS` array if not already), `src/lib/profile.functions.ts` (+`setMyMarket`, `market` field), `src/lib/brands.functions.ts` (market filter + `needsMarket`), `src/components/marketing/GoogleAuthCard.tsx` (selector + gating + sessionStorage stash), `src/routes/auth.callback.tsx` (apply pending market), `src/routes/_authenticated/profile.tsx` (Market row), `src/routes/_authenticated/dashboard.tsx` + `watchlist.tsx` + `brand.$id.tsx` (empty-state prompt), `AI_PROJECT_HANDOFF.md`.
-- Auto-regenerated: `src/integrations/supabase/types.ts`.
+```text
+1. ALTER TABLE public.sale_events
+     DROP CONSTRAINT sale_events_status_check,
+     ADD  CONSTRAINT sale_events_status_check
+       CHECK (status IN ('draft','published','hidden'));
 
-## 8. Out of scope
+2. ALTER TABLE public.sale_predictions
+     DROP CONSTRAINT sale_predictions_status_check,
+     ADD  CONSTRAINT sale_predictions_status_check
+       CHECK (status IN ('draft','published','hidden'));
 
-- Existing auth logic (`signInWith*`, `signUpWithEmail`) — unchanged.
-- Layout components, marketing pages, admin UIs.
-- Prediction algorithm market-awareness (separate slice).
-- Backfilling existing accounts: existing users will see the empty-state prompt and set their market from `/profile`.
+3. ALTER TABLE public.sale_events
+     DROP CONSTRAINT sale_events_source_type_check,
+     ADD  CONSTRAINT sale_events_source_type_check
+       CHECK (source_type IN (
+         'admin_confirmed','brand_site','email_archive','wayback',
+         'retailer','press','price_tracker','manual_research'
+       ));
+```
 
-## 9. Risks & regression checks
+(Exact constraint names to be confirmed from `pg_constraint` when writing the migration; the original migration didn't name them explicitly, so Postgres auto-named them — the real migration will look them up or use `IF EXISTS`.)
 
-- **OAuth users who skip the stash**: if `sessionStorage` is cleared between click and callback, market lands as null and the user is prompted on first dashboard load — acceptable, not a hard failure.
-- **Existing users**: all have `market = NULL` post-migration, so dashboard renders the prompt. No data loss; admin sees no change.
-- **Sale-event visibility regression**: published events with `country_code = NULL` (current state for all rows) remain visible to every market — keeps the dashboard from going empty for existing markets. Verify by listing sales with a test profile in `gb` and confirming both `gb` and `NULL` rows appear, and `us` rows do not.
-- **IP detection on the worker runtime**: fall back to `navigator.language` if the header is missing; never block signup.
-- **Private beta path**: unchanged — selector only renders in the active signup card.
+Then, in app code (separate change, after migration approval):
 
-## 10. Approval
+```text
+4. admin-sales.functions.ts
+   - Replace SALE_TYPES list (final values above).
+   - Add SOURCE_TYPES constant + Zod enum.
+   - Add `sourceType` to SaleInput (default 'admin_confirmed').
+   - Bump discount max from 90 → 100.
 
-Approve to switch to build mode and execute in this order: migration → shared selector + detection → profile fn + page → signup gating + callback stash → server-side filter + empty states → handoff doc.
+5. SaleEventDrawer.tsx
+   - Source type Select (new).
+   - Sale type Select uses new label map.
+   - Admin notes textarea: placeholder + "Insert evidence template" button.
+
+6. SaleEventsTab.tsx + SaleEventDetailsDrawer.tsx
+   - Sale type label map (machine → human).
+   - Optional: show source_type chip in details drawer.
+
+7. supabase/types.ts auto-regenerates after migration runs.
+```
+
+---
+
+## 8. Affected files
+
+- `supabase/migrations/<new>.sql` (new)
+- `src/lib/admin-sales.functions.ts` — `SALE_STATUSES` (no change in values, just removes mismatch), `SALE_TYPES`, new `SOURCE_TYPES`, `SaleInput` extension, discount bound.
+- `src/components/admin/SaleEventDrawer.tsx` — new source-type field, sale-type label map, notes template helper.
+- `src/components/admin/SaleEventsTab.tsx` — sale-type label map (display only).
+- `src/components/admin/SaleEventDetailsDrawer.tsx` — sale-type / source-type labels.
+- `src/integrations/supabase/types.ts` — auto-regenerated.
+
+Not affected: `src/lib/brands.functions.ts` (still filters by `status = 'published'`), prediction logic, user-facing components, `markets.ts`, RLS policies.
+
+---
+
+## 9. Regression risks
+
+- **CHECK constraint names**: Postgres auto-named the original constraints. Migration must look them up dynamically or wrap drops in `DO $$ ... EXCEPTION ... $$` to stay idempotent. Otherwise migration may fail on a fresh DB rebuild.
+- **`sale_predictions.status`**: prediction generation code may insert `'archived'` somewhere — needs a quick grep before applying step 2. (Initial scan found no such writes, but worth re-checking the prediction worker once it exists.)
+- **Type regeneration lag**: between migration apply and types regen, `status: 'hidden'` inserts will type-error against a stale union. Apply migration first, regenerate types, then ship UI changes — already the standard flow.
+- **Researcher confusion**: introducing `source_type` Select without docs may default everything to `admin_confirmed`. Mitigate with helper text under the field.
+- **`sale_type` taxonomy churn**: no DB CHECK means a typo in the constant won't be caught by Postgres. Mitigation: Zod enum at the server-fn boundary.
+
+---
+
+## 10. Testing checklist
+
+After migration + code changes:
+
+- [ ] Migration applies cleanly on a fresh DB rebuild (constraint drops are idempotent).
+- [ ] `INSERT ... status='hidden'` succeeds; `status='archived'` fails.
+- [ ] `INSERT ... source_type='wayback'` succeeds; `source_type='nonsense'` fails.
+- [ ] Admin UI: create a new UK event with `country_code='gb'`, every new `sale_type`, every new `source_type`, discount 0–100, future + past dates.
+- [ ] Admin UI: bulk publish / hide / draft transitions work for an existing draft.
+- [ ] Admin UI: filter by status `hidden` returns the right rows.
+- [ ] Admin UI: "Insert evidence template" populates `admin_notes` correctly and can be appended for a second source.
+- [ ] Non-admin user: hidden + draft events are invisible (`status='published'` RLS still holds).
+- [ ] `brands.functions.ts` dashboard / brand-detail queries still return only published rows for the user's market + globals.
+- [ ] TypeScript: no `any` introduced; `SALE_TYPES`/`SOURCE_TYPES`/`SALE_STATUSES` are the single source of truth (no duplicated string literals in components).
+- [ ] Drawer Zod: discount 100 accepted, 101 rejected, `discount_max < discount_min` rejected, `end_date < start_date` rejected.
+- [ ] `sale_predictions` reads continue to work (status CHECK widened symmetrically).
