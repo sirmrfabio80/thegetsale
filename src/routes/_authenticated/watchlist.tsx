@@ -588,45 +588,131 @@ function WatchlistPage() {
           </Link>
         </div>
       ) : visible.length === 0 ? (
-        <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
-          <p className="eyebrow text-muted-foreground">Filtered out</p>
-          <p className="mt-4 font-serif text-3xl leading-tight">No brands in {deptLabel}.</p>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other
-            departments
-            {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={clearDepartmentFilters}
-              className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
-            >
-              Clear filters
-            </button>
-            <Link
-              to="/setup"
-              className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-            >
-              Adjust in setup
-            </Link>
+        (q.trim() !== "" || cat !== "All") && filteredOutByQuery > 0 ? (
+          <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
+            <p className="eyebrow text-muted-foreground">No matches</p>
+            <p className="mt-4 font-serif text-3xl leading-tight">
+              No houses match your search.
+            </p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+              Try a different category or clear the search to see your full watchlist.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={clearSearchAndCategory}
+                className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+              >
+                Clear search & filters
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
+            <p className="eyebrow text-muted-foreground">Filtered out</p>
+            <p className="mt-4 font-serif text-3xl leading-tight">No brands in {deptLabel}.</p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+              {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other
+              departments
+              {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={clearDepartmentFilters}
+                className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+              >
+                Clear filters
+              </button>
+              <Link
+                to="/setup"
+                className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                Adjust in setup
+              </Link>
+            </div>
+          </div>
+        )
       ) : (
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {visible.map((it) => (
-            <WatchlistCard
-              key={it.brandId}
-              item={it}
-              brand={brandsBySlug.get(it.brandId) ?? null}
-              selectable={selectMode}
-              selected={selected.has(it.brandId)}
-              onToggleSelect={toggleSelect}
-            />
-          ))}
-          {orphans.map((it) => (
-            <WatchlistCard key={it.brandId} item={it} brand={null} />
-          ))}
-        </section>
+        <>
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {pagedVisible.map((it) => (
+              <WatchlistCard
+                key={it.brandId}
+                item={it}
+                brand={brandsBySlug.get(it.brandId) ?? null}
+                selectable={selectMode}
+                selected={selected.has(it.brandId)}
+                onToggleSelect={toggleSelect}
+              />
+            ))}
+            {safePage === totalPages &&
+              orphans.map((it) => (
+                <WatchlistCard key={it.brandId} item={it} brand={null} />
+              ))}
+          </section>
+
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <p className="eyebrow [font-variant-numeric:tabular-nums]">
+                Showing {rangeStart}–{rangeEnd} of {visible.length} houses
+              </p>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      aria-disabled={safePage === 1}
+                      tabIndex={safePage === 1 ? -1 : undefined}
+                      className={
+                        safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage > 1) goToPage(safePage - 1);
+                      }}
+                    />
+                  </PaginationItem>
+                  {pageItems.map((item) =>
+                    typeof item === "number" ? (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === safePage}
+                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (item !== safePage) goToPage(item);
+                          }}
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      aria-disabled={safePage === totalPages}
+                      tabIndex={safePage === totalPages ? -1 : undefined}
+                      className={
+                        safePage === totalPages
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage < totalPages) goToPage(safePage + 1);
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </>
       )}
     </PageLayout>
   );
