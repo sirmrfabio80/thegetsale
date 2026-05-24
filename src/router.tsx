@@ -3,6 +3,8 @@ import { createRouter } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { routeTree } from "./routeTree.gen";
 import { subscribeToUser } from "./lib/auth";
+import { PERF_CONFIG } from "./lib/perf-config";
+import { installPerfLogger } from "./lib/perf-logger";
 
 export type RouterAuth = {
   status: "loading" | "authenticated" | "unauthenticated";
@@ -11,14 +13,14 @@ export type RouterAuth = {
 
 export const getRouter = () => {
   // Fresh QueryClient per request — never share across SSR requests.
-  // Defaults tuned to reduce refetch churn on long-lived tabs (the main
-  // contributor to Safari's "significant memory" reloads).
+  // Defaults sourced from `lib/perf-config.ts` for centralised tuning.
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 60_000,
-        gcTime: 5 * 60_000,
-        refetchOnWindowFocus: false,
+        staleTime: PERF_CONFIG.queryStaleTime,
+        gcTime: PERF_CONFIG.queryGcTime,
+        refetchOnWindowFocus: PERF_CONFIG.refetchOnWindowFocus,
+        refetchOnReconnect: PERF_CONFIG.refetchOnReconnect,
       },
     },
   });
@@ -32,7 +34,7 @@ export const getRouter = () => {
     // Non-zero so link-hover prefetches aren't instantly stale and refetched
     // on the actual navigation. Query's own staleTime still controls
     // freshness end-to-end.
-    defaultPreloadStaleTime: 30_000,
+    defaultPreloadStaleTime: PERF_CONFIG.preloadStaleTime,
   });
 
   if (typeof window !== "undefined") {
@@ -54,6 +56,9 @@ export const getRouter = () => {
       queryClient.invalidateQueries();
       router.invalidate();
     });
+
+    // Dev-only perf logger: route transitions, invalidations, heap samples.
+    installPerfLogger(router, queryClient);
   }
 
   return router;
