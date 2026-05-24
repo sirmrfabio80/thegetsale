@@ -318,7 +318,7 @@ function Dashboard() {
         })}
         {departments.size > 0 && (
           <button
-            onClick={() => setDepartments(new Set())}
+            onClick={handleClearDepartments}
             className="px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             Clear
@@ -331,7 +331,7 @@ function Dashboard() {
           {FILTERS.map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => handleSetFilter(f)}
               className={cn(
                 "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
                 filter === f
@@ -344,7 +344,7 @@ function Dashboard() {
           ))}
           {hasSetup && (
             <button
-              onClick={() => setOnlyMine((v) => !v)}
+              onClick={handleToggleOnlyMine}
               className={cn(
                 "border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition-colors",
                 onlyMine
@@ -358,7 +358,7 @@ function Dashboard() {
         </div>
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search a brand…"
           className="w-full border border-border bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-foreground focus:outline-none md:w-64"
         />
@@ -366,13 +366,15 @@ function Dashboard() {
 
       <SectionRule />
 
+      <div ref={gridTopRef} className="scroll-mt-24" />
+
       {filtered.length === 0 ? (
         <div className="py-16 text-center text-sm text-muted-foreground">
           {onlyMine ? (
             <p>
               None of your brands match right now.{" "}
               <button
-                onClick={() => setOnlyMine(false)}
+                onClick={handleToggleOnlyMine}
                 className="underline underline-offset-4 hover:text-foreground"
               >
                 See all brands
@@ -388,12 +390,78 @@ function Dashboard() {
           )}
         </div>
       ) : (
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {filtered.map((b) => (
-            <BrandCard key={b.id} brand={b} forYou={hasSetup && matchedIds.has(b.id)} />
-          ))}
-        </section>
+        <>
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {visible.map((b) => (
+              <BrandCard key={b.id} brand={b} forYou={hasSetup && matchedIds.has(b.id)} />
+            ))}
+          </section>
+
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <p className="eyebrow [font-variant-numeric:tabular-nums]">
+                Showing {rangeStart}–{rangeEnd} of {filtered.length} brands
+              </p>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      aria-disabled={safePage === 1}
+                      tabIndex={safePage === 1 ? -1 : undefined}
+                      className={
+                        safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage > 1) goToPage(safePage - 1);
+                      }}
+                    />
+                  </PaginationItem>
+                  {pageItems.map((item) =>
+                    typeof item === "number" ? (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === safePage}
+                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (item !== safePage) goToPage(item);
+                          }}
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      aria-disabled={safePage === totalPages}
+                      tabIndex={safePage === totalPages ? -1 : undefined}
+                      className={
+                        safePage === totalPages
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (safePage < totalPages) goToPage(safePage + 1);
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </>
       )}
+
     </PageLayout>
   );
 }
