@@ -98,6 +98,9 @@ const FILTERS: Array<"All" | Category> = [
 
 function Dashboard() {
   const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
+  const { page } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const gridTopRef = useRef<HTMLDivElement>(null);
   const houseDTOs = dashboard.houses;
   const needsMarket = dashboard.needsMarket;
   const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
@@ -113,6 +116,18 @@ function Dashboard() {
   const [onlyMine, setOnlyMine] = useState(false);
   const [styles, setStyles] = useState<StylePreference[]>([]);
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
+
+  const resetPage = () => {
+    navigate({ search: (prev) => ({ ...prev, page: 1 }), replace: true });
+  };
+
+  const goToPage = (next: number) => {
+    navigate({ search: (prev) => ({ ...prev, page: next }) });
+    requestAnimationFrame(() => {
+      gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
 
   // Sync derived filter state from the backend-backed setup record.
   useEffect(() => {
