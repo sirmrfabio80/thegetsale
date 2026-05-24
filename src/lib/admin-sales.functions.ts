@@ -123,6 +123,7 @@ function mapRow(r: any, brandName: string | null): SaleEventDTO {
     category: r.category ?? null,
     countryCode: r.country_code ?? null,
     saleType: r.sale_type,
+    sourceType: r.source_type ?? "admin_confirmed",
     startDate: r.start_date,
     endDate: r.end_date,
     discountMin: r.discount_min,
@@ -131,6 +132,7 @@ function mapRow(r: any, brandName: string | null): SaleEventDTO {
     adminNotes: r.admin_notes,
   };
 }
+
 
 export const listBrandOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
