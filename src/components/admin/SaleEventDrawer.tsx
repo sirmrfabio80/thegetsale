@@ -61,6 +61,7 @@ type FormState = {
   category: string;
   countryCode: string; // "" = Global
   saleType: (typeof SALE_TYPES)[number];
+  sourceType: (typeof SOURCE_TYPES)[number];
   startDate: string;
   endDate: string;
   discountMin: string;
@@ -75,7 +76,8 @@ const empty: FormState = {
   brandId: "",
   category: "",
   countryCode: "",
-  saleType: "seasonal",
+  saleType: "summer_sale",
+  sourceType: "admin_confirmed",
   startDate: "",
   endDate: "",
   discountMin: "",
@@ -87,15 +89,16 @@ const empty: FormState = {
 const dateRe = /^\d{4}-\d{2}-\d{2}$/;
 const discountField = z
   .string()
-  .refine((v) => v === "" || /^\d+$/.test(v), { message: "Whole number 0–90" })
+  .refine((v) => v === "" || /^\d+$/.test(v), { message: "Whole number 0–100" })
   .refine(
     (v) => {
       if (v === "") return true;
       const n = Number(v);
-      return n >= 0 && n <= 90;
+      return n >= 0 && n <= 100;
     },
-    { message: "Must be between 0 and 90" },
+    { message: "Must be between 0 and 100" },
   );
+
 
 const saleFormSchema = z
   .object({
