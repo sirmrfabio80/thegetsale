@@ -1,238 +1,108 @@
 
-# Prepare `sale_events` for UK manual sale-history research
+# Memory investigation + profile route fix — The Get
 
-Investigation only — no code, no migrations applied. All recommendations below are incremental, reversible, and assume the current `sale_events` table is **empty** (verified: 0 rows for status / source_type / sale_type).
+## What the screenshots show
 
----
+1. **Dashboard reload (Safari)** — "This web page was reloaded because it was using significant memory." Safari's per-tab memory guard. Fires when a tab's footprint grows past Safari's threshold over time, not because a single render is doing something catastrophic.
+2. **Profile page (`/profile`)** — branded `__root.tsx` `ErrorComponent` ("This page didn't load") instead of the actual profile. The route is throwing during `beforeLoad`/loader, the root error boundary catches it, and the user sees the generic fallback.
 
-## 1. Current findings
+Both URLs are `preview--thegetsale.lovable.app` — the **deployed preview**, not local Vite dev. The runtime error `Failed to fetch dynamically imported module: virtual:tanstack-start-client-entry` is the classic symptom of Safari evicting the tab and then trying to re-import chunks from a build that has since been replaced. It is a consequence of the reload, not the cause.
 
-### Schema (verified from migrations)
-`sale_events` was created in `20260519220503_*.sql`:
-- `status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','archived'))`
-- `source_type text NOT NULL DEFAULT 'admin_confirmed' CHECK (source_type IN ('admin_confirmed','admin_observed','imported'))`
-- `sale_type text NOT NULL` — **no CHECK** (free text), confirmed
-- `discount_min` / `discount_max` — `integer`, no DB CHECK on range
-- `country_code` added in `20260523220517_*.sql` with `CHECK (country_code IS NULL OR country_code ~ '^[a-z]{2}$')` and composite index `(brand_id, country_code, start_date)` — matches what was described
-- RLS: non-admins limited to `status = 'published'`
-- `sale_predictions` shares the same `status` CHECK (`draft|published|archived`)
+## Likely contributors to memory — ranked by suspicion
 
-### TypeScript / app code
-- `src/lib/admin-sales.functions.ts`
-  - `SALE_STATUSES = ['draft','published','hidden']` ← **mismatch with DB**
-  - `SALE_TYPES = ['seasonal','mid_season','private','flash','archive','other']`
-  - Zod: discount 0–90, `discountMax ≥ discountMin`, `endDate ≥ startDate` — all present and correct
-  - `country_code` is part of `SaleInput` and filter input
-- `src/components/admin/SaleEventDrawer.tsx` — form uses `SALE_STATUSES` and `SALE_TYPES`, exposes `countryCode` via a Select bound to `MARKETS` (Global = NULL). No `source_type` field.
-- `src/components/admin/SaleEventsTab.tsx` — bulk actions and per-row buttons hardcode `"draft" | "published" | "hidden"`; filter dropdown also uses those three.
-- `src/components/admin/SaleEventDetailsDrawer.tsx` — displays `event.status` as-is.
-- `src/lib/brands.functions.ts` — user-facing queries filter `status = 'published'` only.
-- `src/integrations/supabase/types.ts` — auto-generated; will refresh after migration.
+### 1. Double `onAuthStateChange` subscription with full query-cache invalidation (high)
 
-### Confirmation of described state
-- Status mismatch: **confirmed** (DB allows `archived`, app uses `hidden`). Any attempt today to send `status: 'hidden'` would fail the DB CHECK. No row has `archived` (table empty).
-- `country_code` column, CHECK, index, and admin UI exposure: **confirmed**.
-- `markets.ts` `MarketCode` union & `MARKETS` list: **confirmed** in place; `gb` present.
-- Discount/date Zod validation: **confirmed** in `SaleInput`.
+`src/router.tsx:39` and `src/lib/auth.ts:95` both call `supabase.auth.onAuthStateChange`. Every auth event (INITIAL_SESSION, TOKEN_REFRESHED — roughly hourly and on every focus/visibility regain) triggers in the router branch:
 
----
+- `queryClient.invalidateQueries()` over **every** query in the cache
+- `router.invalidate()` (refetches every active route loader)
 
-## 2. `status` mismatch — fix
+`PERFORMANCE.md §2/§3` already flagged this. The auth store fix landed; the router-side duplicate is still there. On a long-lived tab, that's a steady stream of refetches, new response objects retained in the query cache, and re-rendered React trees — exactly the shape that pushes Safari over its ceiling.
 
-Adopt `draft | published | hidden` everywhere. `hidden` reads better for curated history than `archived`.
+### 2. Query cache with no `defaultOptions` (high)
 
-Required changes:
-1. Drop existing CHECK on `sale_events.status` and `sale_predictions.status`; re-add with `('draft','published','hidden')`.
-2. Default stays `'draft'`. RLS policy text doesn't need to change (still keys off `'published'`).
-3. No data migration needed — both tables are empty for `status`.
-4. App code already uses `hidden`; types regenerate automatically.
+`getRouter()` creates a `QueryClient` with no defaults and sets `defaultPreloadStaleTime: 0` on the router. Effects:
 
-Risk: zero (no rows). Reversible: re-run a migration swapping the CHECK back.
+- `gcTime` defaults to 5 minutes, but on a backgrounded Safari tab timers throttle — cached responses linger far longer than expected.
+- `defaultPreloadStaleTime: 0` means every link-hover prefetch is instantly stale, so the actual navigation refetches even though data just arrived. Each refetch creates a new response object and keeps the previous one around until React unmounts the consumer.
+- Combined with §1, every TOKEN_REFRESHED re-runs `listHousesForDashboard`, `watchlistQueryOptions`, `setupQueryOptions`, etc., and retains the prior payloads.
 
----
+### 3. `lucide-react` barrel import (medium)
 
-## 3. Final recommended values
+`package.json` pulls all of `lucide-react` (~1100 icons). Production builds tree-shake per-icon, but the dev/preview build ships more eagerly and the parsed-but-unused modules sit in memory, inflating baseline heap.
 
-**`status`** (DB CHECK + TS union):
-`draft | published | hidden`
+### 4. 27 Radix packages + `vaul` + `tw-animate-css` (medium)
 
-**`sale_type`** — replace the existing `SALE_TYPES` constant in `admin-sales.functions.ts` with:
-```
-summer_sale
-winter_sale
-mid_season_sale
-black_friday
-boxing_day
-archive_sale
-private_sale
-retailer_markdown
-further_reductions
-outlet_sale
-other
-```
-Notes / pushback:
-- Keep `other` as an explicit escape hatch so researchers aren't blocked when a real-world sale doesn't fit the taxonomy.
-- `boxing_day` is UK-specific; fine for now since this phase is UK-only.
-- `further_reductions` overlaps semantically with the second half of `summer_sale`/`winter_sale`. Recommend keeping it — UK retailers explicitly market it as a distinct phase and researchers will want to log it as such.
-- **DB CHECK on `sale_type`: defer.** Rely on the TS/Zod enum only for this phase. Reasons: (a) taxonomy is likely to evolve once real research starts, (b) adding a DB CHECK now means another migration the first time the list changes, (c) the enum at the API boundary already blocks bad values. Re-evaluate before opening write access beyond admins.
-- Admin UI: display human labels (e.g. "Mid-season sale", "Black Friday", "Further reductions") mapped from machine values.
+Anything actually rendered (Dialog, Select, Dropdown, Tooltip, Popover, ScrollArea) brings Radix runtime + Floating UI state. Several admin and setup screens mount multiple primitives simultaneously, and Radix portals can retain detached DOM after route transitions if a popover was open during navigation.
 
-**`source_type`** — widen DB CHECK to:
-```
-admin_confirmed
-brand_site
-email_archive
-wayback
-retailer
-press
-price_tracker
-manual_research
-```
-- Migration **is** required (CHECK is on the column). Empty table → safe.
-- Default stays `'admin_confirmed'`.
-- Add a `SOURCE_TYPES` constant + Zod enum in `admin-sales.functions.ts`, surface as a Select in `SaleEventDrawer` (currently not exposed).
-- Recommend widening the CHECK now rather than deferring — `source_type` already has a CHECK so the migration cost is the same either way, and provenance is core to the research workflow.
+### 5. `lib/error-capture.ts` global listeners (low)
 
----
+`globalThis.addEventListener("error", …)` and `unhandledrejection` registered at module scope, never removed. Single-slot, 5s TTL — not a growing list, but flagging it as one of the few persistent globals.
 
-## 4. Category — recommendation
+### 6. Lovable preview iframe overhead (informational)
 
-**Defer.** Keep `category text` nullable as-is for this phase.
+Safari accounts iframe memory against the parent tab. Part of the "significant memory" reading is the Lovable preview chrome itself, not The Get. The same app at a custom domain reports noticeably less. Outside our control — investigation here targets the app's own heap.
 
-Reasons:
-- The brand-level `categories text[]` already exists on `brands` and covers discovery/filtering.
-- Sale-level category at the row is informational; a free-text field with a convention (`null` = whole house, otherwise lowercase slug like `womenswear`, `menswear`, `accessories`, `beauty`) is enough.
-- Promoting to `text[]` or a relation now is speculative until research surfaces real need (e.g. "this sale covered womenswear + accessories but not menswear").
+## What's wrong with `/profile`
 
-Action: document the convention in `admin_notes` template / drawer helper text; no schema change.
+`src/routes/_authenticated/profile.tsx` has its own `beforeLoad`:
 
----
-
-## 5. Evidence tracking — `admin_notes` template
-
-Stay with `admin_notes`. Do **not** add `sale_event_sources` this phase.
-
-Proposed template (rendered as placeholder text in the Admin notes textarea, and offered via a "Insert template" button next to the field):
-
-```
-Evidence
-- Source:
-- URL:
-- Archived URL:
-- Observed date:
-- Sale copy:
-- Discount range:
-- Date confidence:
-- Notes:
-
-Confidence: low | medium | high
+```ts
+beforeLoad: async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw redirect({ to: "/login" });
+}
 ```
 
-Conventions:
-- One evidence block per source; researchers can paste multiple blocks separated by a blank line.
-- `Date confidence` and trailing `Confidence` line are intentionally separate: the first qualifies the dates, the second qualifies the overall record.
-- Keep machine parsing out of scope — text only.
+Three problems:
 
----
+1. **It's redundant.** The parent `_authenticated.tsx` layout already gates on `context.auth.status`. This second check duplicates the gate and adds a network round-trip on every navigation into `/profile`.
+2. **It runs during SSR.** Profile is under `_authenticated/`, but `_authenticated.tsx` only filters by `context.auth` (which is `"loading"` during SSR — it does NOT throw during SSR, it just lets the layout render `HydratingShell`). The profile's `beforeLoad` then fires `supabase.auth.getUser()` on the server with no session, returns `{ data: { user: null }, error: ... }`, and throws `redirect({ to: "/login" })`. If the redirect resolves cleanly it's silent — but any failure mode (network blip, transient Supabase error, the redirect throw being swallowed by an unrelated try/catch upstream) surfaces as a thrown error and the root `errorComponent` renders "This page didn't load".
+3. **Other authenticated routes don't do this.** `dashboard.tsx`, `watchlist.tsx`, `setup.tsx`, etc. rely on the parent layout gate only. Profile is the odd one out, and it's the only route currently showing the error.
 
-## 6. Discount bounds
+The fix is to delete the `beforeLoad` on the profile route and rely on `_authenticated.tsx` like every other protected page. The `useProfile()` query inside the component already handles the authenticated/unauthenticated split via `enabled: auth.status === "authenticated"`, so removing the gate doesn't expose anything to anonymous users.
 
-**Widen to 0–100.** Recommendation: change Zod `discount_min`/`discount_max` upper bound from 90 to 100.
+## What to verify before fixing memory
 
-Reasons:
-- Archive sales and final clearance can legitimately reach 90%+ and occasionally 95%. Capping at 90 forces researchers to misrecord.
-- Keep the cross-field `discount_max ≥ discount_min` refine unchanged.
-- No DB CHECK to add — column stays plain `integer`, validation lives in Zod.
+Diagnostic steps to run before any code change so we don't fix the wrong thing:
 
-`end_date ≥ start_date` validation is already present in `SaleInput` — confirmed, no change.
+1. **Heap snapshot in Safari.** Sit on `/dashboard` for 2 minutes, then dashboard → watchlist → brand detail → back, 3×. A growing heap across identical navigations confirms a leak; flat-but-high points to baseline bloat.
+2. **Query cache count** at idle vs after 5 minutes. If it grows, §1+§2 confirmed.
+3. **Detached DOM** in Heap Snapshot → filter "Detached". High count = Radix portal cleanup issue.
+4. **Reproduce in Chrome.** Chrome's DevTools Performance Monitor shows JS heap trend. If Chrome stays flat and Safari grows, it's Safari background-tab throttling + query refetch storm.
 
----
+## Proposed fixes (ordered, smallest first)
 
-## 7. Migration steps (in order)
+1. **Remove the duplicate `beforeLoad` on `/_authenticated/profile`.** Delete the block; keep `errorComponent` and `pendingComponent`. This is the profile error fix and is independent of the memory work.
+2. **Remove the duplicate auth subscription in `src/router.tsx`.** The module-scoped store in `src/lib/auth.ts` already handles auth state. Drive router context off the same store instead of opening a second `onAuthStateChange`. Kills the full-cache invalidation on every TOKEN_REFRESHED.
+3. **Tighten `QueryClient` defaults.** In `getRouter()`:
+   ```ts
+   new QueryClient({
+     defaultOptions: {
+       queries: {
+         staleTime: 60_000,
+         gcTime: 5 * 60_000,
+         refetchOnWindowFocus: false,
+       },
+     },
+   })
+   ```
+   and raise `defaultPreloadStaleTime` to e.g. `30_000` so hover prefetches aren't instantly thrown away.
+4. **Audit `lucide-react` usage.** Either switch hot paths to per-icon imports or run `bunx knip`; if <50 distinct icons used, per-icon imports are a clear win.
+5. **Verify Radix portal cleanup** on routes that open menus/popovers (admin, profile, setup). Confirm open popovers close before route navigation, or rely on `<Outlet />` unmount. Detached-DOM count from step 3 above tells us if this is real.
+6. **(Optional) Drop unused Radix packages** via `bunx depcheck`. Trims install size, doesn't directly reduce runtime memory; lowest priority.
 
-One migration file, applied as a single transaction:
+## What this plan does NOT change
 
-```text
-1. ALTER TABLE public.sale_events
-     DROP CONSTRAINT sale_events_status_check,
-     ADD  CONSTRAINT sale_events_status_check
-       CHECK (status IN ('draft','published','hidden'));
+- No product, routing, terminology, or UX changes.
+- No backend or RLS changes.
+- No new dependencies.
+- The Lovable preview iframe overhead is outside our control.
 
-2. ALTER TABLE public.sale_predictions
-     DROP CONSTRAINT sale_predictions_status_check,
-     ADD  CONSTRAINT sale_predictions_status_check
-       CHECK (status IN ('draft','published','hidden'));
+## Deliverable order if approved
 
-3. ALTER TABLE public.sale_events
-     DROP CONSTRAINT sale_events_source_type_check,
-     ADD  CONSTRAINT sale_events_source_type_check
-       CHECK (source_type IN (
-         'admin_confirmed','brand_site','email_archive','wayback',
-         'retailer','press','price_tracker','manual_research'
-       ));
-```
-
-(Exact constraint names to be confirmed from `pg_constraint` when writing the migration; the original migration didn't name them explicitly, so Postgres auto-named them — the real migration will look them up or use `IF EXISTS`.)
-
-Then, in app code (separate change, after migration approval):
-
-```text
-4. admin-sales.functions.ts
-   - Replace SALE_TYPES list (final values above).
-   - Add SOURCE_TYPES constant + Zod enum.
-   - Add `sourceType` to SaleInput (default 'admin_confirmed').
-   - Bump discount max from 90 → 100.
-
-5. SaleEventDrawer.tsx
-   - Source type Select (new).
-   - Sale type Select uses new label map.
-   - Admin notes textarea: placeholder + "Insert evidence template" button.
-
-6. SaleEventsTab.tsx + SaleEventDetailsDrawer.tsx
-   - Sale type label map (machine → human).
-   - Optional: show source_type chip in details drawer.
-
-7. supabase/types.ts auto-regenerates after migration runs.
-```
-
----
-
-## 8. Affected files
-
-- `supabase/migrations/<new>.sql` (new)
-- `src/lib/admin-sales.functions.ts` — `SALE_STATUSES` (no change in values, just removes mismatch), `SALE_TYPES`, new `SOURCE_TYPES`, `SaleInput` extension, discount bound.
-- `src/components/admin/SaleEventDrawer.tsx` — new source-type field, sale-type label map, notes template helper.
-- `src/components/admin/SaleEventsTab.tsx` — sale-type label map (display only).
-- `src/components/admin/SaleEventDetailsDrawer.tsx` — sale-type / source-type labels.
-- `src/integrations/supabase/types.ts` — auto-regenerated.
-
-Not affected: `src/lib/brands.functions.ts` (still filters by `status = 'published'`), prediction logic, user-facing components, `markets.ts`, RLS policies.
-
----
-
-## 9. Regression risks
-
-- **CHECK constraint names**: Postgres auto-named the original constraints. Migration must look them up dynamically or wrap drops in `DO $$ ... EXCEPTION ... $$` to stay idempotent. Otherwise migration may fail on a fresh DB rebuild.
-- **`sale_predictions.status`**: prediction generation code may insert `'archived'` somewhere — needs a quick grep before applying step 2. (Initial scan found no such writes, but worth re-checking the prediction worker once it exists.)
-- **Type regeneration lag**: between migration apply and types regen, `status: 'hidden'` inserts will type-error against a stale union. Apply migration first, regenerate types, then ship UI changes — already the standard flow.
-- **Researcher confusion**: introducing `source_type` Select without docs may default everything to `admin_confirmed`. Mitigate with helper text under the field.
-- **`sale_type` taxonomy churn**: no DB CHECK means a typo in the constant won't be caught by Postgres. Mitigation: Zod enum at the server-fn boundary.
-
----
-
-## 10. Testing checklist
-
-After migration + code changes:
-
-- [ ] Migration applies cleanly on a fresh DB rebuild (constraint drops are idempotent).
-- [ ] `INSERT ... status='hidden'` succeeds; `status='archived'` fails.
-- [ ] `INSERT ... source_type='wayback'` succeeds; `source_type='nonsense'` fails.
-- [ ] Admin UI: create a new UK event with `country_code='gb'`, every new `sale_type`, every new `source_type`, discount 0–100, future + past dates.
-- [ ] Admin UI: bulk publish / hide / draft transitions work for an existing draft.
-- [ ] Admin UI: filter by status `hidden` returns the right rows.
-- [ ] Admin UI: "Insert evidence template" populates `admin_notes` correctly and can be appended for a second source.
-- [ ] Non-admin user: hidden + draft events are invisible (`status='published'` RLS still holds).
-- [ ] `brands.functions.ts` dashboard / brand-detail queries still return only published rows for the user's market + globals.
-- [ ] TypeScript: no `any` introduced; `SALE_TYPES`/`SOURCE_TYPES`/`SALE_STATUSES` are the single source of truth (no duplicated string literals in components).
-- [ ] Drawer Zod: discount 100 accepted, 101 rejected, `discount_max < discount_min` rejected, `end_date < start_date` rejected.
-- [ ] `sale_predictions` reads continue to work (status CHECK widened symmetrically).
+1. Land fix #1 (profile `beforeLoad` removal) — smallest, fixes the visible error immediately, zero risk to other routes.
+2. Run the verification steps and report which memory contributors are confirmed.
+3. Land fix #2 (router auth dedupe) — most likely single-cause win for memory, low risk.
+4. Land fix #3 (QueryClient defaults).
+5. Re-measure. Only proceed to #4–#6 if memory is still elevated.

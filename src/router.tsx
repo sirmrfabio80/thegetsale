@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { routeTree } from "./routeTree.gen";
-import { supabase } from "./integrations/supabase/client";
+import { subscribeToUser } from "./lib/auth";
 
 export type RouterAuth = {
   status: "loading" | "authenticated" | "unauthenticated";
@@ -10,7 +10,18 @@ export type RouterAuth = {
 };
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  // Fresh QueryClient per request — never share across SSR requests.
+  // Defaults tuned to reduce refetch churn on long-lived tabs (the main
+  // contributor to Safari's "significant memory" reloads).
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60_000,
+        gcTime: 5 * 60_000,
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
 
   const initialAuth: RouterAuth = { status: "loading", user: null };
 
@@ -18,11 +29,22 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient, auth: initialAuth },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    // Non-zero so link-hover prefetches aren't instantly stale and refetched
+    // on the actual navigation. Query's own staleTime still controls
+    // freshness end-to-end.
+    defaultPreloadStaleTime: 30_000,
   });
 
   if (typeof window !== "undefined") {
-    const apply = (user: User | null) => {
+    // Subscribe through the shared auth store instead of opening a second
+    // `supabase.auth.onAuthStateChange`. Previously both the store AND the
+    // router subscribed, so every TOKEN_REFRESHED ran the cache
+    // invalidation + route reload twice.
+    let lastUserId: string | null | undefined;
+    subscribeToUser((user) => {
+      const nextId = user?.id ?? null;
+      if (nextId === lastUserId) return;
+      lastUserId = nextId;
       router.update({
         context: {
           queryClient,
@@ -31,13 +53,6 @@ export const getRouter = () => {
       });
       queryClient.invalidateQueries();
       router.invalidate();
-    };
-
-    // onAuthStateChange fires INITIAL_SESSION on subscribe, so we rely on
-    // it alone — a separate getSession() call would invalidate every query
-    // twice on boot.
-    supabase.auth.onAuthStateChange((_event, session) => {
-      apply(session?.user ?? null);
     });
   }
 

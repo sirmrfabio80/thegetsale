@@ -292,6 +292,8 @@ No Stripe / email / analytics integrations detected.
 | 8 | Low | Only one vitest test file | Regressions in auth / watchlist undetected | Add server-fn unit tests + a Playwright smoke | Later |
 | 9 | Low | `any` types in `ensureAdmin(supabase: any, ...)` helpers | Loses type safety | Type with `SupabaseClient<Database>` | Later |
 | 10 | Low | `SystemTab` content not reviewed in this audit | `unclear` ownership | Review and document | Later |
+| 11 | Done | `/profile` rendered root `errorComponent` ("This page didn't load") | Redundant `beforeLoad` ran `supabase.auth.getUser()` during SSR with no session | Removed; parent `_authenticated` layout is the sole gate | Done |
+| 12 | Done | Duplicate `onAuthStateChange` in `router.tsx` + `lib/auth.ts` | Every TOKEN_REFRESHED ran `invalidateQueries` + `router.invalidate` twice — contributor to Safari "significant memory" reloads | Router now subscribes via `subscribeToUser()` from the shared auth store; `QueryClient` defaults set (`staleTime` 60s, `gcTime` 5m, `refetchOnWindowFocus: false`); `defaultPreloadStaleTime` raised to 30s | Done |
 
 ## 14. Testing and regression checklist
 
