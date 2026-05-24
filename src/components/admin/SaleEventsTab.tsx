@@ -43,9 +43,11 @@ import {
   bulkSetSaleEventStatus,
   bulkDeleteSaleEvents,
   SALE_TYPES,
+  SALE_TYPE_LABELS,
   SALE_STATUSES,
   type SaleEventDTO,
 } from "@/lib/admin-sales.functions";
+
 import { SaleEventDrawer } from "./SaleEventDrawer";
 import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
 import { MARKETS, marketLabel } from "@/lib/markets";
