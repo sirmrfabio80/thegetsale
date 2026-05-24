@@ -315,6 +315,9 @@ No Stripe / email / analytics integrations detected.
 
 ## 15. Performance and maintainability review
 
+- **Central perf tunables** live in `src/lib/perf-config.ts` (`PERF_CONFIG`): Query `staleTime`/`gcTime`/`refetchOnWindowFocus`/`refetchOnReconnect`, Router `defaultPreloadStaleTime`, plus dev-logger toggles. Tune here, not in `router.tsx`.
+- **Dev-only perf logger** in `src/lib/perf-logger.ts` (installed from `src/router.tsx` in dev): logs route transition timings, wraps `QueryClient.invalidateQueries`/`removeQueries` to count + log invalidations, samples `performance.memory` every 15s + on visibility change, and emits a `mem-growth` warning when the JS heap doubles vs. the first sample. Off in production. Filter DevTools console by `[perf]`.
+
 - **Loaders prefetch via `ensureQueryData`** + `useSuspenseQuery` — correct TanStack pattern, avoids waterfall.
 - **Optimistic mutations** in `data/store.ts` reduce perceived latency.
 - **Module-scoped auth store** in `lib/auth.ts` — single Supabase subscription shared across all components (good).
