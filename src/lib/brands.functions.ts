@@ -56,6 +56,7 @@ export type PublicHouseDTO = {
   cadence: string | null;
   lastSaleDays: number | null;
   websiteUrl: string | null;
+  logoUrl: string | null;
   links: BrandLinkDTO[];
 };
 
