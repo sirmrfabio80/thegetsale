@@ -398,3 +398,162 @@ function Field({
     </div>
   );
 }
+
+const MAX_BYTES = 1024 * 1024; // 1 MB
+const MAX_DIM = 1024;
+const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
+const MIME_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/svg+xml": "svg",
+};
+
+function shortHash(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function readImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  if (file.type === "image/svg+xml") return Promise.resolve(null); // skip for SVG
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      resolve(null);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
+function LogoField({
+  brandId,
+  name,
+  currentLogoUrl,
+  onChanged,
+}: {
+  brandId: string | null;
+  name: string;
+  currentLogoUrl: string | null;
+  onChanged: () => void;
+}) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(currentLogoUrl);
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const setLogoFn = useServerFn(setBrandLogoUrl);
+  const removeLogoFn = useServerFn(removeBrandLogo);
+
+  useEffect(() => {
+    setLogoUrl(currentLogoUrl);
+  }, [currentLogoUrl, brandId]);
+
+  const disabled = !brandId;
+
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !brandId) return;
+
+    if (!ALLOWED_MIME.has(file.type)) {
+      toast.error("Use a PNG, JPG, WebP or SVG file");
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      toast.error("Logo must be 1 MB or smaller");
+      return;
+    }
+    const dims = await readImageDimensions(file);
+    if (dims && (dims.width > MAX_DIM || dims.height > MAX_DIM)) {
+      toast.error(`Logo must be ${MAX_DIM}×${MAX_DIM} or smaller`);
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const ext = MIME_EXT[file.type] ?? "png";
+      const path = `${brandId}/${shortHash()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("brand-logos")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw new Error(upErr.message);
+      const publicUrl = supabase.storage.from("brand-logos").getPublicUrl(path).data.publicUrl;
+      await setLogoFn({ data: { brandId, logoUrl: publicUrl } });
+      setLogoUrl(publicUrl);
+      toast.success("Logo updated");
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't upload logo");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onRemove = async () => {
+    if (!brandId) return;
+    setBusy(true);
+    try {
+      await removeLogoFn({ data: { brandId } });
+      setLogoUrl(null);
+      toast.success("Logo removed");
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't remove logo");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <span className="eyebrow mb-1 block">Logo</span>
+      <div className="flex items-center gap-4 border border-border p-3">
+        <BrandLogo name={name || "—"} logoUrl={logoUrl} size={64} />
+        <div className="flex-1">
+          {disabled ? (
+            <p className="text-xs text-muted-foreground">
+              Save the house first, then add a logo.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              PNG, JPG, WebP or SVG · up to 1 MB · max 1024×1024.
+            </p>
+          )}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              className="hidden"
+              onChange={onPick}
+              disabled={disabled || busy}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={disabled || busy}
+              onClick={() => inputRef.current?.click()}
+              className="h-9 rounded-none px-3 text-[11px] uppercase tracking-[0.18em]"
+            >
+              {busy ? "Working…" : logoUrl ? "Replace" : "Choose file"}
+            </Button>
+            {logoUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={disabled || busy}
+                onClick={onRemove}
+                className="h-9 rounded-none px-3 text-[11px] uppercase tracking-[0.18em]"
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
