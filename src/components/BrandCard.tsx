@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Brand, SignalKind } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
+import { BrandLogo } from "./BrandLogo";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
