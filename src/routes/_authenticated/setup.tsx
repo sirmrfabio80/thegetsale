@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { RotateCcw, Search, X } from "lucide-react";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
@@ -59,6 +59,35 @@ function SetupPage() {
 
   const [hydrated, setHydrated] = useState(false);
 
+  type PersistedPayload = {
+    departments: string[];
+    houses: string[];
+    categories: string[];
+    styles: string[];
+    notifications: { emailSignals: boolean; smsDrops: boolean; weeklyDigest: boolean };
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedRef = useRef<PersistedPayload | null>(null);
+
+  const shallowEqualSetup = (a: PersistedPayload, b: PersistedPayload) => {
+    const arrEq = (x: string[], y: string[]) =>
+      x.length === y.length && [...x].sort().join("\u0001") === [...y].sort().join("\u0001");
+    return (
+      arrEq(a.departments, b.departments) &&
+      arrEq(a.houses, b.houses) &&
+      arrEq(a.categories, b.categories) &&
+      arrEq(a.styles, b.styles) &&
+      a.notifications.emailSignals === b.notifications.emailSignals &&
+      a.notifications.smsDrops === b.notifications.smsDrops &&
+      a.notifications.weeklyDigest === b.notifications.weeklyDigest
+    );
+  };
+
   // Hydrate from the backend record once it arrives.
   useEffect(() => {
     if (isLoading || hydrated) return;
@@ -70,33 +99,77 @@ function SetupPage() {
       setEmailSignals(setup.notifications.emailSignals);
       setSmsDrops(setup.notifications.smsDrops);
       setWeeklyDigest(setup.notifications.weeklyDigest);
+      lastPersistedRef.current = {
+        departments: [...(setup.departments ?? [])],
+        houses: [...setup.houses],
+        categories: [...setup.categories],
+        styles: [...(setup.styles ?? [])],
+        notifications: { ...setup.notifications },
+      };
+    } else {
+      lastPersistedRef.current = {
+        departments: [],
+        houses: [],
+        categories: [],
+        styles: [],
+        notifications: { emailSignals: true, smsDrops: false, weeklyDigest: false },
+      };
     }
     setHydrated(true);
   }, [isLoading, setup, hydrated]);
 
-  // Persist on every change after hydration. The mutation debounces optimistic
-  // cache updates and the upsert is cheap; users rarely toggle dozens of chips
-  // per second.
+  // Debounced auto-save: coalesce rapid chip toggles into one network call.
   useEffect(() => {
     if (!hydrated) return;
-    save({
+    const payload: PersistedPayload = {
       departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
+    };
+    if (lastPersistedRef.current && shallowEqualSetup(lastPersistedRef.current, payload)) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      lastPersistedRef.current = payload;
+      saveRef.current(payload);
+      debounceRef.current = null;
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
+
+  const toggleHouse = useCallback((name: string) => {
+    setHouses((prev) => {
+      const n = new Set(prev);
+      if (n.has(name)) n.delete(name);
+      else n.add(name);
+      return n;
     });
-  }, [
-    hydrated,
-    departments,
-    houses,
-    categories,
-    styles,
-    emailSignals,
-    smsDrops,
-    weeklyDigest,
-    save,
-  ]);
+  }, []);
+  const toggleCategory = useCallback((label: string) => {
+    setCategories((prev) => {
+      const n = new Set(prev);
+      if (n.has(label)) n.delete(label);
+      else n.add(label);
+      return n;
+    });
+  }, []);
+  const toggleStyleValue = useCallback((label: string) => {
+    setStyles((prev) => {
+      const n = new Set(prev);
+      const v = label as StylePreference;
+      if (n.has(v)) n.delete(v);
+      else n.add(v);
+      return n;
+    });
+  }, []);
 
   const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
@@ -107,16 +180,55 @@ function SetupPage() {
 
   const valid = useMemo(() => houses.size >= 3, [houses]);
 
+  const filteredHouseGroups = useMemo(() => {
+    const q = houseQuery.toLowerCase();
+    return options.houseGroups
+      .map((g) => ({
+        ...g,
+        houses: g.houses.filter(
+          (h) =>
+            (!q || h.name.toLowerCase().includes(q)) &&
+            (!housesSelectedOnly || houses.has(h.name)),
+        ),
+      }))
+      .filter((g) => g.houses.length > 0);
+  }, [options.houseGroups, houseQuery, housesSelectedOnly, houses]);
+
+  const filteredCategories = useMemo(() => {
+    const q = categoryQuery.toLowerCase();
+    return options.categories.filter(
+      (cat) =>
+        (!q || cat.label.toLowerCase().includes(q)) &&
+        (!categoriesSelectedOnly || categories.has(cat.label)),
+    );
+  }, [options.categories, categoryQuery, categoriesSelectedOnly, categories]);
+
+  const filteredStyles = useMemo(() => {
+    const q = styleQuery.toLowerCase();
+    return options.styles.filter(
+      (opt) =>
+        (!q ||
+          opt.label.toLowerCase().includes(q) ||
+          (opt.description ?? "").toLowerCase().includes(q)) &&
+        (!stylesSelectedOnly || styles.has(opt.label as StylePreference)),
+    );
+  }, [options.styles, styleQuery, stylesSelectedOnly, styles]);
+
   const handleStart = () => {
     if (!valid) return;
-    save({
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    const payload: PersistedPayload = {
       departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
-      markCompleted: true,
-    });
+    };
+    lastPersistedRef.current = payload;
+    save({ ...payload, markCompleted: true });
     navigate({ to: "/dashboard" });
   };
 
@@ -144,6 +256,7 @@ function SetupPage() {
     setCategoriesSelectedOnly(false);
     setStylesSelectedOnly(false);
   };
+
 
   const scrollToStep = (id: string) => {
     if (typeof document === "undefined") return;
