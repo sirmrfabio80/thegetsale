@@ -333,6 +333,15 @@ export function HouseDrawer({ open, onOpenChange, editing, onSaved }: Props) {
                 <Switch checked={form.isActive} onCheckedChange={(v) => setField("isActive", v)} />
               </label>
             </div>
+
+            <div className="md:col-span-2">
+              <LogoField
+                brandId={editing?.id ?? null}
+                name={form.name || editing?.name || ""}
+                currentLogoUrl={editing?.logoUrl ?? null}
+                onChanged={onSaved}
+              />
+            </div>
           </div>
         </div>
 
