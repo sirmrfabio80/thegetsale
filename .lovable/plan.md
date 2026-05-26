@@ -1,108 +1,160 @@
 
-# Fix Setup page mutation feedback loop
+# Brand logos — revised plan
 
-The `/setup` page locks the main thread on every chip click because `useSetupMutation().save` is recreated each render (its `useCallback` depends on the whole `mutation` object), which retriggers the auto-save `useEffect`, which mutates cache, which re-renders, which rebuilds `save` again — a classic feedback loop. Each chip also receives a new inline arrow on every render so every chip in the picker rerenders too.
+Adds a logo per house: stored in Supabase, displayed on every brand card surface, manageable from the admin drawer, with a one-off (chunked) backfill from Logo.dev.
 
-Fix in four files, no UI/copy/logic changes, no new dependencies.
+## 1. Schema change
 
-## 1. `src/data/setupStore.ts` — stable `save`
+Migration on `public.brands`:
 
-In `useSetupMutation`:
-- Destructure `const { mutate } = useMutation({...})` (TanStack's `mutate` is referentially stable).
-- Return `save: mutate` directly (or `useCallback((p) => mutate(p), [mutate])`). Drop the existing `useCallback` that depended on the full `mutation` object.
-- Keep `isPending` exposed as today via the mutation's own `isPending` field (read from a separate variable or return the mutation object too — but never put the mutation object in a dep array elsewhere).
+```sql
+ALTER TABLE public.brands ADD COLUMN logo_url text;
+```
 
-## 2. `src/routes/_authenticated/setup.tsx` — debounce + skip redundant saves
+Nullable, no default. RLS / GRANTs unchanged.
 
-In `SetupPage`:
+Code touched (extend, don't break existing selects):
+- `src/lib/admin-houses.functions.ts` — add `logoUrl: string | null` to `HouseDTO`, include `logo_url` in `mapRow`, add to `HouseInput` zod (optional/nullable, max 500, must start with the bucket public prefix), pass through in `createHouse`/`updateHouse`.
+- `src/lib/brands.functions.ts` — add `logo_url` to `BRAND_COLS`; add `logoUrl: string | null` to `HouseDashboardDTO`, `HouseDetailDTO`, `PublicHouseDTO`; pass through in `toDashboardDTO` and both detail handlers.
+- `src/data/types.ts` — add `logoUrl?: string | null` to `Brand`.
+- `src/integrations/supabase/types.ts` — auto-regenerates; never hand-edit.
 
-- Add refs:
-  - `const saveRef = useRef(save);` plus a `useEffect(() => { saveRef.current = save; });` to always hold the latest stable `save`.
-  - `const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);`
-  - `const lastPersistedRef = useRef<PersistedPayload | null>(null);` where `PersistedPayload` is the shape passed to `save` (no `markCompleted`).
+## 2. Storage bucket
 
-- Helper `shallowEqualSetup(a, b)`:
-  - Compare `departments`, `houses`, `categories`, `styles` as arrays-by-value: sort copies and join, compare strings.
-  - Compare `notifications` key-by-key (`emailSignals`, `smsDrops`, `weeklyDigest`).
-  - Return `true` if all equal.
+New public-read bucket `brand-logos`:
 
-- Hydration effect: when setting `setHydrated(true)`, also set `lastPersistedRef.current` to the snapshot just hydrated (or to an empty default if `setup` was null). This guarantees the first auto-save comparison shows "no change".
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('brand-logos','brand-logos', true);
 
-- Replace the auto-save effect:
-  ```ts
-  useEffect(() => {
-    if (!hydrated) return;
-    const payload = {
-      departments: [...departments],
-      houses: [...houses],
-      categories: [...categories],
-      styles: [...styles],
-      notifications: { emailSignals, smsDrops, weeklyDigest },
-    };
-    if (lastPersistedRef.current && shallowEqualSetup(lastPersistedRef.current, payload)) return;
+CREATE POLICY "Public read brand-logos"
+  ON storage.objects FOR SELECT USING (bucket_id = 'brand-logos');
 
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      lastPersistedRef.current = payload;
-      saveRef.current(payload);
-      debounceRef.current = null;
-    }, 500);
+CREATE POLICY "Admins write brand-logos"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'brand-logos' AND has_role(auth.uid(),'admin'));
 
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-        debounceRef.current = null;
-      }
-    };
-  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
-  ```
-  Note: `save` is intentionally not in the deps; we use `saveRef.current`.
+CREATE POLICY "Admins update brand-logos"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (bucket_id = 'brand-logos' AND has_role(auth.uid(),'admin'));
 
-- `handleStart`: clear any pending debounce timer, then call `save({...payload, markCompleted: true})` immediately (synchronous as today), update `lastPersistedRef.current`, then navigate. No debounce on completion.
+CREATE POLICY "Admins delete brand-logos"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'brand-logos' AND has_role(auth.uid(),'admin'));
+```
 
-## 3. Memoize filters in `SetupPage`
+**Object path:** `brand-logos/{brand.id}/{hash}.{ext}` — keyed by brand UUID, not slug (slugs are mutable). `{hash}` is a short content/time hash to bust CDN cache on replace.
 
-Replace inline `.filter(...)` chains and the IIFE empty-state checks:
+`brands.logo_url` stores the full public URL from `supabase.storage.from('brand-logos').getPublicUrl(path)`.
 
-- `const filteredHouseGroups = useMemo(() => { const q = houseQuery.toLowerCase(); return options.houseGroups.map(g => ({ ...g, houses: g.houses.filter(h => (!q || h.name.toLowerCase().includes(q)) && (!housesSelectedOnly || houses.has(h.name))) })).filter(g => g.houses.length > 0); }, [options.houseGroups, houseQuery, housesSelectedOnly, houses]);`
-- Equivalent `filteredCategories` and `filteredStyles` memos (styles searches both `label` and `description`).
-- Render the "No X match your filters." paragraph from `filteredX.length === 0` (for houses use `filteredHouseGroups.length === 0`). Remove the IIFEs.
+File constraints (client + server):
+- MIME: `image/png`, `image/jpeg`, `image/svg+xml`, `image/webp`
+- Max size: 1 MB
+- Max raster dimensions: 1024×1024 (client check via `Image`; SVG skipped). Displayed at 40px.
 
-## 4. `src/components/setup/SelectableChip.tsx` + parent handlers
+## 3. Backfill (admin-triggered, chunked, Logo.dev)
 
-- Change the chip API:
-  ```tsx
-  interface SelectableChipProps {
-    label: string;
-    value: string;
-    selected: boolean;
-    onToggle: (value: string) => void;
-  }
-  ```
-  Internally call `onToggle(value)`. Wrap the export in `React.memo` (default shallow comparison).
+New server fn `backfillBrandLogos` in `src/lib/admin-logo-backfill.functions.ts` (`requireSupabaseAuth` + admin guard, uses `supabaseAdmin` for storage + DB writes):
 
-- In `setup.tsx`, define stable handlers once with `useCallback`:
-  ```ts
-  const toggleHouse = useCallback((name: string) => setHouses(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; }), []);
-  const toggleCategory = useCallback((label: string) => setCategories(prev => { ... }), []);
-  const toggleStyle = useCallback((label: string) => setStyles(prev => { const n = new Set(prev); n.has(label as StylePreference) ? n.delete(label as StylePreference) : n.add(label as StylePreference); return n; }), []);
-  ```
-  Pass `onToggle={toggleHouse}` (etc.) and `value={house.name}` to each chip. With memoization, only chips whose `selected` flips will rerender.
+```text
+remaining = count(brands WHERE is_active AND logo_url IS NULL AND website_url IS NOT NULL)
+batch    = first 25 such brands, ordered by name
 
-- Department buttons remain inline (they're not `SelectableChip` and there are only 4).
+for each brand in batch:
+  domain = new URL(website_url).hostname.replace(/^www\./,'')
+  GET https://img.logo.dev/${domain}?size=256&format=png&token=${LOGO_DEV_TOKEN}
+  if 200 and content-type starts with "image/":
+    path = `${brand.id}/${shortHash()}.png`
+    upload bytes to brand-logos at path
+    update brands.logo_url = publicUrl(path)
+    updated++
+  else:
+    skipped.push({ slug, reason: status===404 ? "not_found" : `http_${status}` })
 
-## Out of scope
+return { processed: batch.length, updated, skipped, errors, remaining: remaining - batch.length }
+```
 
-- No visual/UI changes, no copy edits, no business-logic changes.
-- No DB / server-function / route changes.
-- No new dependencies.
-- No changes to `SaveDTO` shape or types.
+**No background infra.** Admin clicks "Fetch missing logos" in the Houses tab toolbar; toast on completion reads e.g.:
 
-## Acceptance checks (manual)
+> Updated 22 · skipped 3 · **41 brands remaining** — click again to continue.
 
-1. Fresh `/setup` load with existing setup → no POST to `saveMySetup` fires.
-2. Single chip click → exactly one POST after ~500ms; chip toggles instantly.
-3. Six rapid chip clicks (<500ms) → one POST with the final combined state.
-4. Typing in the houses search → non-matching/unchanged chips don't rerender (verify with React DevTools highlight-updates).
-5. Safari Timeline on fresh load shows <50 timer installs in the first second.
-6. `handleStart` still completes immediately and navigates to `/dashboard`.
+Button disables while running. Idempotent: re-runs only touch rows where `logo_url IS NULL`.
+
+404 / unsupported: row stays NULL, card falls back to monogram, admin can upload manually.
+
+**Secret:** `LOGO_DEV_TOKEN` will be added via `add_secret` **before** the backfill server fn is wired up. The Houses tab button stays hidden / disabled until the secret exists (server fn returns an explicit `{ error: "missing_token" }` shape that the UI surfaces as a toast).
+
+## 4. Card UI
+
+New reusable component `src/components/BrandLogo.tsx`:
+
+```text
+<BrandLogo name size={40} logoUrl={…} />
+```
+
+- 40×40 (configurable) square tile, 1px `border-border`, `bg-muted`, no radius, 4px inner padding.
+- If `logoUrl` present: `<img loading="lazy" object-contain alt="{name} logo" onError={…}>`. **`onError` flips local state to render the monogram fallback** — no broken-image icon ever shows.
+- Fallback monogram: 2 uppercase letters, serif, `text-foreground/70`, centered. Derivation rule (confirmed): strip non-alphanumerics, then first letter of first 2 whitespace-separated words; single-word → first 2 letters. `The Row → TR`, `ARKET → AR`, `Massimo Dutti → MD`, `& Other Stories → OS`.
+
+**Applied to all three card surfaces, same 40px spec, positioned top-left above the eyebrow line:**
+- `src/components/BrandCard.tsx`
+- `src/components/RecommendationCard.tsx`
+- `src/components/WatchlistCard.tsx`
+
+In every card: signal-accent left border, bookmark button, 3-stat row, serif name, and all existing copy stay exactly as they are. 12px margin-bottom under the tile before the eyebrow. Mobile (<640px): no reflow — tile fits within existing padding.
+
+**Detail page hero is out of scope for this PR.**
+
+## 5. Admin upload — `HouseDrawer.tsx`
+
+New "Logo" field, full-width row above the "Active" switch:
+
+```text
+Logo
+┌──────┐
+│ ▢ 64 │  [Choose file]   Remove
+│      │  PNG, JPG, SVG, WEBP · max 1 MB · square recommended
+└──────┘
+```
+
+**Direct-to-storage upload using the user's JWT** (admin RLS policies above enforce access):
+
+```text
+client (HouseDrawer):
+  1. validate mime + size + dimensions
+  2. path = `${brand.id}/${shortHash()}.${ext}`
+  3. supabase.storage.from('brand-logos').upload(path, file, { cacheControl: '3600', upsert: false })
+  4. publicUrl = supabase.storage.from('brand-logos').getPublicUrl(path).data.publicUrl
+  5. call server fn setBrandLogoUrl({ brandId, logoUrl: publicUrl })
+  6. on success: invalidate ["admin","houses"] / ["admin","brands"], update preview
+```
+
+Server fn `setBrandLogoUrl` (in `admin-houses.functions.ts`, `requireSupabaseAuth` + `ensureAdmin`):
+- Re-validates `logoUrl` starts with the bucket's public prefix (`${SUPABASE_URL}/storage/v1/object/public/brand-logos/`) and parses to a path under `{brandId}/…`.
+- **Best-effort deletes the previous object** (reads current `brands.logo_url`, extracts path if it points into our bucket, calls `supabaseAdmin.storage.from('brand-logos').remove([prevPath])` — ignore failures).
+- Updates `brands.logo_url`.
+
+Server fn `removeBrandLogo({ brandId })`:
+- Reads current `brands.logo_url`, best-effort deletes the storage object, clears `logo_url`.
+
+For brand-new houses (no `id`), the Logo field is disabled with hint "Save the house first, then add a logo." Avoids orphaned uploads.
+
+No base64 over the wire.
+
+## 6. Manual verification
+
+- Card variants: BrandCard, RecommendationCard, WatchlistCard each render tile with image when `logoUrl` set, monogram otherwise. Identical 40px spec across all three.
+- `<img onError>` fallback: set `logo_url` to a deliberately broken URL on one brand → card shows monogram, no broken-image glyph.
+- Mobile 375px: tile + name + bookmark fit, no wrap regression.
+- Admin upload (valid PNG ≤1 MB, ≤1024²): success, preview updates, dashboard reflects after invalidation. URL in DB starts with the bucket public prefix.
+- Validation rejects: >1 MB, >1024² raster, `.gif`, non-image mime — client toast, no upload attempted.
+- Replace: uploading a new file deletes the previous storage object (verify via Storage tab) before the new URL is written.
+- Remove: clears `logo_url` AND removes the storage object; card reverts to monogram.
+- RLS: non-admin authenticated user calling `.storage.from('brand-logos').upload(...)` directly → denied.
+- Backfill button (admin only): first click processes 25 and toast shows remaining count; re-click resumes; running with `LOGO_DEV_TOKEN` missing surfaces a clear toast and does nothing.
+- `AI_PROJECT_HANDOFF.md` updated in the same turn: new `logo_url` column, `brand-logos` bucket + path scheme (`{brand.id}/{hash}.{ext}`), Logo.dev provider + token + 25-per-batch cap, direct-to-storage upload pattern, `BrandLogo` component, three card surfaces updated.
+
+## Pre-build checklist
+
+1. Add `LOGO_DEV_TOKEN` via `add_secret` **before** wiring the backfill server fn — confirmed.
+2. Monogram rule confirmed (`The Row → TR`, `& Other Stories → OS`).
+3. No new dependencies.
