@@ -35,7 +35,7 @@ export type BackfillResult = {
   skipped: { slug: string; reason: string }[];
   errors: { slug: string; message: string }[];
   remaining: number;
-  error?: "missing_token";
+  error?: "missing_token" | "invalid_token";
 };
 
 export const backfillBrandLogos = createServerFn({ method: "POST" })
