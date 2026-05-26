@@ -59,6 +59,8 @@ function toBrand(h: HouseDashboardDTO): Brand {
     cadence: h.cadence ?? "",
     factors: [],
     history: [],
+    websiteUrl: h.websiteUrl,
+    logoUrl: h.logoUrl,
   };
 }
 
