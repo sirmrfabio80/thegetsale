@@ -380,47 +380,27 @@ function SetupPage() {
         </div>
 
         <div className="mt-8 space-y-8">
-          {options.houseGroups.map((group) => {
-            const filteredHouses = group.houses.filter((h) => {
-              const matchesQuery =
-                !houseQuery || h.name.toLowerCase().includes(houseQuery.toLowerCase());
-              const matchesSelected = !housesSelectedOnly || houses.has(h.name);
-              return matchesQuery && matchesSelected;
-            });
-            if (filteredHouses.length === 0) return null;
-            return (
-              <div key={group.label}>
-                <p className="eyebrow mb-3">{group.label}</p>
-                <div className="flex flex-wrap gap-2">
-                  {filteredHouses.map((house) => (
-                    <SelectableChip
-                      key={house.slug}
-                      label={house.name}
-                      selected={houses.has(house.name)}
-                      onToggle={() => setHouses((s) => toggle(s, house.name))}
-                    />
-                  ))}
-                </div>
+          {filteredHouseGroups.map((group) => (
+            <div key={group.label}>
+              <p className="eyebrow mb-3">{group.label}</p>
+              <div className="flex flex-wrap gap-2">
+                {group.houses.map((house) => (
+                  <SelectableChip
+                    key={house.slug}
+                    label={house.name}
+                    value={house.name}
+                    selected={houses.has(house.name)}
+                    onToggle={toggleHouse}
+                  />
+                ))}
               </div>
-            );
-          })}
-          {(() => {
-            const totalVisible = options.houseGroups.reduce(
-              (acc, g) =>
-                acc +
-                g.houses.filter((h) => {
-                  const mq = !houseQuery || h.name.toLowerCase().includes(houseQuery.toLowerCase());
-                  const ms = !housesSelectedOnly || houses.has(h.name);
-                  return mq && ms;
-                }).length,
-              0,
-            );
-            if (totalVisible === 0) {
-              return <p className="text-sm text-muted-foreground">No houses match your filters.</p>;
-            }
-            return null;
-          })()}
+            </div>
+          ))}
+          {filteredHouseGroups.length === 0 && (
+            <p className="text-sm text-muted-foreground">No houses match your filters.</p>
+          )}
         </div>
+
         <p className="mt-6 text-xs text-muted-foreground">You can change this later.</p>
       </section>
 
@@ -473,38 +453,22 @@ function SetupPage() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-2">
-          {options.categories
-            .filter((cat) => {
-              const matchesQuery =
-                !categoryQuery || cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
-              const matchesSelected = !categoriesSelectedOnly || categories.has(cat.label);
-              return matchesQuery && matchesSelected;
-            })
-            .map((cat) => (
-              <SelectableChip
-                key={cat.slug}
-                label={cat.label}
-                selected={categories.has(cat.label)}
-                onToggle={() => setCategories((s) => toggle(s, cat.label))}
-              />
-            ))}
-          {(() => {
-            const visible = options.categories.filter((cat) => {
-              const mq =
-                !categoryQuery || cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
-              const ms = !categoriesSelectedOnly || categories.has(cat.label);
-              return mq && ms;
-            });
-            if (visible.length === 0) {
-              return (
-                <p className="w-full text-sm text-muted-foreground">
-                  No categories match your filters.
-                </p>
-              );
-            }
-            return null;
-          })()}
+          {filteredCategories.map((cat) => (
+            <SelectableChip
+              key={cat.slug}
+              label={cat.label}
+              value={cat.label}
+              selected={categories.has(cat.label)}
+              onToggle={toggleCategory}
+            />
+          ))}
+          {filteredCategories.length === 0 && (
+            <p className="w-full text-sm text-muted-foreground">
+              No categories match your filters.
+            </p>
+          )}
         </div>
+
       </section>
 
       <SectionRule />
