@@ -80,7 +80,7 @@ function normaliseCategories(brand: { categories?: string[] | null; category?: s
 }
 
 function toDashboardDTO(
-  brand: BrandRow & { website_url?: string | null },
+  brand: BrandRow & { website_url?: string | null; logo_url?: string | null },
   events: EventRow[],
   prediction: PredictionRow | null,
 ): HouseDashboardDTO {
@@ -101,11 +101,12 @@ function toDashboardDTO(
     headline: d.headline,
     isFallback: d.isFallback,
     websiteUrl: brand.website_url ?? null,
+    logoUrl: brand.logo_url ?? null,
   };
 }
 
 const BRAND_COLS =
-  "id, slug, name, category, categories, tagline, editorial_copy, website_url";
+  "id, slug, name, category, categories, tagline, editorial_copy, website_url, logo_url";
 const EVENT_COLS = "brand_id, start_date, discount_min, discount_max, admin_notes, status";
 const PREDICTION_COLS =
   "brand_id, predicted_start_date, confidence_score, confidence_label, signal, reasoning_summary, algorithm_version, status";
