@@ -27,6 +27,7 @@ import {
   HOUSE_GROUPS,
   type HouseDTO,
 } from "@/lib/admin-houses.functions";
+import { backfillBrandLogos } from "@/lib/admin-logo-backfill.functions";
 import { HouseDrawer } from "./HouseDrawer";
 
 type Filters = {
@@ -46,6 +47,31 @@ export function HousesTab() {
 
   const fetchList = useServerFn(listHouses);
   const setActiveFn = useServerFn(setHouseActive);
+  const backfillFn = useServerFn(backfillBrandLogos);
+
+  const backfillMut = useMutation({
+    mutationFn: () => backfillFn(),
+    onSuccess: (r) => {
+      if (r.error === "missing_token") {
+        toast.error("Logo provider token isn't configured");
+        return;
+      }
+      const skipped = r.skipped.length;
+      const errs = r.errors.length;
+      const parts = [`Updated ${r.updated}`];
+      if (skipped) parts.push(`skipped ${skipped}`);
+      if (errs) parts.push(`${errs} error${errs === 1 ? "" : "s"}`);
+      const tail =
+        r.remaining > 0
+          ? ` · ${r.remaining} remaining — click again to continue`
+          : " · all caught up";
+      toast.success(parts.join(" · ") + tail);
+      qc.invalidateQueries({ queryKey: ["admin", "houses"] });
+      qc.invalidateQueries({ queryKey: ["admin", "brands"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't fetch logos"),
+  });
 
   const listQ = useQuery({
     queryKey: ["admin", "houses", filters],
@@ -138,15 +164,25 @@ export function HousesTab() {
             </Select>
           </div>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setDrawerOpen(true);
-          }}
-          className="h-11 w-full rounded-none px-5 text-[11px] uppercase tracking-[0.18em] md:w-auto"
-        >
-          Add house
-        </Button>
+        <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+          <Button
+            variant="outline"
+            disabled={backfillMut.isPending}
+            onClick={() => backfillMut.mutate()}
+            className="h-11 w-full rounded-none px-5 text-[11px] uppercase tracking-[0.18em] md:w-auto"
+          >
+            {backfillMut.isPending ? "Fetching…" : "Fetch missing logos"}
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setDrawerOpen(true);
+            }}
+            className="h-11 w-full rounded-none px-5 text-[11px] uppercase tracking-[0.18em] md:w-auto"
+          >
+            Add house
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
