@@ -4,10 +4,8 @@ import { cn } from "@/lib/utils";
 interface BrandLogoProps {
   name: string;
   logoUrl?: string | null;
-  /** Square size shortcut. Overridden by width/height if provided. */
+  /** Square tile size. Defaults to 64. */
   size?: number;
-  width?: number;
-  height?: number;
   className?: string;
 }
 
@@ -29,9 +27,7 @@ function deriveMonogram(name: string): string {
 export function BrandLogo({
   name,
   logoUrl,
-  size = 48,
-  width,
-  height,
+  size = 64,
   className,
 }: BrandLogoProps) {
   const [errored, setErrored] = useState(false);
@@ -40,19 +36,15 @@ export function BrandLogo({
     setErrored(false);
   }, [logoUrl]);
 
-  const w = width ?? size;
-  const h = height ?? size;
   const showImage = !!logoUrl && !errored;
   const monogram = deriveMonogram(name);
-  const minDim = Math.min(w, h);
-  const pad = Math.max(4, Math.round(minDim * 0.12));
 
   return (
     <div
-      aria-hidden={!showImage}
-      style={{ width: w, height: h }}
+      style={{ width: size, height: size }}
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden border border-border bg-background",
+        "flex shrink-0 items-center justify-center overflow-hidden border border-border",
+        showImage ? "bg-background" : "bg-muted",
         className,
       )}
     >
@@ -62,13 +54,13 @@ export function BrandLogo({
           alt={`${name} logo`}
           loading="lazy"
           onError={() => setErrored(true)}
-          style={{ padding: pad }}
           className="h-full w-full object-contain"
         />
       ) : (
         <span
+          aria-hidden
           className="font-serif text-foreground/70"
-          style={{ fontSize: Math.round(minDim * 0.4), lineHeight: 1 }}
+          style={{ fontSize: Math.round(size * 0.4), lineHeight: 1 }}
         >
           {monogram}
         </span>

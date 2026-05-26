@@ -60,30 +60,30 @@ export function WatchlistCard({
         selected ? "border-foreground" : "border-border",
       )}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3">
-          {selectable && (
-            <input
-              type="checkbox"
-              checked={!!selected}
-              onChange={() => onToggleSelect?.(item.brandId)}
-              onClick={stop}
-              aria-label={`Select ${brand.name}`}
-              className="mt-1 h-4 w-4 cursor-pointer accent-foreground"
-            />
-          )}
-          <div className="min-w-0">
-            <BrandLogo name={brand.name} logoUrl={brand.logoUrl} width={72} height={48} className="mb-3" />
-            <p className="eyebrow mb-2">
-              {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
-            </p>
-            <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Watching since {formatDate(item.addedAt)}
-            </p>
+      <div className="flex items-start gap-3">
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={() => onToggleSelect?.(item.brandId)}
+            onClick={stop}
+            aria-label={`Select ${brand.name}`}
+            className="mt-1 h-4 w-4 cursor-pointer accent-foreground"
+          />
+        )}
+        <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={64} />
+        <div className="flex min-w-0 flex-1 flex-col self-stretch">
+          <p className="eyebrow mb-1.5 truncate">
+            {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
+          </p>
+          <h3 className="truncate font-serif text-2xl leading-tight">{brand.name}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Watching since {formatDate(item.addedAt)}
+          </p>
+          <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
+            <SignalBadge signal={brand.signal} />
           </div>
         </div>
-        <SignalBadge signal={brand.signal} />
       </div>
 
       <div className="hairline my-5" />
