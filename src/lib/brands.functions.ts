@@ -33,6 +33,7 @@ export type HouseDashboardDTO = {
   headline: string;
   isFallback: boolean;
   websiteUrl: string | null;
+  logoUrl: string | null;
 };
 
 export type HouseHistoryItem = { date: string; label: string; depth: string };
