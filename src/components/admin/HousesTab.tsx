@@ -56,6 +56,12 @@ export function HousesTab() {
         toast.error("Logo provider token isn't configured");
         return;
       }
+      if (r.error === "invalid_token") {
+        toast.error(
+          "Logo.dev token is the wrong type — needs a publishable key (pk_…), not a secret key (sk_…).",
+        );
+        return;
+      }
       const skipped = r.skipped.length;
       const errs = r.errors.length;
       const parts = [`Updated ${r.updated}`];
