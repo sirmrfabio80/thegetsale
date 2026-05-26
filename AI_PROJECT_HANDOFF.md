@@ -524,6 +524,26 @@ Implications enforced in the UI:
     Dutti `friday_sale` were inserted with inferred dates (noted in
     `admin_notes`). Anine Bing `sale_notification` (permanent signup
     page, not an event) was skipped.
+- **Card identity-row redesign** (May 2026):
+  - `BrandCard`, `RecommendationCard`, and `WatchlistCard` now use a shared
+    identity-row layout: 64×64 `BrandLogo` tile on the left, eyebrow + serif
+    name + tagline/meta stacked to the right, signal pill anchored to the
+    bottom-right of the right column via `mt-auto` (no absolute positioning,
+    so it never overlaps the `line-clamp-2` tagline at narrow widths).
+  - `BrandLogo` default `size` raised 40 → 64; `width`/`height` props removed
+    in favour of a single square `size`. Image state uses `bg-background` and
+    no inner padding (logos bleed to the hairline); monogram fallback uses
+    `bg-muted` so empty tiles read as intentionally different.
+  - `SignalBadge` `low` variant no longer renders the dashed pill — it now
+    renders as quiet inline copy "Awaiting signal" in
+    `text-xs text-muted-foreground` with a 6px `bg-border` dot.
+  - `BrandCard` stats row: when `brand.signal === 'low'` the three-stat grid
+    is replaced by a single line "Awaiting signal · cadence calibrating",
+    keeping the same vertical footprint so card heights stay aligned.
+  - Bookmark button is now ghost by default (transparent + `border-border`)
+    and only fills when watched, so it no longer competes with the brand name.
+  - Categories eyebrow truncates to "first 3 · +N" and never wraps.
+  - "For you" tag moved above the eyebrow as a small outlined pill.
 
 
 
