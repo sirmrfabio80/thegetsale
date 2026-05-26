@@ -38,20 +38,6 @@ export const HOUSE_GROUPS = [
 
 export const HOUSE_STATUS_FILTERS = ["active", "inactive", "all"] as const;
 
-export type HouseDTO = {
-  id: string;
-  name: string;
-  slug: string;
-  houseGroup: string | null;
-  country: string | null;
-  websiteUrl: string | null;
-  description: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-const slugRe = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type HouseDTO = {
   id: string;
