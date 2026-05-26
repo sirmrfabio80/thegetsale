@@ -36,7 +36,7 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
       >
         <div className="flex items-start justify-between gap-4 pr-10">
           <div>
-            <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={40} className="mb-3" />
+            <BrandLogo name={brand.name} logoUrl={brand.logoUrl} width={72} height={48} className="mb-3" />
             <p className="eyebrow mb-2">
               {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
             </p>
