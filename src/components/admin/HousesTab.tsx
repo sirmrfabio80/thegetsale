@@ -27,6 +27,7 @@ import {
   HOUSE_GROUPS,
   type HouseDTO,
 } from "@/lib/admin-houses.functions";
+import { backfillBrandLogos } from "@/lib/admin-logo-backfill.functions";
 import { HouseDrawer } from "./HouseDrawer";
 
 type Filters = {
