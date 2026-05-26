@@ -183,3 +183,79 @@ export const setHouseActive = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const setBrandLogoUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        brandId: z.string().uuid(),
+        logoUrl: z.string().trim().url().max(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+
+    const prefix = publicLogoPrefix();
+    if (!data.logoUrl.startsWith(prefix)) {
+      throw new Error("Logo URL is not from the brand-logos bucket");
+    }
+    const newPath = data.logoUrl.slice(prefix.length).split("?")[0];
+    if (!newPath || !newPath.startsWith(`${data.brandId}/`)) {
+      throw new Error("Logo path must be under the brand's folder");
+    }
+
+    // Best-effort delete the previous object.
+    const { data: existing } = await supabase
+      .from("brands")
+      .select("logo_url")
+      .eq("id", data.brandId)
+      .maybeSingle();
+    const prevPath = extractLogoPath((existing as { logo_url?: string | null } | null)?.logo_url);
+    if (prevPath && prevPath !== newPath) {
+      try {
+        await supabaseAdmin.storage.from(BRAND_LOGOS_BUCKET).remove([prevPath]);
+      } catch {
+        // ignore
+      }
+    }
+
+    const { error } = await supabase
+      .from("brands")
+      .update({ logo_url: data.logoUrl })
+      .eq("id", data.brandId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removeBrandLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ brandId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+
+    const { data: existing } = await supabase
+      .from("brands")
+      .select("logo_url")
+      .eq("id", data.brandId)
+      .maybeSingle();
+    const prevPath = extractLogoPath((existing as { logo_url?: string | null } | null)?.logo_url);
+    if (prevPath) {
+      try {
+        await supabaseAdmin.storage.from(BRAND_LOGOS_BUCKET).remove([prevPath]);
+      } catch {
+        // ignore
+      }
+    }
+
+    const { error } = await supabase
+      .from("brands")
+      .update({ logo_url: null })
+      .eq("id", data.brandId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
