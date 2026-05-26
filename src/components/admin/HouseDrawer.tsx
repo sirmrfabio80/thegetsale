@@ -25,13 +25,9 @@ import {
 import {
   createHouse,
   updateHouse,
-  setBrandLogoUrl,
-  removeBrandLogo,
   HOUSE_GROUPS,
   type HouseDTO,
 } from "@/lib/admin-houses.functions";
-import { BrandLogo } from "@/components/BrandLogo";
-import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
   open: boolean;
