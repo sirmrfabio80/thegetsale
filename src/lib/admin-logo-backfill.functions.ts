@@ -35,7 +35,7 @@ export type BackfillResult = {
   skipped: { slug: string; reason: string }[];
   errors: { slug: string; message: string }[];
   remaining: number;
-  error?: "missing_token";
+  error?: "missing_token" | "invalid_token";
 };
 
 export const backfillBrandLogos = createServerFn({ method: "POST" })
@@ -53,6 +53,16 @@ export const backfillBrandLogos = createServerFn({ method: "POST" })
         errors: [],
         remaining: 0,
         error: "missing_token",
+      };
+    }
+    if (!token.startsWith("pk_")) {
+      return {
+        processed: 0,
+        updated: 0,
+        skipped: [],
+        errors: [],
+        remaining: 0,
+        error: "invalid_token",
       };
     }
 

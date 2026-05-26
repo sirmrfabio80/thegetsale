@@ -4,7 +4,10 @@ import { cn } from "@/lib/utils";
 interface BrandLogoProps {
   name: string;
   logoUrl?: string | null;
+  /** Square size shortcut. Overridden by width/height if provided. */
   size?: number;
+  width?: number;
+  height?: number;
   className?: string;
 }
 
@@ -23,23 +26,33 @@ function deriveMonogram(name: string): string {
   return (w.length >= 2 ? w.slice(0, 2) : w[0]).toUpperCase();
 }
 
-export function BrandLogo({ name, logoUrl, size = 40, className }: BrandLogoProps) {
+export function BrandLogo({
+  name,
+  logoUrl,
+  size = 48,
+  width,
+  height,
+  className,
+}: BrandLogoProps) {
   const [errored, setErrored] = useState(false);
 
-  // Reset error state when the source URL changes (e.g. after replace).
   useEffect(() => {
     setErrored(false);
   }, [logoUrl]);
 
+  const w = width ?? size;
+  const h = height ?? size;
   const showImage = !!logoUrl && !errored;
   const monogram = deriveMonogram(name);
+  const minDim = Math.min(w, h);
+  const pad = Math.max(4, Math.round(minDim * 0.12));
 
   return (
     <div
       aria-hidden={!showImage}
-      style={{ width: size, height: size }}
+      style={{ width: w, height: h }}
       className={cn(
-        "flex shrink-0 items-center justify-center border border-border bg-muted",
+        "flex shrink-0 items-center justify-center overflow-hidden border border-border bg-background",
         className,
       )}
     >
@@ -49,13 +62,13 @@ export function BrandLogo({ name, logoUrl, size = 40, className }: BrandLogoProp
           alt={`${name} logo`}
           loading="lazy"
           onError={() => setErrored(true)}
-          style={{ padding: 4 }}
+          style={{ padding: pad }}
           className="h-full w-full object-contain"
         />
       ) : (
         <span
           className="font-serif text-foreground/70"
-          style={{ fontSize: Math.round(size * 0.4), lineHeight: 1 }}
+          style={{ fontSize: Math.round(minDim * 0.4), lineHeight: 1 }}
         >
           {monogram}
         </span>
