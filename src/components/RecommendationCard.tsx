@@ -1,6 +1,7 @@
 import type { Brand } from "@/data/types";
 
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "./BrandLogo";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {
@@ -20,6 +21,7 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
     >
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-xl">
+          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={40} className="mb-3" />
           <p className="eyebrow">Editor's note</p>
           <h2 className="mt-3 font-serif text-[2rem] italic leading-[1.1]">{brand.headline}</h2>
           <p className="mt-4 text-sm text-muted-foreground">

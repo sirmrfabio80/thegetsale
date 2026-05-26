@@ -1,6 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const BRAND_LOGOS_BUCKET = "brand-logos";
+
+function publicLogoPrefix(): string {
+  const base = (process.env.SUPABASE_URL ?? "").replace(/\/+$/, "");
+  return `${base}/storage/v1/object/public/${BRAND_LOGOS_BUCKET}/`;
+}
+
+function extractLogoPath(logoUrl: string | null | undefined): string | null {
+  if (!logoUrl) return null;
+  const prefix = publicLogoPrefix();
+  if (!logoUrl.startsWith(prefix)) return null;
+  const rest = logoUrl.slice(prefix.length).split("?")[0];
+  return rest || null;
+}
 
 async function ensureAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("has_role", {
@@ -22,6 +38,7 @@ export const HOUSE_GROUPS = [
 
 export const HOUSE_STATUS_FILTERS = ["active", "inactive", "all"] as const;
 
+
 export type HouseDTO = {
   id: string;
   name: string;
@@ -30,6 +47,7 @@ export type HouseDTO = {
   country: string | null;
   websiteUrl: string | null;
   description: string | null;
+  logoUrl: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -68,6 +86,7 @@ function mapRow(r: any): HouseDTO {
     country: r.country ?? null,
     websiteUrl: r.website_url ?? null,
     description: r.description ?? null,
+    logoUrl: r.logo_url ?? null,
     isActive: !!r.is_active,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -164,3 +183,79 @@ export const setHouseActive = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const setBrandLogoUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        brandId: z.string().uuid(),
+        logoUrl: z.string().trim().url().max(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+
+    const prefix = publicLogoPrefix();
+    if (!data.logoUrl.startsWith(prefix)) {
+      throw new Error("Logo URL is not from the brand-logos bucket");
+    }
+    const newPath = data.logoUrl.slice(prefix.length).split("?")[0];
+    if (!newPath || !newPath.startsWith(`${data.brandId}/`)) {
+      throw new Error("Logo path must be under the brand's folder");
+    }
+
+    // Best-effort delete the previous object.
+    const { data: existing } = await supabase
+      .from("brands")
+      .select("logo_url")
+      .eq("id", data.brandId)
+      .maybeSingle();
+    const prevPath = extractLogoPath((existing as { logo_url?: string | null } | null)?.logo_url);
+    if (prevPath && prevPath !== newPath) {
+      try {
+        await supabaseAdmin.storage.from(BRAND_LOGOS_BUCKET).remove([prevPath]);
+      } catch {
+        // ignore
+      }
+    }
+
+    const { error } = await supabase
+      .from("brands")
+      .update({ logo_url: data.logoUrl })
+      .eq("id", data.brandId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removeBrandLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ brandId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await ensureAdmin(supabase, userId);
+
+    const { data: existing } = await supabase
+      .from("brands")
+      .select("logo_url")
+      .eq("id", data.brandId)
+      .maybeSingle();
+    const prevPath = extractLogoPath((existing as { logo_url?: string | null } | null)?.logo_url);
+    if (prevPath) {
+      try {
+        await supabaseAdmin.storage.from(BRAND_LOGOS_BUCKET).remove([prevPath]);
+      } catch {
+        // ignore
+      }
+    }
+
+    const { error } = await supabase
+      .from("brands")
+      .update({ logo_url: null })
+      .eq("id", data.brandId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+

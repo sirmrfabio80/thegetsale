@@ -33,6 +33,7 @@ export interface Brand {
   factors: SignalFactor[];
   history: SaleEvent[];
   websiteUrl?: string | null;
+  logoUrl?: string | null;
   links?: BrandLink[];
 }
 

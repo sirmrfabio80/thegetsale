@@ -75,6 +75,7 @@ export type Database = {
           house_group: string | null
           id: string
           is_active: boolean
+          logo_url: string | null
           name: string
           slug: string
           tagline: string | null
@@ -91,6 +92,7 @@ export type Database = {
           house_group?: string | null
           id?: string
           is_active?: boolean
+          logo_url?: string | null
           name: string
           slug: string
           tagline?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           house_group?: string | null
           id?: string
           is_active?: boolean
+          logo_url?: string | null
           name?: string
           slug?: string
           tagline?: string | null

@@ -33,6 +33,7 @@ export type HouseDashboardDTO = {
   headline: string;
   isFallback: boolean;
   websiteUrl: string | null;
+  logoUrl: string | null;
 };
 
 export type HouseHistoryItem = { date: string; label: string; depth: string };
@@ -55,6 +56,7 @@ export type PublicHouseDTO = {
   cadence: string | null;
   lastSaleDays: number | null;
   websiteUrl: string | null;
+  logoUrl: string | null;
   links: BrandLinkDTO[];
 };
 
@@ -78,7 +80,7 @@ function normaliseCategories(brand: { categories?: string[] | null; category?: s
 }
 
 function toDashboardDTO(
-  brand: BrandRow & { website_url?: string | null },
+  brand: BrandRow & { website_url?: string | null; logo_url?: string | null },
   events: EventRow[],
   prediction: PredictionRow | null,
 ): HouseDashboardDTO {
@@ -99,11 +101,12 @@ function toDashboardDTO(
     headline: d.headline,
     isFallback: d.isFallback,
     websiteUrl: brand.website_url ?? null,
+    logoUrl: brand.logo_url ?? null,
   };
 }
 
 const BRAND_COLS =
-  "id, slug, name, category, categories, tagline, editorial_copy, website_url";
+  "id, slug, name, category, categories, tagline, editorial_copy, website_url, logo_url";
 const EVENT_COLS = "brand_id, start_date, discount_min, discount_max, admin_notes, status";
 const PREDICTION_COLS =
   "brand_id, predicted_start_date, confidence_score, confidence_label, signal, reasoning_summary, algorithm_version, status";
@@ -275,7 +278,7 @@ export const getPublicHouseDetail = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PublicHouseDTO | null> => {
     const { data: brand, error } = await supabaseAdmin
       .from("brands")
-      .select("id, slug, name, category, categories, tagline, website_url, is_active")
+      .select("id, slug, name, category, categories, tagline, website_url, logo_url, is_active")
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();
@@ -308,6 +311,7 @@ export const getPublicHouseDetail = createServerFn({ method: "POST" })
       cadence: d.cadence,
       lastSaleDays: d.lastSaleDays,
       websiteUrl: (brand as any).website_url ?? null,
+      logoUrl: (brand as any).logo_url ?? null,
       links,
     };
   });

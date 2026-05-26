@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Brand, WatchlistItem } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
+import { BrandLogo } from "./BrandLogo";
 import { useWatchlistMutations } from "@/data/store";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
@@ -72,6 +73,7 @@ export function WatchlistCard({
             />
           )}
           <div className="min-w-0">
+            <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={40} className="mb-3" />
             <p className="eyebrow mb-2">
               {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
             </p>

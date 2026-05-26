@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Brand, SignalKind } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
+import { BrandLogo } from "./BrandLogo";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
       >
         <div className="flex items-start justify-between gap-4 pr-10">
           <div>
+            <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={40} className="mb-3" />
             <p className="eyebrow mb-2">
               {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
             </p>
