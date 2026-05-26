@@ -47,6 +47,31 @@ export function HousesTab() {
 
   const fetchList = useServerFn(listHouses);
   const setActiveFn = useServerFn(setHouseActive);
+  const backfillFn = useServerFn(backfillBrandLogos);
+
+  const backfillMut = useMutation({
+    mutationFn: () => backfillFn(),
+    onSuccess: (r) => {
+      if (r.error === "missing_token") {
+        toast.error("Logo provider token isn't configured");
+        return;
+      }
+      const skipped = r.skipped.length;
+      const errs = r.errors.length;
+      const parts = [`Updated ${r.updated}`];
+      if (skipped) parts.push(`skipped ${skipped}`);
+      if (errs) parts.push(`${errs} error${errs === 1 ? "" : "s"}`);
+      const tail =
+        r.remaining > 0
+          ? ` · ${r.remaining} remaining — click again to continue`
+          : " · all caught up";
+      toast.success(parts.join(" · ") + tail);
+      qc.invalidateQueries({ queryKey: ["admin", "houses"] });
+      qc.invalidateQueries({ queryKey: ["admin", "brands"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Couldn't fetch logos"),
+  });
 
   const listQ = useQuery({
     queryKey: ["admin", "houses", filters],
