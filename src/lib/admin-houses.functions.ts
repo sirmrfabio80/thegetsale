@@ -1,6 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const BRAND_LOGOS_BUCKET = "brand-logos";
+
+function publicLogoPrefix(): string {
+  const base = (process.env.SUPABASE_URL ?? "").replace(/\/+$/, "");
+  return `${base}/storage/v1/object/public/${BRAND_LOGOS_BUCKET}/`;
+}
+
+function extractLogoPath(logoUrl: string | null | undefined): string | null {
+  if (!logoUrl) return null;
+  const prefix = publicLogoPrefix();
+  if (!logoUrl.startsWith(prefix)) return null;
+  const rest = logoUrl.slice(prefix.length).split("?")[0];
+  return rest || null;
+}
 
 async function ensureAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("has_role", {
