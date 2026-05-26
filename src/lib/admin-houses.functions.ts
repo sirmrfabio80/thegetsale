@@ -53,6 +53,22 @@ export type HouseDTO = {
 
 const slugRe = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+export type HouseDTO = {
+  id: string;
+  name: string;
+  slug: string;
+  houseGroup: string | null;
+  country: string | null;
+  websiteUrl: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+const slugRe = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 const HouseInput = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   slug: z
@@ -84,6 +100,7 @@ function mapRow(r: any): HouseDTO {
     country: r.country ?? null,
     websiteUrl: r.website_url ?? null,
     description: r.description ?? null,
+    logoUrl: r.logo_url ?? null,
     isActive: !!r.is_active,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
