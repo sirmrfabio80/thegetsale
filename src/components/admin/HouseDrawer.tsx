@@ -511,7 +511,7 @@ function LogoField({
     <div>
       <span className="eyebrow mb-1 block">Logo</span>
       <div className="flex items-center gap-4 border border-border p-3">
-        <BrandLogo name={name || "—"} logoUrl={logoUrl} size={64} />
+        <BrandLogo name={name || "—"} logoUrl={logoUrl} width={96} height={64} />
         <div className="flex-1">
           {disabled ? (
             <p className="text-xs text-muted-foreground">
