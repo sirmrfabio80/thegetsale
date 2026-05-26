@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { Brand, SignalKind } from "@/data/types";
+import type { Brand, Category, SignalKind } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { BrandLogo } from "./BrandLogo";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
@@ -14,6 +14,13 @@ const SIGNAL_ACCENT: Record<SignalKind, string> = {
   low: "var(--signal-low)",
 };
 
+function formatCategories(categories: Category[] | undefined, fallback: string): string {
+  const list = categories ?? [];
+  if (list.length === 0) return fallback;
+  if (list.length <= 3) return list.join(" · ");
+  return `${list.slice(0, 3).join(" · ")} · +${list.length - 3}`;
+}
+
 export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: boolean }) {
   const items = useWatchlist();
   const isWatched = items.some((w) => w.brandId === brand.id);
@@ -26,6 +33,9 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
     else add(brand.id, brand.name);
   };
 
+  const eyebrow = formatCategories(brand.categories, brandDepartment(brand));
+  const isLow = brand.signal === "low";
+
   return (
     <div className="relative">
       <Link
@@ -34,32 +44,41 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
         style={{ borderLeftColor: SIGNAL_ACCENT[brand.signal] }}
         className="group block border border-border border-l-2 bg-card px-5 py-6 transition-all md:hover:border-foreground/20 md:hover:shadow-[0_2px_12px_oklch(0_0_0/0.06)]"
       >
-        <div className="flex items-start justify-between gap-4 pr-10">
-          <div>
-            <BrandLogo name={brand.name} logoUrl={brand.logoUrl} width={72} height={48} className="mb-3" />
-            <p className="eyebrow mb-2">
-              {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
-            </p>
-            <h3 className="font-serif text-[1.5rem] leading-tight">{brand.name}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{brand.tagline}</p>
+        {forYou && (
+          <div className="mb-3">
+            <span className="inline-flex h-5 items-center border border-border px-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              For you
+            </span>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <SignalBadge signal={brand.signal} />
-            {forYou && (
-              <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                For you
-              </span>
+        )}
+
+        <div className="flex items-start gap-4 pr-10">
+          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={64} />
+          <div className="flex min-w-0 flex-1 flex-col self-stretch">
+            <p className="eyebrow mb-1.5 truncate">{eyebrow}</p>
+            <h3 className="font-serif text-[1.5rem] leading-tight">{brand.name}</h3>
+            {brand.tagline && (
+              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{brand.tagline}</p>
             )}
+            <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
+              <SignalBadge signal={brand.signal} />
+            </div>
           </div>
         </div>
 
         <div className="hairline mt-6" />
 
-        <div className="mt-5 grid grid-cols-3 gap-4 text-[12px]">
-          <Stat label="Confidence" value={`${brand.confidence}%`} />
-          <Stat label="Window" value={brand.windowDays > 90 ? "—" : `${brand.windowDays}d`} />
-          <Stat label="Depth" value={brand.expectedDepth} />
-        </div>
+        {isLow ? (
+          <div className="mt-5 flex min-h-[44px] items-center text-xs text-muted-foreground">
+            Awaiting signal · cadence calibrating
+          </div>
+        ) : (
+          <div className="mt-5 grid min-h-[44px] grid-cols-3 gap-4 text-[12px]">
+            <Stat label="Confidence" value={`${brand.confidence}%`} />
+            <Stat label="Window" value={brand.windowDays > 90 ? "—" : `${brand.windowDays}d`} />
+            <Stat label="Depth" value={brand.expectedDepth || "—"} />
+          </div>
+        )}
       </Link>
 
       <button
@@ -72,11 +91,13 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
         }
         title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
         className={cn(
-          "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-border bg-background transition-colors hover:border-foreground disabled:opacity-50",
-          isWatched && "border-foreground bg-foreground text-background hover:opacity-90",
+          "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border transition-colors disabled:opacity-50",
+          isWatched
+            ? "border-foreground bg-foreground text-background hover:opacity-90"
+            : "border-border bg-transparent text-foreground hover:bg-muted",
         )}
       >
-        <Bookmark className={cn("h-3.5 w-3.5", isWatched && "fill-current")} aria-hidden />
+        <Bookmark className={cn("h-4 w-4", isWatched && "fill-current")} aria-hidden />
       </button>
     </div>
   );

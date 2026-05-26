@@ -20,17 +20,19 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
       className="border border-l-2 border-border bg-card px-6 py-8 md:px-10 md:py-10"
     >
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-xl">
-          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} width={72} height={48} className="mb-3" />
-          <p className="eyebrow">Editor's note</p>
-          <h2 className="mt-3 font-serif text-[2rem] italic leading-[1.1]">{brand.headline}</h2>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Based on cadence, inventory, and market signals around{" "}
-            <span className="text-foreground">{brand.name}</span>.
-            {isWatched
-              ? " We'll keep watching and surface the read when the window opens."
-              : " Add to your watchlist to follow the next move."}
-          </p>
+        <div className="flex max-w-xl items-start gap-4">
+          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={64} />
+          <div className="min-w-0 flex-1">
+            <p className="eyebrow">Editor's note</p>
+            <h2 className="mt-2 font-serif text-[2rem] italic leading-[1.1]">{brand.headline}</h2>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Based on cadence, inventory, and market signals around{" "}
+              <span className="text-foreground">{brand.name}</span>.
+              {isWatched
+                ? " We'll keep watching and surface the read when the window opens."
+                : " Add to your watchlist to follow the next move."}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 md:shrink-0">
