@@ -1,6 +1,7 @@
 import type { Brand } from "@/data/types";
 
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "./BrandLogo";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {
