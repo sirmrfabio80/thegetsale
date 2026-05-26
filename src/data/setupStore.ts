@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback } from "react";
+
 import { toast } from "@/lib/toast";
 import { getMySetup, saveMySetup, type SetupDTO } from "@/lib/setup.functions";
 
@@ -33,7 +33,7 @@ export function useSetupMutation() {
   const queryClient = useQueryClient();
   const saveFn = useServerFn(saveMySetup);
 
-  const mutation = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: async (payload: SavePayload) => {
       const current = queryClient.getQueryData<SetupDTO | null>(setupQueryOptions.queryKey) ?? null;
       const base = current ?? EMPTY;
@@ -73,7 +73,6 @@ export function useSetupMutation() {
     },
   });
 
-  const save = useCallback((payload: SavePayload) => mutation.mutate(payload), [mutation]);
-
-  return { save, isPending: mutation.isPending };
+  // `mutate` from TanStack Query is referentially stable across renders.
+  return { save: mutate, isPending };
 }

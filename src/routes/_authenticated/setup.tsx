@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { RotateCcw, Search, X } from "lucide-react";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
@@ -59,6 +59,35 @@ function SetupPage() {
 
   const [hydrated, setHydrated] = useState(false);
 
+  type PersistedPayload = {
+    departments: string[];
+    houses: string[];
+    categories: string[];
+    styles: string[];
+    notifications: { emailSignals: boolean; smsDrops: boolean; weeklyDigest: boolean };
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedRef = useRef<PersistedPayload | null>(null);
+
+  const shallowEqualSetup = (a: PersistedPayload, b: PersistedPayload) => {
+    const arrEq = (x: string[], y: string[]) =>
+      x.length === y.length && [...x].sort().join("\u0001") === [...y].sort().join("\u0001");
+    return (
+      arrEq(a.departments, b.departments) &&
+      arrEq(a.houses, b.houses) &&
+      arrEq(a.categories, b.categories) &&
+      arrEq(a.styles, b.styles) &&
+      a.notifications.emailSignals === b.notifications.emailSignals &&
+      a.notifications.smsDrops === b.notifications.smsDrops &&
+      a.notifications.weeklyDigest === b.notifications.weeklyDigest
+    );
+  };
+
   // Hydrate from the backend record once it arrives.
   useEffect(() => {
     if (isLoading || hydrated) return;
@@ -70,33 +99,77 @@ function SetupPage() {
       setEmailSignals(setup.notifications.emailSignals);
       setSmsDrops(setup.notifications.smsDrops);
       setWeeklyDigest(setup.notifications.weeklyDigest);
+      lastPersistedRef.current = {
+        departments: [...(setup.departments ?? [])],
+        houses: [...setup.houses],
+        categories: [...setup.categories],
+        styles: [...(setup.styles ?? [])],
+        notifications: { ...setup.notifications },
+      };
+    } else {
+      lastPersistedRef.current = {
+        departments: [],
+        houses: [],
+        categories: [],
+        styles: [],
+        notifications: { emailSignals: true, smsDrops: false, weeklyDigest: false },
+      };
     }
     setHydrated(true);
   }, [isLoading, setup, hydrated]);
 
-  // Persist on every change after hydration. The mutation debounces optimistic
-  // cache updates and the upsert is cheap; users rarely toggle dozens of chips
-  // per second.
+  // Debounced auto-save: coalesce rapid chip toggles into one network call.
   useEffect(() => {
     if (!hydrated) return;
-    save({
+    const payload: PersistedPayload = {
       departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
+    };
+    if (lastPersistedRef.current && shallowEqualSetup(lastPersistedRef.current, payload)) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      lastPersistedRef.current = payload;
+      saveRef.current(payload);
+      debounceRef.current = null;
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, [hydrated, departments, houses, categories, styles, emailSignals, smsDrops, weeklyDigest]);
+
+  const toggleHouse = useCallback((name: string) => {
+    setHouses((prev) => {
+      const n = new Set(prev);
+      if (n.has(name)) n.delete(name);
+      else n.add(name);
+      return n;
     });
-  }, [
-    hydrated,
-    departments,
-    houses,
-    categories,
-    styles,
-    emailSignals,
-    smsDrops,
-    weeklyDigest,
-    save,
-  ]);
+  }, []);
+  const toggleCategory = useCallback((label: string) => {
+    setCategories((prev) => {
+      const n = new Set(prev);
+      if (n.has(label)) n.delete(label);
+      else n.add(label);
+      return n;
+    });
+  }, []);
+  const toggleStyleValue = useCallback((label: string) => {
+    setStyles((prev) => {
+      const n = new Set(prev);
+      const v = label as StylePreference;
+      if (n.has(v)) n.delete(v);
+      else n.add(v);
+      return n;
+    });
+  }, []);
 
   const toggle = <T extends string>(set: Set<T>, value: T) => {
     const next = new Set(set);
@@ -107,16 +180,55 @@ function SetupPage() {
 
   const valid = useMemo(() => houses.size >= 3, [houses]);
 
+  const filteredHouseGroups = useMemo(() => {
+    const q = houseQuery.toLowerCase();
+    return options.houseGroups
+      .map((g) => ({
+        ...g,
+        houses: g.houses.filter(
+          (h) =>
+            (!q || h.name.toLowerCase().includes(q)) &&
+            (!housesSelectedOnly || houses.has(h.name)),
+        ),
+      }))
+      .filter((g) => g.houses.length > 0);
+  }, [options.houseGroups, houseQuery, housesSelectedOnly, houses]);
+
+  const filteredCategories = useMemo(() => {
+    const q = categoryQuery.toLowerCase();
+    return options.categories.filter(
+      (cat) =>
+        (!q || cat.label.toLowerCase().includes(q)) &&
+        (!categoriesSelectedOnly || categories.has(cat.label)),
+    );
+  }, [options.categories, categoryQuery, categoriesSelectedOnly, categories]);
+
+  const filteredStyles = useMemo(() => {
+    const q = styleQuery.toLowerCase();
+    return options.styles.filter(
+      (opt) =>
+        (!q ||
+          opt.label.toLowerCase().includes(q) ||
+          (opt.description ?? "").toLowerCase().includes(q)) &&
+        (!stylesSelectedOnly || styles.has(opt.label as StylePreference)),
+    );
+  }, [options.styles, styleQuery, stylesSelectedOnly, styles]);
+
   const handleStart = () => {
     if (!valid) return;
-    save({
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    const payload: PersistedPayload = {
       departments: [...departments],
       houses: [...houses],
       categories: [...categories],
       styles: [...styles],
       notifications: { emailSignals, smsDrops, weeklyDigest },
-      markCompleted: true,
-    });
+    };
+    lastPersistedRef.current = payload;
+    save({ ...payload, markCompleted: true });
     navigate({ to: "/dashboard" });
   };
 
@@ -144,6 +256,7 @@ function SetupPage() {
     setCategoriesSelectedOnly(false);
     setStylesSelectedOnly(false);
   };
+
 
   const scrollToStep = (id: string) => {
     if (typeof document === "undefined") return;
@@ -267,47 +380,27 @@ function SetupPage() {
         </div>
 
         <div className="mt-8 space-y-8">
-          {options.houseGroups.map((group) => {
-            const filteredHouses = group.houses.filter((h) => {
-              const matchesQuery =
-                !houseQuery || h.name.toLowerCase().includes(houseQuery.toLowerCase());
-              const matchesSelected = !housesSelectedOnly || houses.has(h.name);
-              return matchesQuery && matchesSelected;
-            });
-            if (filteredHouses.length === 0) return null;
-            return (
-              <div key={group.label}>
-                <p className="eyebrow mb-3">{group.label}</p>
-                <div className="flex flex-wrap gap-2">
-                  {filteredHouses.map((house) => (
-                    <SelectableChip
-                      key={house.slug}
-                      label={house.name}
-                      selected={houses.has(house.name)}
-                      onToggle={() => setHouses((s) => toggle(s, house.name))}
-                    />
-                  ))}
-                </div>
+          {filteredHouseGroups.map((group) => (
+            <div key={group.label}>
+              <p className="eyebrow mb-3">{group.label}</p>
+              <div className="flex flex-wrap gap-2">
+                {group.houses.map((house) => (
+                  <SelectableChip
+                    key={house.slug}
+                    label={house.name}
+                    value={house.name}
+                    selected={houses.has(house.name)}
+                    onToggle={toggleHouse}
+                  />
+                ))}
               </div>
-            );
-          })}
-          {(() => {
-            const totalVisible = options.houseGroups.reduce(
-              (acc, g) =>
-                acc +
-                g.houses.filter((h) => {
-                  const mq = !houseQuery || h.name.toLowerCase().includes(houseQuery.toLowerCase());
-                  const ms = !housesSelectedOnly || houses.has(h.name);
-                  return mq && ms;
-                }).length,
-              0,
-            );
-            if (totalVisible === 0) {
-              return <p className="text-sm text-muted-foreground">No houses match your filters.</p>;
-            }
-            return null;
-          })()}
+            </div>
+          ))}
+          {filteredHouseGroups.length === 0 && (
+            <p className="text-sm text-muted-foreground">No houses match your filters.</p>
+          )}
         </div>
+
         <p className="mt-6 text-xs text-muted-foreground">You can change this later.</p>
       </section>
 
@@ -360,38 +453,22 @@ function SetupPage() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-2">
-          {options.categories
-            .filter((cat) => {
-              const matchesQuery =
-                !categoryQuery || cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
-              const matchesSelected = !categoriesSelectedOnly || categories.has(cat.label);
-              return matchesQuery && matchesSelected;
-            })
-            .map((cat) => (
-              <SelectableChip
-                key={cat.slug}
-                label={cat.label}
-                selected={categories.has(cat.label)}
-                onToggle={() => setCategories((s) => toggle(s, cat.label))}
-              />
-            ))}
-          {(() => {
-            const visible = options.categories.filter((cat) => {
-              const mq =
-                !categoryQuery || cat.label.toLowerCase().includes(categoryQuery.toLowerCase());
-              const ms = !categoriesSelectedOnly || categories.has(cat.label);
-              return mq && ms;
-            });
-            if (visible.length === 0) {
-              return (
-                <p className="w-full text-sm text-muted-foreground">
-                  No categories match your filters.
-                </p>
-              );
-            }
-            return null;
-          })()}
+          {filteredCategories.map((cat) => (
+            <SelectableChip
+              key={cat.slug}
+              label={cat.label}
+              value={cat.label}
+              selected={categories.has(cat.label)}
+              onToggle={toggleCategory}
+            />
+          ))}
+          {filteredCategories.length === 0 && (
+            <p className="w-full text-sm text-muted-foreground">
+              No categories match your filters.
+            </p>
+          )}
         </div>
+
       </section>
 
       <SectionRule />
@@ -447,61 +524,39 @@ function SetupPage() {
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {options.styles
-            .filter((opt) => {
-              const matchesQuery =
-                !styleQuery ||
-                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
-                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
-              const matchesSelected =
-                !stylesSelectedOnly || styles.has(opt.label as StylePreference);
-              return matchesQuery && matchesSelected;
-            })
-            .map((opt) => {
-              const value = opt.label as StylePreference;
-              const selected = styles.has(value);
-              return (
-                <button
-                  key={opt.slug}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setStyles((s) => toggle(s, value))}
-                  className={`border p-4 text-left transition-colors ${
-                    selected
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-foreground hover:border-foreground"
+          {filteredStyles.map((opt) => {
+            const value = opt.label as StylePreference;
+            const selected = styles.has(value);
+            return (
+              <button
+                key={opt.slug}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleStyleValue(opt.label)}
+                className={`border p-4 text-left transition-colors ${
+                  selected
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-foreground hover:border-foreground"
+                }`}
+              >
+                <p className="font-serif text-lg">{opt.label}</p>
+                <p
+                  className={`mt-1 text-xs ${
+                    selected ? "text-background/70" : "text-muted-foreground"
                   }`}
                 >
-                  <p className="font-serif text-lg">{opt.label}</p>
-                  <p
-                    className={`mt-1 text-xs ${
-                      selected ? "text-background/70" : "text-muted-foreground"
-                    }`}
-                  >
-                    {opt.description}
-                  </p>
-                </button>
-              );
-            })}
-          {(() => {
-            const visible = options.styles.filter((opt) => {
-              const mq =
-                !styleQuery ||
-                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
-                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
-              const ms = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
-              return mq && ms;
-            });
-            if (visible.length === 0) {
-              return (
-                <p className="col-span-full text-sm text-muted-foreground">
-                  No styles match your filters.
+                  {opt.description}
                 </p>
-              );
-            }
-            return null;
-          })()}
+              </button>
+            );
+          })}
+          {filteredStyles.length === 0 && (
+            <p className="col-span-full text-sm text-muted-foreground">
+              No styles match your filters.
+            </p>
+          )}
         </div>
+
       </section>
 
       <SectionRule />
