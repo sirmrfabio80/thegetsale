@@ -524,61 +524,39 @@ function SetupPage() {
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {options.styles
-            .filter((opt) => {
-              const matchesQuery =
-                !styleQuery ||
-                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
-                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
-              const matchesSelected =
-                !stylesSelectedOnly || styles.has(opt.label as StylePreference);
-              return matchesQuery && matchesSelected;
-            })
-            .map((opt) => {
-              const value = opt.label as StylePreference;
-              const selected = styles.has(value);
-              return (
-                <button
-                  key={opt.slug}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setStyles((s) => toggle(s, value))}
-                  className={`border p-4 text-left transition-colors ${
-                    selected
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-foreground hover:border-foreground"
+          {filteredStyles.map((opt) => {
+            const value = opt.label as StylePreference;
+            const selected = styles.has(value);
+            return (
+              <button
+                key={opt.slug}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleStyleValue(opt.label)}
+                className={`border p-4 text-left transition-colors ${
+                  selected
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-foreground hover:border-foreground"
+                }`}
+              >
+                <p className="font-serif text-lg">{opt.label}</p>
+                <p
+                  className={`mt-1 text-xs ${
+                    selected ? "text-background/70" : "text-muted-foreground"
                   }`}
                 >
-                  <p className="font-serif text-lg">{opt.label}</p>
-                  <p
-                    className={`mt-1 text-xs ${
-                      selected ? "text-background/70" : "text-muted-foreground"
-                    }`}
-                  >
-                    {opt.description}
-                  </p>
-                </button>
-              );
-            })}
-          {(() => {
-            const visible = options.styles.filter((opt) => {
-              const mq =
-                !styleQuery ||
-                opt.label.toLowerCase().includes(styleQuery.toLowerCase()) ||
-                (opt.description ?? "").toLowerCase().includes(styleQuery.toLowerCase());
-              const ms = !stylesSelectedOnly || styles.has(opt.label as StylePreference);
-              return mq && ms;
-            });
-            if (visible.length === 0) {
-              return (
-                <p className="col-span-full text-sm text-muted-foreground">
-                  No styles match your filters.
+                  {opt.description}
                 </p>
-              );
-            }
-            return null;
-          })()}
+              </button>
+            );
+          })}
+          {filteredStyles.length === 0 && (
+            <p className="col-span-full text-sm text-muted-foreground">
+              No styles match your filters.
+            </p>
+          )}
         </div>
+
       </section>
 
       <SectionRule />
