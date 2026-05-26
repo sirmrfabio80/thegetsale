@@ -278,7 +278,7 @@ export const getPublicHouseDetail = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PublicHouseDTO | null> => {
     const { data: brand, error } = await supabaseAdmin
       .from("brands")
-      .select("id, slug, name, category, categories, tagline, website_url, is_active")
+      .select("id, slug, name, category, categories, tagline, website_url, logo_url, is_active")
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();
@@ -311,6 +311,7 @@ export const getPublicHouseDetail = createServerFn({ method: "POST" })
       cadence: d.cadence,
       lastSaleDays: d.lastSaleDays,
       websiteUrl: (brand as any).website_url ?? null,
+      logoUrl: (brand as any).logo_url ?? null,
       links,
     };
   });
