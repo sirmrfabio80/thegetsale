@@ -73,6 +73,7 @@ export function WatchlistCard({
             />
           )}
           <div className="min-w-0">
+            <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={40} className="mb-3" />
             <p className="eyebrow mb-2">
               {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
             </p>
