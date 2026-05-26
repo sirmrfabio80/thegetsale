@@ -164,15 +164,25 @@ export function HousesTab() {
             </Select>
           </div>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setDrawerOpen(true);
-          }}
-          className="h-11 w-full rounded-none px-5 text-[11px] uppercase tracking-[0.18em] md:w-auto"
-        >
-          Add house
-        </Button>
+        <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+          <Button
+            variant="outline"
+            disabled={backfillMut.isPending}
+            onClick={() => backfillMut.mutate()}
+            className="h-11 w-full rounded-none px-5 text-[11px] uppercase tracking-[0.18em] md:w-auto"
+          >
+            {backfillMut.isPending ? "Fetching…" : "Fetch missing logos"}
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setDrawerOpen(true);
+            }}
+            className="h-11 w-full rounded-none px-5 text-[11px] uppercase tracking-[0.18em] md:w-auto"
+          >
+            Add house
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
