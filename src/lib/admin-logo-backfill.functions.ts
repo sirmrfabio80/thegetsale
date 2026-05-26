@@ -55,6 +55,16 @@ export const backfillBrandLogos = createServerFn({ method: "POST" })
         error: "missing_token",
       };
     }
+    if (!token.startsWith("pk_")) {
+      return {
+        processed: 0,
+        updated: 0,
+        skipped: [],
+        errors: [],
+        remaining: 0,
+        error: "invalid_token",
+      };
+    }
 
     // Count total remaining (before this batch).
     const { count: totalCount, error: cErr } = await supabaseAdmin
