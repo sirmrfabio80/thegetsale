@@ -110,7 +110,15 @@ function Footer() {
         <span className="font-serif text-base normal-case tracking-normal text-foreground">
           The Get
         </span>
-        <span>A quieter way to buy. Prototype, mock data.</span>
+        <span className="flex flex-col gap-1 md:items-end">
+          <span>A quieter way to buy. Prototype, mock data.</span>
+          <a
+            href="https://logo.dev"
+            className="normal-case tracking-normal text-muted-foreground hover:text-foreground"
+          >
+            Logos provided by Logo.dev
+          </a>
+        </span>
       </div>
     </footer>
   );
