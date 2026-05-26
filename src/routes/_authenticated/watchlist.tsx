@@ -74,6 +74,7 @@ function toBrand(h: HouseDashboardDTO): Brand {
     factors: [],
     history: [],
     websiteUrl: h.websiteUrl,
+    logoUrl: h.logoUrl,
   };
 }
 
