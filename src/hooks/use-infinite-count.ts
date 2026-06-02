@@ -1,10 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * Infinite-scroll counter. Returns the number of items to show, a sentinel
- * ref to place at the bottom of the list, and a manual loadMore for fallback.
- * Increments by `step` whenever the sentinel intersects the viewport, until
- * `total` is reached. Resets to `step` whenever any value in `resetKey` changes.
+ * Infinite-scroll counter. Returns:
+ *  - count: current items to render
+ *  - sentinelRef: ref to attach to a bottom-of-list element
+ *  - loadMore: manual fallback
+ *  - done: count has reached total
+ *  - loading: a load step is in flight (briefly true during each batch grow)
+ *
+ * Guarded against rapid repeat triggers via a short cooldown so the
+ * IntersectionObserver does not fire multiple times for the same intersection.
+ *
+ * Reset semantics: `resetKey` should ONLY contain user-driven filter inputs
+ * (search, category, etc.) — not `total`. The hook clamps `count` when total
+ * shrinks via a separate effect, so changes to total during a session do not
+ * reset the scroll position.
  */
 export function useInfiniteCount(
   total: number,
@@ -12,22 +22,44 @@ export function useInfiniteCount(
   resetKey: ReadonlyArray<unknown> = [],
 ) {
   const [count, setCount] = useState(() => Math.min(step, Math.max(0, total)));
+  const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const cooldownRef = useRef(false);
 
-  // Reset when filters change.
+  // Reset when user-driven inputs change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCount(Math.min(step, Math.max(0, total)));
+    setLoading(false);
+    cooldownRef.current = false;
   }, resetKey);
 
-  // Clamp when total shrinks.
+  // Clamp when total shrinks. Never resets to `step`; just trims overflow.
   useEffect(() => {
-    setCount((c) => Math.min(Math.max(step, c), Math.max(0, total)));
-  }, [total, step]);
+    setCount((c) => {
+      const clamped = Math.min(c, Math.max(0, total));
+      return clamped === c ? c : clamped;
+    });
+  }, [total]);
+
+  const triggerLoadMore = useCallback(() => {
+    if (cooldownRef.current) return;
+    setCount((c) => {
+      if (c >= total) return c;
+      cooldownRef.current = true;
+      setLoading(true);
+      // Release the cooldown and loading flag after the new batch has rendered.
+      window.setTimeout(() => {
+        cooldownRef.current = false;
+        setLoading(false);
+      }, 220);
+      return Math.min(c + step, total);
+    });
+  }, [step, total]);
 
   const loadMore = useCallback(() => {
-    setCount((c) => Math.min(c + step, total));
-  }, [step, total]);
+    triggerLoadMore();
+  }, [triggerLoadMore]);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -38,7 +70,8 @@ export function useInfiniteCount(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
-            setCount((c) => Math.min(c + step, total));
+            triggerLoadMore();
+            break;
           }
         }
       },
@@ -46,7 +79,13 @@ export function useInfiniteCount(
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [count, total, step]);
+  }, [count, total, triggerLoadMore]);
 
-  return { count: Math.min(count, total), sentinelRef, loadMore, done: count >= total };
+  return {
+    count: Math.min(count, total),
+    sentinelRef,
+    loadMore,
+    done: count >= total,
+    loading,
+  };
 }
