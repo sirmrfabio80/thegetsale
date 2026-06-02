@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useAuth, signOut, localPartFromEmail } from "@/lib/auth";
 import { useProfile } from "@/hooks/use-profile";
@@ -14,10 +14,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function PageLayout({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <div className="min-h-screen bg-background text-foreground">
       <TopNav />
-      <main className="mx-auto w-full max-w-5xl px-5 md:px-10">{children}</main>
+      <main className="mx-auto w-full max-w-5xl px-5 md:px-10">
+        <div key={pathname} className="page-fade">
+          {children}
+        </div>
+      </main>
       <Footer />
     </div>
   );
