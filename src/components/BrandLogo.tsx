@@ -24,6 +24,14 @@ function deriveMonogram(name: string): string {
   return (w.length >= 2 ? w.slice(0, 2) : w[0]).toUpperCase();
 }
 
+function hashToTintClass(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  return `bg-mono-${(h % 6) + 1}`;
+}
+
 export function BrandLogo({
   name,
   logoUrl,
@@ -44,7 +52,7 @@ export function BrandLogo({
       style={{ width: size, height: size }}
       className={cn(
         "flex shrink-0 items-center justify-center overflow-hidden border border-border",
-        showImage ? "bg-background" : "bg-muted",
+        showImage ? "bg-background" : hashToTintClass(name),
         className,
       )}
     >

@@ -14,9 +14,15 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
     else add(brand.id, brand.name);
   };
 
+  const isLow = brand.signal === "low";
+  const wash = isLow ? undefined : `var(--signal-${brand.signal}-wash)`;
+
   return (
     <section
-      style={{ borderLeftColor: "var(--signal-soon)" }}
+      style={{
+        borderLeftColor: `var(--signal-${brand.signal})`,
+        ...(wash ? { backgroundColor: wash } : {}),
+      }}
       className="border border-l-2 border-border bg-card px-6 py-8 md:px-10 md:py-10"
     >
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">

@@ -6,6 +6,7 @@ import { useWatchlist, useWatchlistMutations } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
+import { useReveal } from "@/hooks/use-reveal";
 
 const SIGNAL_ACCENT: Record<SignalKind, string> = {
   buy: "var(--signal-buy)",
@@ -21,10 +22,17 @@ function formatCategories(categories: Category[] | undefined, fallback: string):
   return `${list.slice(0, 3).join(" · ")} · +${list.length - 3}`;
 }
 
-export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: boolean }) {
+interface BrandCardProps {
+  brand: Brand;
+  forYou?: boolean;
+  revealIndex?: number;
+}
+
+export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardProps) {
   const items = useWatchlist();
   const isWatched = items.some((w) => w.brandId === brand.id);
   const { add, remove, isPending } = useWatchlistMutations();
+  const revealRef = useReveal<HTMLDivElement>();
 
   const onToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -35,18 +43,29 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
 
   const eyebrow = formatCategories(brand.categories, brandDepartment(brand));
   const isLow = brand.signal === "low";
+  const wash = isLow ? undefined : `var(--signal-${brand.signal}-wash)`;
 
   return (
-    <div className="relative">
+    <div
+      ref={revealRef}
+      className="reveal-on-scroll relative"
+      style={{ transitionDelay: `${(revealIndex % 6) * 60}ms` }}
+    >
       <Link
         to="/brand/$id"
         params={{ id: brand.id }}
-        style={{ borderLeftColor: SIGNAL_ACCENT[brand.signal] }}
-        className="group block border border-border border-l-2 bg-card px-5 py-6 transition-all md:hover:border-foreground/20 md:hover:shadow-[0_2px_12px_oklch(0_0_0/0.06)]"
+        style={{
+          borderLeftColor: SIGNAL_ACCENT[brand.signal],
+          ...(wash ? { backgroundColor: wash } : {}),
+        }}
+        className={cn(
+          "brand-card-link group block border border-border border-l-2 px-5 py-6 transition-all md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)]",
+          isLow && "bg-card",
+        )}
       >
         {forYou && (
           <div className="mb-3">
-            <span className="inline-flex h-5 items-center border border-border px-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="inline-flex h-5 items-center border border-border bg-background/60 px-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               For you
             </span>
           </div>
@@ -94,7 +113,7 @@ export function BrandCard({ brand, forYou = false }: { brand: Brand; forYou?: bo
           "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border transition-colors disabled:opacity-50",
           isWatched
             ? "border-foreground bg-foreground text-background hover:opacity-90"
-            : "border-border bg-transparent text-foreground hover:bg-muted",
+            : "border-border bg-background/70 text-foreground hover:bg-muted",
         )}
       >
         <Bookmark className={cn("h-4 w-4", isWatched && "fill-current")} aria-hidden />

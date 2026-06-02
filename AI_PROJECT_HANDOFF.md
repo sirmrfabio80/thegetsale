@@ -210,14 +210,19 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
 
 - **Visual direction**: Quiet editorial. Warm off-white background, deep brown-ink foreground, subtle border hairlines, generous whitespace, serif headlines + sans body.
 - **Typography**: `Instrument Serif` (display, italic-capable) + `Inter` (body). Loaded async via injected `<link>` in `__root.tsx` to avoid blocking first paint.
-- **Color tokens** (`styles.css`, oklch): `background`, `foreground`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `ring`, and signal palette `--signal-soon/-hold/-buy/-low`.
+- **Color tokens** (`styles.css`, oklch): `background`, `foreground`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `ring`, and signal palette `--signal-soon/-hold/-buy/-low` (Jun 2026 retint: deep botanical green, warm ochre, slate-blue, muted stone) plus matching surface washes `--signal-{buy,soon,hold}-wash`. Elevation tokens `--shadow-1/2/3` and monogram-tint classes `.bg-mono-1..6` also live here.
 - **Radius**: `--radius: 0.25rem` — deliberately tight/architectural.
 - **Spacing/scale**: max width `5xl` for app, `3xl` for editorial blocks; sections breathe with `py-16/24`.
-- **Motion**: minimal — shimmer skeletons (`@keyframes theget-shimmer`), no Framer/GSAP.
+- **Motion**: CSS-only — shimmer skeletons (`@keyframes theget-shimmer`), `reveal-on-scroll` (shared `useReveal` IntersectionObserver in `hooks/use-reveal.ts`), `meter-fill` (segmented distribution bar), `page-fade` (cross-fade in `PageLayout`), `useCountUp` (radial confidence arc + numerals). All gated behind `prefers-reduced-motion: reduce`. No Framer/GSAP.
 - **Patterns**:
   - "Eyebrow" caps label (`.eyebrow`, 11px, 0.18em tracking).
   - Hairline rules (`.hairline`).
   - Outline-square buttons (uppercase 11px, 0.18em tracking).
+  - Paper-grain background via inlined SVG noise on `body` (multiply blend, ~3.5% opacity); `.paper-grain-heavy` utility for header bands.
+  - Per-signal left rail on `BrandCard`, `RecommendationCard`, `WatchlistCard`, `SignalEditorial` (`var(--signal-{signal})`). Active cards (`signal !== "low"`) also get the matching `*-wash` tint and full Confidence/Window/Depth metric grid; `low` stays the quiet single-line state.
+  - `EditorialBand` (`components/dashboard/EditorialBand.tsx`) — dashboard header band with serif headline on a `bg-background/75 backdrop-blur` plate. Default asset is a procedural SVG (`src/assets/editorial-band-default.svg`); takes an optional `imageUrl?` prop so a later phase can wire admin-set assets without changing the component contract.
+  - `SignalDistribution` (`components/SignalDistribution.tsx`) — animated segmented bar; props `{ buy, wait, hold, low, total }` matching the dashboard's `counts` shape.
+  - `ConfidenceArc` (`components/ConfidenceArc.tsx`) — small radial SVG arc + numeric `{score}/100` text (signal is never colour-only); mounted inside `SignalEditorial`'s top rail.
   - SignalBadge color-coded by `--signal-*`.
 - **Responsive**: mobile-first; grids collapse to single column; nav avoids overflow.
 - **Accessibility**: focus rings via `--ring`; `aria-busy`/`aria-live` on shells; semantic headings. Some custom buttons could use better focus contrast — `unclear`, worth audit.

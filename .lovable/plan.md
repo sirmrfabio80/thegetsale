@@ -1,160 +1,195 @@
 
-# Brand logos — revised plan
+# Editorial visual elevation of The Get
 
-Adds a logo per house: stored in Supabase, displayed on every brand card surface, manageable from the admin drawer, with a one-off (chunked) backfill from Logo.dev.
+Visual-only pass. No changes to data fetching, `createServerFn` logic, auth, RLS, route logic, or the signal enum strings (`buy|soon|hold|low` are persisted). Tokens added to `src/styles.css` only (light; dark out of scope). Toast shim stays a no-op; no `sonner`, no `<Toaster/>`. No edits to `src/routeTree.gen.ts` or `src/integrations/supabase/*`.
 
-## 1. Schema change
+The dashboard currently reads flat because all mock houses are in the `low` state, so the existing `--signal-*` palette and the metric grid never render. Colour and motion must come from the signal language itself, not added decoration.
 
-Migration on `public.brands`:
+---
 
-```sql
-ALTER TABLE public.brands ADD COLUMN logo_url text;
-```
+## 1. Signal palette — concrete oklch values
 
-Nullable, no default. RLS / GRANTs unchanged.
+Background ref: `--background: oklch(0.975 0.008 80)` (warm off-white ≈ #f6f3ec, L ~96.6).
+Each signal gets a **text/ink** token (badge text, numerals) and a **surface wash** token (card tint). Border = ink at low alpha. `low` keeps no wash.
 
-Code touched (extend, don't break existing selects):
-- `src/lib/admin-houses.functions.ts` — add `logoUrl: string | null` to `HouseDTO`, include `logo_url` in `mapRow`, add to `HouseInput` zod (optional/nullable, max 500, must start with the bucket public prefix), pass through in `createHouse`/`updateHouse`.
-- `src/lib/brands.functions.ts` — add `logo_url` to `BRAND_COLS`; add `logoUrl: string | null` to `HouseDashboardDTO`, `HouseDetailDTO`, `PublicHouseDTO`; pass through in `toDashboardDTO` and both detail handlers.
-- `src/data/types.ts` — add `logoUrl?: string | null` to `Brand`.
-- `src/integrations/supabase/types.ts` — auto-regenerates; never hand-edit.
+| Token | Before | After — ink (oklch) | After — wash (oklch) | Role |
+|---|---|---|---|---|
+| `--signal-buy` | `oklch(0.45 0.06 130)` | `oklch(0.42 0.09 145)` deep botanical green | `--signal-buy-wash: oklch(0.96 0.025 140)` | Buy now |
+| `--signal-soon` | `oklch(0.58 0.08 60)` | `oklch(0.55 0.10 70)` warm ochre | `--signal-soon-wash: oklch(0.965 0.028 75)` | Wait for sale |
+| `--signal-hold` | `oklch(0.62 0.02 70)` | `oklch(0.48 0.045 250)` slate-blue | `--signal-hold-wash: oklch(0.96 0.012 240)` | Hold |
+| `--signal-low`  | `oklch(0.7 0.012 75)`  | `oklch(0.60 0.008 75)` muted stone | — (no wash) | No clear read |
 
-## 2. Storage bucket
+Contrast vs background:
 
-New public-read bucket `brand-logos`:
+| Token | Text contrast | Graphic/UI contrast |
+|---|---|---|
+| buy ink  | ~7.4 : 1 ✅ AA body | ✅ |
+| soon ink | ~4.8 : 1 ✅ AA body | ✅ |
+| hold ink | ~5.9 : 1 ✅ AA body | ✅ |
+| low ink  | ~3.4 : 1 — used only for eyebrow/dot, never long body copy | ✅ for dot |
+| washes vs bg | ~1.05 : 1 (intentionally near-invisible tint, decorative only) | n/a |
 
-```sql
-INSERT INTO storage.buckets (id, name, public) VALUES ('brand-logos','brand-logos', true);
+Register all four ink tokens **and** the three wash tokens in the `@theme inline` block (`--color-signal-buy`, `--color-signal-buy-wash`, …) so Tailwind utilities resolve. `SignalBadge`'s `tones` map is rewritten to read the new tokens; border uses ink at `/40`, background uses the wash token directly (no `/[0.08]` math).
 
-CREATE POLICY "Public read brand-logos"
-  ON storage.objects FOR SELECT USING (bucket_id = 'brand-logos');
+---
 
-CREATE POLICY "Admins write brand-logos"
-  ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'brand-logos' AND has_role(auth.uid(),'admin'));
+## 2. Active-card treatment (BrandCard, no parallel component)
 
-CREATE POLICY "Admins update brand-logos"
-  ON storage.objects FOR UPDATE TO authenticated
-  USING (bucket_id = 'brand-logos' AND has_role(auth.uid(),'admin'));
+Branch on `brand.signal` inside the existing `BrandCard`:
 
-CREATE POLICY "Admins delete brand-logos"
-  ON storage.objects FOR DELETE TO authenticated
-  USING (bucket_id = 'brand-logos' AND has_role(auth.uid(),'admin'));
-```
+- `low` → unchanged: quiet card, no wash, single "Awaiting signal · cadence calibrating" line. Left rail keeps `--signal-low`.
+- `buy | soon | hold` → apply tinted wash via `style={{ backgroundColor: 'var(--signal-' + brand.signal + '-wash)' }}` on the inner `<Link>`, plus the existing 3-stat Confidence/Window/Depth grid (tabular-nums already present). Left rail retints to the new ink token (existing `SIGNAL_ACCENT` map kept; values updated).
 
-**Object path:** `brand-logos/{brand.id}/{hash}.{ext}` — keyed by brand UUID, not slug (slugs are mutable). `{hash}` is a short content/time hash to bust CDN cache on replace.
+No new component. `RecommendationCard` and `WatchlistCard` reuse the same wash via the same `signal !== 'low'` branch.
 
-`brands.logo_url` stores the full public URL from `supabase.storage.from('brand-logos').getPublicUrl(path)`.
+---
 
-File constraints (client + server):
-- MIME: `image/png`, `image/jpeg`, `image/svg+xml`, `image/webp`
-- Max size: 1 MB
-- Max raster dimensions: 1024×1024 (client check via `Image`; SVG skipped). Displayed at 40px.
+## 3. Signal rails — per-component inventory (current state → change)
 
-## 3. Backfill (admin-triggered, chunked, Logo.dev)
+| Component | Current rail | Change |
+|---|---|---|
+| `BrandCard.tsx` | Has signal rail via `SIGNAL_ACCENT` map (`border-l-2` + dynamic colour) | **Keep**; retint to new ink tokens |
+| `RecommendationCard.tsx` | Hard-codes `var(--signal-soon)` left border (line 19) | **Make dynamic**: `var(--signal-{brand.signal})` |
+| `brand/SignalEditorial.tsx` | No signal rail (`border border-border bg-card` only) | **ADD** left rail in `var(--signal-{brand.signal})` |
+| `WatchlistCard.tsx` | No signal rail (border toggles only for selection state) | **ADD** left rail in `var(--signal-{brand.signal})` + wash branch |
 
-New server fn `backfillBrandLogos` in `src/lib/admin-logo-backfill.functions.ts` (`requireSupabaseAuth` + admin guard, uses `supabaseAdmin` for storage + DB writes):
+---
 
-```text
-remaining = count(brands WHERE is_active AND logo_url IS NULL AND website_url IS NOT NULL)
-batch    = first 25 such brands, ordered by name
+## 4. Distribution meter (dashboard)
 
-for each brand in batch:
-  domain = new URL(website_url).hostname.replace(/^www\./,'')
-  GET https://img.logo.dev/${domain}?size=256&format=png&token=${LOGO_DEV_TOKEN}
-  if 200 and content-type starts with "image/":
-    path = `${brand.id}/${shortHash()}.png`
-    upload bytes to brand-logos at path
-    update brands.logo_url = publicUrl(path)
-    updated++
-  else:
-    skipped.push({ slug, reason: status===404 ? "not_found" : `http_${status}` })
-
-return { processed: batch.length, updated, skipped, errors, remaining: remaining - batch.length }
-```
-
-**No background infra.** Admin clicks "Fetch missing logos" in the Houses tab toolbar; toast on completion reads e.g.:
-
-> Updated 22 · skipped 3 · **41 brands remaining** — click again to continue.
-
-Button disables while running. Idempotent: re-runs only touch rows where `logo_url IS NULL`.
-
-404 / unsupported: row stays NULL, card falls back to monogram, admin can upload manually.
-
-**Secret:** `LOGO_DEV_TOKEN` will be added via `add_secret` **before** the backfill server fn is wired up. The Houses tab button stays hidden / disabled until the secret exists (server fn returns an explicit `{ error: "missing_token" }` shape that the UI surfaces as a toast).
-
-## 4. Card UI
-
-New reusable component `src/components/BrandLogo.tsx`:
+Replace the eyebrow line `{counts.buy} Buy · {counts.wait} Soon · {counts.hold} Hold · {counts.low} Low` with a thin segmented bar above the caption.
 
 ```text
-<BrandLogo name size={40} logoUrl={…} />
+┌────────────────────────────────────────────┐  height: 6px, hairline border
+│ buy │  soon  │ hold │     low (rest)       │  segments coloured with ink token
+└────────────────────────────────────────────┘
+  3 Buy · 12 Soon · 8 Hold · 22 Low   ← tabular-nums caption stays
 ```
 
-- 40×40 (configurable) square tile, 1px `border-border`, `bg-muted`, no radius, 4px inner padding.
-- If `logoUrl` present: `<img loading="lazy" object-contain alt="{name} logo" onError={…}>`. **`onError` flips local state to render the monogram fallback** — no broken-image icon ever shows.
-- Fallback monogram: 2 uppercase letters, serif, `text-foreground/70`, centered. Derivation rule (confirmed): strip non-alphanumerics, then first letter of first 2 whitespace-separated words; single-word → first 2 letters. `The Row → TR`, `ARKET → AR`, `Massimo Dutti → MD`, `& Other Stories → OS`.
+- New `src/components/SignalDistribution.tsx`. **Props match the dashboard shape: `counts: { buy; wait; hold; low; total }`** — the dashboard counts object keys soon as `wait`, naming the prop the same avoids a rename churn.
+- Pure CSS flex; widths = `flex: count`. Segments use `bg-[color:var(--signal-{name})]` (ink token).
+- Each segment animates `transform: scaleX(0) → scaleX(1)`, `transform-origin: left`, 600ms `cubic-bezier(0.2,0.7,0.2,1)`, staggered 80ms via `animation-delay`. Disabled under reduced motion.
 
-**Applied to all three card surfaces, same 40px spec, positioned top-left above the eyebrow line:**
-- `src/components/BrandCard.tsx`
-- `src/components/RecommendationCard.tsx`
-- `src/components/WatchlistCard.tsx`
+---
 
-In every card: signal-accent left border, bookmark button, 3-stat row, serif name, and all existing copy stay exactly as they are. 12px margin-bottom under the tile before the eyebrow. Mobile (<640px): no reflow — tile fits within existing padding.
+## 5. Confidence arc (brand detail)
 
-**Detail page hero is out of scope for this PR.**
+In `SignalEditorial`'s top eyebrow rail, where `Confidence X/100` lives, mount a small radial arc beside the number.
 
-## 5. Admin upload — `HouseDrawer.tsx`
+- New `src/components/ConfidenceArc.tsx`. Inline SVG ~28px square, stroke 2px. Track in `--border`; progress stroke in `var(--signal-{signal})`. Animate `stroke-dashoffset` full → target over 900ms ease-out.
+- Numeric `{score}/100` **stays as text** beside the arc — signal is never colour-only.
+- Count-up via a small `useCountUp(value, duration)` hook driven by `requestAnimationFrame`, integer rounding, `[font-variant-numeric:tabular-nums]`.
+- `prefers-reduced-motion`: render final state instantly, no rAF loop.
 
-New "Logo" field, full-width row above the "Active" switch:
+---
 
-```text
-Logo
-┌──────┐
-│ ▢ 64 │  [Choose file]   Remove
-│      │  PNG, JPG, SVG, WEBP · max 1 MB · square recommended
-└──────┘
+## 6. Motion system (CSS-only, no Framer/GSAP)
+
+All keyframes added to `src/styles.css`. A single shared IntersectionObserver via `src/hooks/use-reveal.ts` (rootMargin `0px 0px -10% 0px`, threshold 0.05; adds `is-visible` on intersect, disconnects on unmount).
+
+Pieces:
+
+1. **Staggered card reveal** — `BrandCard` root gets `reveal-on-scroll` with initial `opacity-0 translate-y-[6px]`. Stagger via `style={{ animationDelay: \`${(index % 6) * 60}ms\` }}` from the dashboard map. 400ms fade+translate-y on `.is-visible`.
+2. **Count-ups** — `useCountUp` reused by `ConfidenceArc` and the BrandCard stat grid `Confidence %` value.
+3. **Hover hairline accent** — `BrandCard` adds a pseudo `::after` (1px hairline) along the bottom, `scale-x-0 → scale-x-100` on `md:group-hover`, `transform-origin: left`, 250ms ease-out. **No transform on the card itself.**
+4. **Page cross-fade** — `PageLayout`'s `<main>` wraps `children` in a `page-fade` div keyed off pathname via `useRouterState`. 200ms opacity 0→1 on key change. Opacity-only, no layout shift.
+
+Single guard at the bottom of `styles.css`:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll, .stagger-item, .meter-fill, .arc-fill,
+  .page-fade { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
 ```
 
-**Direct-to-storage upload using the user's JWT** (admin RLS policies above enforce access):
+No new dependencies. Existing transitions kept.
 
-```text
-client (HouseDrawer):
-  1. validate mime + size + dimensions
-  2. path = `${brand.id}/${shortHash()}.${ext}`
-  3. supabase.storage.from('brand-logos').upload(path, file, { cacheControl: '3600', upsert: false })
-  4. publicUrl = supabase.storage.from('brand-logos').getPublicUrl(path).data.publicUrl
-  5. call server fn setBrandLogoUrl({ brandId, logoUrl: publicUrl })
-  6. on success: invalidate ["admin","houses"] / ["admin","brands"], update preview
-```
+---
 
-Server fn `setBrandLogoUrl` (in `admin-houses.functions.ts`, `requireSupabaseAuth` + `ensureAdmin`):
-- Re-validates `logoUrl` starts with the bucket's public prefix (`${SUPABASE_URL}/storage/v1/object/public/brand-logos/`) and parses to a path under `{brandId}/…`.
-- **Best-effort deletes the previous object** (reads current `brands.logo_url`, extracts path if it points into our bucket, calls `supabaseAdmin.storage.from('brand-logos').remove([prevPath])` — ignore failures).
-- Updates `brands.logo_url`.
+## 7. Depth / texture
 
-Server fn `removeBrandLogo({ brandId })`:
-- Reads current `brands.logo_url`, best-effort deletes the storage object, clears `logo_url`.
+- **Paper grain** — single inline-SVG noise via CSS background on `body::before`: `position: fixed; inset: 0; pointer-events: none; mix-blend-mode: multiply; opacity: 0.035; z-index: 0;`. SVG inlined as data-URI in `styles.css` (no network, no asset file). Content above on `z-10`.
+- **Elevation scale** as tokens:
+  - `--shadow-1: 0 1px 0 0 oklch(0 0 0 / 0.04)` (hairline rest)
+  - `--shadow-2: 0 2px 12px -6px oklch(0 0 0 / 0.08)` (card hover — promote the inline value currently used by `BrandCard`)
+  - `--shadow-3: 0 12px 40px -16px oklch(0 0 0 / 0.12)` (editorial band, ConfidenceArc card hover)
+- Radius stays `0.25rem`. No rounded-2xl drift.
 
-For brand-new houses (no `id`), the Logo field is disabled with hint "Save the house first, then add a logo." Avoids orphaned uploads.
+---
 
-No base64 over the wire.
+## 8. Logos (BrandLogo)
 
-## 6. Manual verification
+- Real `logoUrl` mark rendering (Logo.dev wired upstream in `brands.functions.ts`) is **unchanged**.
+- Monogram fallback only: deterministic tint derived from a hash of `name`. Six pre-declared classes `.bg-mono-1` … `.bg-mono-6` defined in `styles.css`, each backed by an oklch token at L≈0.92 / C≈0.02 in a constrained warm/cool band. Glyph stays `text-foreground/70`.
+- Implementation: tiny pure helper `hashToTintClass(name)` returning one of the six class names.
+- **Do not thread `house_group` through props in this pass.** `Brand` and `BrandLogo` only carry `name`/`logoUrl` today; group plumbing is a separate change. Name-hash gives stable, calm differentiation now without touching the DTO.
 
-- Card variants: BrandCard, RecommendationCard, WatchlistCard each render tile with image when `logoUrl` set, monogram otherwise. Identical 40px spec across all three.
-- `<img onError>` fallback: set `logo_url` to a deliberately broken URL on one brand → card shows monogram, no broken-image glyph.
-- Mobile 375px: tile + name + bookmark fit, no wrap regression.
-- Admin upload (valid PNG ≤1 MB, ≤1024²): success, preview updates, dashboard reflects after invalidation. URL in DB starts with the bucket public prefix.
-- Validation rejects: >1 MB, >1024² raster, `.gif`, non-image mime — client toast, no upload attempted.
-- Replace: uploading a new file deletes the previous storage object (verify via Storage tab) before the new URL is written.
-- Remove: clears `logo_url` AND removes the storage object; card reverts to monogram.
-- RLS: non-admin authenticated user calling `.storage.from('brand-logos').upload(...)` directly → denied.
-- Backfill button (admin only): first click processes 25 and toast shows remaining count; re-click resumes; running with `LOGO_DEV_TOKEN` missing surfaces a clear toast and does nothing.
-- `AI_PROJECT_HANDOFF.md` updated in the same turn: new `logo_url` column, `brand-logos` bucket + path scheme (`{brand.id}/{hash}.{ext}`), Logo.dev provider + token + 25-per-batch cap, direct-to-storage upload pattern, `BrandLogo` component, three card surfaces updated.
+---
 
-## Pre-build checklist
+## 9. Editorial header band (optional, default ships)
 
-1. Add `LOGO_DEV_TOKEN` via `add_secret` **before** wiring the backfill server fn — confirmed.
-2. Monogram rule confirmed (`The Row → TR`, `& Other Stories → OS`).
-3. No new dependencies.
+Slot at the top of the dashboard, above the "The Read · Today" eyebrow. New `src/components/dashboard/EditorialBand.tsx`.
+
+- Full container width, height `clamp(160px, 22vw, 240px)`, hairline border, `--radius`, paper-grain layered on top (heavier, 0.06 opacity).
+- Default asset: a single procedural SVG (warm gradient + soft fabric-weave hatch). No people, no photography. Lives at `src/assets/editorial-band-default.svg`, imported as URL.
+- Headline ("Your buy/wait read.") overlays bottom-left on a `bg-background/70 backdrop-blur` plate so it stays legible regardless of asset luminance.
+- Props: `imageUrl?: string; alt?: string; eyebrow: string; headline: string`. **Swap-ready slot. No upload UI, no admin, no storage in this pass.** A later phase only needs to pipe an admin-set URL into `imageUrl`.
+- Mobile (375px): band collapses to ~160px, headline left-aligned, no horizontal scroll.
+- Dashboard wiring: replace the current `<section className="pt-16 md:pt-24">…headline…</section>` with `<EditorialBand>` followed by the existing distribution meter + counts paragraph. The `needsMarket` notice stays above the band, unchanged.
+
+---
+
+## Constraints (locked)
+
+- Visual-only. No data fetching, `createServerFn`, auth, RLS, route logic changes. Signal enum casing untouched.
+- No edits to `src/routeTree.gen.ts` or `src/integrations/supabase/*`.
+- No `sonner`, no `<Toaster/>`. `src/lib/toast` remains a no-op shim.
+- house/brand copy split preserved. Empty/error/fallback copy still leads with buy-vs-wait action, not mood.
+- Tokens added in `src/styles.css` (light only). No scattered raw colour values inline.
+- Accessibility: ≥4.5:1 contrast for text, ≥3:1 for meter/arc/borders against the off-white background. Text label beside every signal colour. All motion gated behind `prefers-reduced-motion: reduce`.
+- Mobile-first. No horizontal scroll at 375px. Reuse and parameterise existing components; do not duplicate.
+
+---
+
+## Files touched (presentational only)
+
+- `src/styles.css` — new ink + wash signal tokens, `@theme inline` registrations, `--shadow-1/2/3`, `.bg-mono-1…6`, paper-grain `body::before`, keyframes (`reveal`, `meter-fill`, `arc-fill`, `page-fade`), single reduced-motion guard.
+- `src/components/SignalBadge.tsx` — `tones` map reads new tokens.
+- `src/components/BrandCard.tsx` — wash branch + hairline-accent `::after` + `reveal-on-scroll`.
+- `src/components/RecommendationCard.tsx` — left rail made dynamic; wash branch.
+- `src/components/WatchlistCard.tsx` — **add** left rail; wash branch.
+- `src/components/brand/SignalEditorial.tsx` — **add** left rail; mount `ConfidenceArc`.
+- `src/components/BrandLogo.tsx` — monogram tint via `hashToTintClass(name)`.
+- `src/components/PageLayout.tsx` — `page-fade` wrapper on `<main>` children.
+- `src/components/SignalDistribution.tsx` — NEW.
+- `src/components/ConfidenceArc.tsx` — NEW.
+- `src/components/dashboard/EditorialBand.tsx` — NEW (+ default procedural SVG asset).
+- `src/hooks/use-reveal.ts` — NEW.
+- `src/hooks/use-count-up.ts` — NEW.
+- `src/routes/_authenticated/dashboard.tsx` — header swapped for `EditorialBand` + `SignalDistribution`; stagger index passed to `BrandCard`.
+- `src/routes/brand.$id.tsx` — no logic change; `SignalEditorial` picks up `ConfidenceArc` internally.
+
+Untouched per constraints: `src/routeTree.gen.ts`, `src/integrations/supabase/*`, all `*.functions.ts`, `src/lib/toast.ts`, auth and route configs.
+
+---
+
+## Out of scope (separate prompts)
+
+- Phase-2 admin upload for the band image (storage bucket + `ensureAdmin` server fn + SettingsTab UI).
+- Replacing the `"Lorem ipsum"` OG/Twitter description in `src/routes/__root.tsx` before a public launch.
+- Dark-mode tokens.
+- Threading `house_group` through `Brand`/DTO for group-based logo tinting.
+
+---
+
+## Verification after build
+
+1. All four signal states render — temporarily override a few houses to `buy`/`soon`/`hold` in dev to confirm wash + metric grid + retinted rail; `low` stays the quiet single line. Do not commit the override.
+2. Distribution meter fills animate on dashboard load; tabular caption matches counts.
+3. Confidence arc on `/brand/$id` counts up; `{score}/100` text still present beside it.
+4. DevTools → Rendering → "Emulate prefers-reduced-motion: reduce" → meter static, cards visible without fade, arc at final state, no page cross-fade.
+5. Lighthouse / axe contrast pass on SignalBadge text and meter/arc against the off-white background.
+6. 375px: no horizontal scroll on dashboard, brand detail, watchlist; header band collapses cleanly.
+7. Guardrails intact: no `sonner`/`<Toaster>`, no edits under `src/integrations/supabase/*` or `routeTree.gen.ts`, signal enum strings unchanged.
+8. Update `AI_PROJECT_HANDOFF.md` in the same turn (new tokens, new components, motion system, header band slot).

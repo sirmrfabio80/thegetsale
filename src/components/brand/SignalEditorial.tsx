@@ -1,5 +1,6 @@
 import type { Brand } from "@/data/types";
 import { SignalBadge } from "@/components/SignalBadge";
+import { ConfidenceArc } from "@/components/ConfidenceArc";
 
 const signalCopy: Record<Brand["signal"], { kicker: string; body: string }> = {
   buy: {
@@ -41,14 +42,18 @@ export function SignalEditorial({ brand }: { brand: Brand }) {
   const last = lastSalePhrase(brand.lastSaleDays);
 
   return (
-    <section aria-label="Signal at a glance" className="relative border border-border bg-card">
+    <section
+      aria-label="Signal at a glance"
+      style={{ borderLeftColor: `var(--signal-${brand.signal})` }}
+      className="relative border border-l-2 border-border bg-card"
+    >
       {/* Top eyebrow rail */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-3 md:px-10">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-3 md:px-10">
         <p className="eyebrow text-muted-foreground">The read · this week</p>
-        <p className="eyebrow text-muted-foreground">
-          Confidence <span className="ml-2 text-foreground">{brand.confidence}</span>
-          <span className="text-muted-foreground">/100</span>
-        </p>
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span>Confidence</span>
+          <ConfidenceArc score={brand.confidence} signal={brand.signal} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12">
