@@ -254,9 +254,20 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
         <header className="grid grid-cols-1 gap-10 pt-10 md:grid-cols-12 md:gap-12 md:pt-16">
           <div className="md:col-span-8">
             <p className="eyebrow">The Get · Dossier</p>
-            <div className="mt-4 flex items-start gap-5">
-              <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={88} />
-              <h1 className="font-serif text-5xl leading-[1.02] tracking-tight md:text-7xl">
+            <div className="mt-4 flex items-center gap-4 md:gap-6">
+              <BrandLogo
+                name={brand.name}
+                logoUrl={brand.logoUrl}
+                size={56}
+                className="md:hidden"
+              />
+              <BrandLogo
+                name={brand.name}
+                logoUrl={brand.logoUrl}
+                size={88}
+                className="hidden md:flex"
+              />
+              <h1 className="min-w-0 font-serif text-5xl leading-[1.02] tracking-tight md:text-7xl">
                 {brand.name}
               </h1>
             </div>
