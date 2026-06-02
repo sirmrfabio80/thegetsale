@@ -138,7 +138,7 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
 
       <section className="pt-8 md:pt-10">
         <div className="flex items-start gap-5 md:gap-6">
-          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={88} className="md:!h-28 md:!w-28" />
+          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={96} />
           <div className="min-w-0 flex-1">
             <p className="eyebrow">
               {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
