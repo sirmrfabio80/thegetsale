@@ -187,19 +187,12 @@ function Dashboard() {
     resetPage();
   };
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const startIdx = (safePage - 1) * PAGE_SIZE;
-  const visible = filtered.slice(startIdx, startIdx + PAGE_SIZE);
-  const rangeStart = filtered.length === 0 ? 0 : startIdx + 1;
-  const rangeEnd = startIdx + visible.length;
-
-  // Clamp out-of-range ?page=N deep links.
-  useEffect(() => {
-    if (page !== safePage) {
-      navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: safePage }), replace: true });
-    }
-  }, [page, safePage, navigate]);
+  const { count: visibleCount, sentinelRef, done } = useInfiniteCount(
+    filtered.length,
+    PAGE_SIZE,
+    [filter, q, onlyMine, departments, hasSetup, brands.length],
+  );
+  const visible = filtered.slice(0, visibleCount);
 
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
@@ -208,8 +201,6 @@ function Dashboard() {
     const low = brands.filter((b) => b.signal === "low").length;
     return { total: brands.length, wait, buy, hold, low };
   }, [brands]);
-
-  const pageItems = buildPageItems(safePage, totalPages);
 
 
   return (
