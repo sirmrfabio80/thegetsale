@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { BackToTop } from "@/components/BackToTop";
 import { useInfiniteCount } from "@/hooks/use-infinite-count";
 
 // Single source of truth so the "Updating list…" flash settles cleanly
@@ -218,12 +219,13 @@ function WatchlistPage() {
     return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
   }, [items, brandsBySlug, departments]);
 
-  const { count: pagedCount, sentinelRef, done } = useInfiniteCount(
+  const { count: pagedCount, sentinelRef, done, loading } = useInfiniteCount(
     visible.length,
     PAGE_SIZE,
-    [q, cat, departments, sortBy, items.length],
+    // User-driven filters only; removing items just clamps via the hook.
+    [q, cat, departments, sortBy],
   );
-  const pagedVisible = visible.slice(0, pagedCount);
+  const pagedVisible = useMemo(() => visible.slice(0, pagedCount), [visible, pagedCount]);
 
   const visibleIds = useMemo(() => pagedVisible.map((v) => v.brandId), [pagedVisible]);
   const selectedVisibleCount = useMemo(
@@ -588,11 +590,15 @@ function WatchlistPage() {
           <InfiniteScrollSentinel
             ref={sentinelRef}
             done={done}
+            loading={loading}
             loadedLabel={`Showing ${pagedVisible.length} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
             doneLabel="You're all caught up"
+            doneHint="That's every house on your watchlist that matches your current filters."
           />
         </>
       )}
+
+      <BackToTop />
     </PageLayout>
   );
 }

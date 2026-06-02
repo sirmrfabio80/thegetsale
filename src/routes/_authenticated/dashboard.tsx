@@ -6,6 +6,7 @@ import { BrandCard } from "@/components/BrandCard";
 import { SignalDistribution } from "@/components/SignalDistribution";
 import { EditorialBand } from "@/components/dashboard/EditorialBand";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { BackToTop } from "@/components/BackToTop";
 import { useInfiniteCount } from "@/hooks/use-infinite-count";
 import type { Brand, Category } from "@/data/types";
 import { cn } from "@/lib/utils";
@@ -187,12 +188,13 @@ function Dashboard() {
     resetPage();
   };
 
-  const { count: visibleCount, sentinelRef, done } = useInfiniteCount(
+  const { count: visibleCount, sentinelRef, done, loading } = useInfiniteCount(
     filtered.length,
     PAGE_SIZE,
-    [filter, q, onlyMine, departments, hasSetup, brands.length],
+    // Only user-driven filters reset to page 1; data refreshes do not.
+    [filter, q, onlyMine, departments, hasSetup],
   );
-  const visible = filtered.slice(0, visibleCount);
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
@@ -365,11 +367,15 @@ function Dashboard() {
           <InfiniteScrollSentinel
             ref={sentinelRef}
             done={done}
-            loadedLabel={`Showing ${visible.length} of ${filtered.length} ${filtered.length === 1 ? "brand" : "brands"}`}
+            loading={loading}
+            loadedLabel={`Showing ${visible.length} of ${filtered.length} ${filtered.length === 1 ? "house" : "houses"}`}
             doneLabel="You're all caught up"
+            doneHint="That's every house that matches your current filters."
           />
         </>
       )}
+
+      <BackToTop />
 
     </PageLayout>
   );

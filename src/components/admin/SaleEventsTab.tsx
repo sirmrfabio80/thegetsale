@@ -53,6 +53,7 @@ import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
 import { MARKETS, marketLabel } from "@/lib/markets";
 import { useInfiniteCount } from "@/hooks/use-infinite-count";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { BackToTop } from "@/components/BackToTop";
 
 type Filters = {
   brandId?: string;
@@ -208,7 +209,8 @@ export function SaleEventsTab() {
     count: mobileLimit,
     sentinelRef,
     done: mobileDone,
-  } = useInfiniteCount(rows.length, MOBILE_PAGE_SIZE, [filters, rows.length]);
+    loading: mobileLoading,
+  } = useInfiniteCount(rows.length, MOBILE_PAGE_SIZE, [filters]);
 
   const mobileRows = useMemo(() => rows.slice(0, mobileLimit), [rows, mobileLimit]);
 
@@ -585,10 +587,13 @@ export function SaleEventsTab() {
           <InfiniteScrollSentinel
             ref={sentinelRef}
             done={mobileDone}
+            loading={mobileLoading}
             loadedLabel={`Showing ${mobileRows.length} of ${rows.length}`}
-            doneLabel="End of list"
+            doneLabel="You're all caught up"
+            doneHint="That's every sale event that matches your current filters."
           />
         )}
+        <BackToTop />
       </div>
 
       {/* Desktop: table */}
