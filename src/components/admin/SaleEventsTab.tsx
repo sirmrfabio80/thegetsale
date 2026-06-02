@@ -76,8 +76,6 @@ export function SaleEventsTab() {
   const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
   const [viewing, setViewing] = useState<SaleEventDTO | null>(null);
   const MOBILE_PAGE_SIZE = 20;
-  const [mobileLimit, setMobileLimit] = useState(MOBILE_PAGE_SIZE);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const savedScrollRef = useRef<number | null>(null);
 
   const updateFilters = (updater: (f: Filters) => Filters) => {
