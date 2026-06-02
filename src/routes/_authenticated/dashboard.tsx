@@ -188,12 +188,13 @@ function Dashboard() {
     resetPage();
   };
 
-  const { count: visibleCount, sentinelRef, done } = useInfiniteCount(
+  const { count: visibleCount, sentinelRef, done, loading } = useInfiniteCount(
     filtered.length,
     PAGE_SIZE,
-    [filter, q, onlyMine, departments, hasSetup, brands.length],
+    // Only user-driven filters reset to page 1; data refreshes do not.
+    [filter, q, onlyMine, departments, hasSetup],
   );
-  const visible = filtered.slice(0, visibleCount);
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
