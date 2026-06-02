@@ -30,6 +30,7 @@ import {
 } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
 import { resolveBrandUrl } from "@/lib/brand-links";
+import { BrandLogo } from "@/components/BrandLogo";
 
 function detailToBrand(h: HouseDetailDTO): Brand {
   return {
