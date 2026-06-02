@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { BrandCard } from "@/components/BrandCard";
 import { SignalDistribution } from "@/components/SignalDistribution";
 import { EditorialBand } from "@/components/dashboard/EditorialBand";
+import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { useInfiniteCount } from "@/hooks/use-infinite-count";
 import type { Brand, Category } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
@@ -13,15 +15,6 @@ import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/ca
 import { styleScore } from "@/data/styles";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 const PAGE_SIZE = 12;
 
