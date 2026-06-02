@@ -590,11 +590,15 @@ function WatchlistPage() {
           <InfiniteScrollSentinel
             ref={sentinelRef}
             done={done}
+            loading={loading}
             loadedLabel={`Showing ${pagedVisible.length} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
             doneLabel="You're all caught up"
+            doneHint="That's every house on your watchlist that matches your current filters."
           />
         </>
       )}
+
+      <BackToTop />
     </PageLayout>
   );
 }
