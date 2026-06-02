@@ -218,35 +218,12 @@ function WatchlistPage() {
     return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
   }, [items, brandsBySlug, departments]);
 
-  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const startIdx = (safePage - 1) * PAGE_SIZE;
-  const pagedVisible = visible.slice(startIdx, startIdx + PAGE_SIZE);
-  const rangeStart = visible.length === 0 ? 0 : startIdx + 1;
-  const rangeEnd = startIdx + pagedVisible.length;
-  const pageItems = buildPageItems(safePage, totalPages);
-
-  // Clamp out-of-range ?page=N deep links.
-  useEffect(() => {
-    if (page !== safePage) {
-      navigate({
-        search: (prev: WatchlistSearch) => ({ ...prev, page: safePage }),
-        replace: true,
-      });
-    }
-  }, [page, safePage, navigate]);
-
-  // Reset to page 1 when filters that affect the visible list shrink it.
-  // (Sort changes don't shrink, but the page may now feel off; reset for clarity.)
-  useEffect(() => {
-    if (page !== 1 && (safePage - 1) * PAGE_SIZE >= visible.length) {
-      navigate({
-        search: (prev: WatchlistSearch) => ({ ...prev, page: 1 }),
-        replace: true,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departments, sortBy]);
+  const { count: pagedCount, sentinelRef, done } = useInfiniteCount(
+    visible.length,
+    PAGE_SIZE,
+    [q, cat, departments, sortBy, items.length],
+  );
+  const pagedVisible = visible.slice(0, pagedCount);
 
   const visibleIds = useMemo(() => pagedVisible.map((v) => v.brandId), [pagedVisible]);
   const selectedVisibleCount = useMemo(
