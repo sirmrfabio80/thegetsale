@@ -144,8 +144,14 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
           <BrandLogo
             name={brand.name}
             logoUrl={brand.logoUrl}
-            size={72}
-            className="md:h-24 md:w-24"
+            size={56}
+            className="md:hidden"
+          />
+          <BrandLogo
+            name={brand.name}
+            logoUrl={brand.logoUrl}
+            size={88}
+            className="hidden md:flex"
           />
           <h1 className="min-w-0 font-serif text-5xl leading-[1.02] md:text-7xl">
             {brand.name}
