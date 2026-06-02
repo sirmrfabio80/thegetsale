@@ -579,74 +579,18 @@ function WatchlistPage() {
                 onToggleSelect={toggleSelect}
               />
             ))}
-            {safePage === totalPages &&
+            {done &&
               orphans.map((it) => (
                 <WatchlistCard key={it.brandId} item={it} brand={null} />
               ))}
           </section>
 
-          {totalPages > 1 && (
-            <div className="mt-10 flex flex-col items-center gap-3">
-              <p className="eyebrow [font-variant-numeric:tabular-nums]">
-                Showing {rangeStart}–{rangeEnd} of {visible.length} houses
-              </p>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      aria-disabled={safePage === 1}
-                      tabIndex={safePage === 1 ? -1 : undefined}
-                      className={
-                        safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (safePage > 1) goToPage(safePage - 1);
-                      }}
-                    />
-                  </PaginationItem>
-                  {pageItems.map((item) =>
-                    typeof item === "number" ? (
-                      <PaginationItem key={item}>
-                        <PaginationLink
-                          href="#"
-                          isActive={item === safePage}
-                          className="cursor-pointer"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (item !== safePage) goToPage(item);
-                          }}
-                        >
-                          {item}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={item}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ),
-                  )}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      aria-disabled={safePage === totalPages}
-                      tabIndex={safePage === totalPages ? -1 : undefined}
-                      className={
-                        safePage === totalPages
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (safePage < totalPages) goToPage(safePage + 1);
-                      }}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+          <InfiniteScrollSentinel
+            ref={sentinelRef}
+            done={done}
+            loadedLabel={`Showing ${pagedVisible.length} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
+            doneLabel="You're all caught up"
+          />
         </>
       )}
     </PageLayout>
