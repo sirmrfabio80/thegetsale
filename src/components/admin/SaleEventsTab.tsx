@@ -586,10 +586,13 @@ export function SaleEventsTab() {
           <InfiniteScrollSentinel
             ref={sentinelRef}
             done={mobileDone}
+            loading={mobileLoading}
             loadedLabel={`Showing ${mobileRows.length} of ${rows.length}`}
-            doneLabel="End of list"
+            doneLabel="You're all caught up"
+            doneHint="That's every sale event that matches your current filters."
           />
         )}
+        <BackToTop />
       </div>
 
       {/* Desktop: table */}
