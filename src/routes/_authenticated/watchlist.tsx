@@ -410,7 +410,6 @@ function WatchlistPage() {
 
       <SectionRule />
 
-      <div ref={gridTopRef} className="scroll-mt-24" />
 
       {items.length > 0 && (visible.length > 0 || selectMode) && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -433,9 +432,7 @@ function WatchlistPage() {
                 <span className="[font-variant-numeric:tabular-nums]">
                   {visible.length === 0
                     ? "0 houses"
-                    : totalPages > 1
-                      ? `${rangeStart}–${rangeEnd} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`
-                      : `${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
+                    : `${pagedVisible.length} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
                 </span>
                 <span aria-hidden className="text-muted-foreground/50">
                   ·
