@@ -30,6 +30,7 @@ import {
 } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
 import { resolveBrandUrl } from "@/lib/brand-links";
+import { BrandLogo } from "@/components/BrandLogo";
 
 function detailToBrand(h: HouseDetailDTO): Brand {
   return {
@@ -49,6 +50,7 @@ function detailToBrand(h: HouseDetailDTO): Brand {
     factors: h.factors,
     history: h.history,
     websiteUrl: h.websiteUrl,
+    logoUrl: h.logoUrl,
     links: h.links.map((l) => ({ countryCode: l.countryCode, url: l.url })),
   };
 }
@@ -135,11 +137,16 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       </div>
 
       <section className="pt-8 md:pt-10">
-        <p className="eyebrow">
-          {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
-        </p>
-        <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
-        <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
+        <div className="flex items-start gap-5 md:gap-6">
+          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={96} />
+          <div className="min-w-0 flex-1">
+            <p className="eyebrow">
+              {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
+            </p>
+            <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
+            <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
+          </div>
+        </div>
       </section>
 
       <div className="mt-10 space-y-6">
@@ -236,9 +243,12 @@ function PublicBrandPreview({ house }: { house: PublicHouseDTO }) {
         <header className="grid grid-cols-1 gap-10 pt-10 md:grid-cols-12 md:gap-12 md:pt-16">
           <div className="md:col-span-8">
             <p className="eyebrow">The Get · Dossier</p>
-            <h1 className="mt-4 font-serif text-5xl leading-[1.02] tracking-tight md:text-7xl">
-              {brand.name}
-            </h1>
+            <div className="mt-4 flex items-start gap-5">
+              <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={88} />
+              <h1 className="font-serif text-5xl leading-[1.02] tracking-tight md:text-7xl">
+                {brand.name}
+              </h1>
+            </div>
             <p className="mt-4 max-w-xl font-serif text-xl italic leading-snug text-foreground/80 md:text-2xl">
               {brand.tagline}
             </p>
