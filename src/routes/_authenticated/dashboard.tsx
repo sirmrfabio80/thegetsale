@@ -367,11 +367,15 @@ function Dashboard() {
           <InfiniteScrollSentinel
             ref={sentinelRef}
             done={done}
-            loadedLabel={`Showing ${visible.length} of ${filtered.length} ${filtered.length === 1 ? "brand" : "brands"}`}
+            loading={loading}
+            loadedLabel={`Showing ${visible.length} of ${filtered.length} ${filtered.length === 1 ? "house" : "houses"}`}
             doneLabel="You're all caught up"
+            doneHint="That's every house that matches your current filters."
           />
         </>
       )}
+
+      <BackToTop />
 
     </PageLayout>
   );
