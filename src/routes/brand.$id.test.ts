@@ -30,8 +30,18 @@ function extractFunctionBody(src: string, fnName: string): string {
   const marker = `function ${fnName}(`;
   const start = src.indexOf(marker);
   if (start === -1) throw new Error(`Could not find function ${fnName} in route file`);
-  // Walk forward from the first `{` after the signature, tracking brace depth.
-  let i = src.indexOf("{", start);
+  // Walk the signature parens to find the matching `)`, then take the next `{`.
+  let i = start + marker.length - 1; // points at the opening `(`
+  let parenDepth = 0;
+  for (; i < src.length; i++) {
+    const ch = src[i];
+    if (ch === "(") parenDepth++;
+    else if (ch === ")") {
+      parenDepth--;
+      if (parenDepth === 0) break;
+    }
+  }
+  i = src.indexOf("{", i);
   if (i === -1) throw new Error(`No body opening brace for ${fnName}`);
   let depth = 0;
   for (; i < src.length; i++) {
