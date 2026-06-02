@@ -137,11 +137,16 @@ function AuthenticatedBrand({ brand }: { brand: Brand }) {
       </div>
 
       <section className="pt-8 md:pt-10">
-        <p className="eyebrow">
-          {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
-        </p>
-        <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
-        <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
+        <div className="flex items-start gap-5 md:gap-6">
+          <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={88} className="md:!h-28 md:!w-28" />
+          <div className="min-w-0 flex-1">
+            <p className="eyebrow">
+              {(brand.categories ?? []).join(" · ") || brandDepartment(brand)}
+            </p>
+            <h1 className="mt-3 font-serif text-5xl leading-[1.02] md:text-7xl">{brand.name}</h1>
+            <p className="mt-3 max-w-xl text-muted-foreground">{brand.tagline}</p>
+          </div>
+        </div>
       </section>
 
       <div className="mt-10 space-y-6">
