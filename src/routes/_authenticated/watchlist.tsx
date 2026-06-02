@@ -10,15 +10,8 @@ import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore
 import { cn } from "@/lib/utils";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { useInfiniteCount } from "@/hooks/use-infinite-count";
 
 // Single source of truth so the "Updating list…" flash settles cleanly
 // after a bulk department toggle.
@@ -34,22 +27,7 @@ const CATEGORY_FILTERS: Array<"All" | Category> = [
   "Jewellery",
 ];
 
-type WatchlistSearch = { page: number; q: string; cat: "All" | Category };
-
-function buildPageItems(
-  current: number,
-  total: number,
-): Array<number | "ellipsis-l" | "ellipsis-r"> {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const items: Array<number | "ellipsis-l" | "ellipsis-r"> = [1];
-  const left = Math.max(2, current - 1);
-  const right = Math.min(total - 1, current + 1);
-  if (left > 2) items.push("ellipsis-l");
-  for (let i = left; i <= right; i++) items.push(i);
-  if (right < total - 1) items.push("ellipsis-r");
-  items.push(total);
-  return items;
-}
+type WatchlistSearch = { q: string; cat: "All" | Category };
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
