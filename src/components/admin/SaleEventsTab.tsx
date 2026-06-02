@@ -51,6 +51,8 @@ import {
 import { SaleEventDrawer } from "./SaleEventDrawer";
 import { SaleEventDetailsDrawer } from "./SaleEventDetailsDrawer";
 import { MARKETS, marketLabel } from "@/lib/markets";
+import { useInfiniteCount } from "@/hooks/use-infinite-count";
+import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 
 type Filters = {
   brandId?: string;
