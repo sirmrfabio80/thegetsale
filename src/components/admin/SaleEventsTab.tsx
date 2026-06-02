@@ -211,7 +211,6 @@ export function SaleEventsTab() {
   } = useInfiniteCount(rows.length, MOBILE_PAGE_SIZE, [filters, rows.length]);
 
   const mobileRows = useMemo(() => rows.slice(0, mobileLimit), [rows, mobileLimit]);
-  const hasMoreMobile = !mobileDone;
 
   // Restore scroll position after a filter change once the new list has rendered
   useEffect(() => {
