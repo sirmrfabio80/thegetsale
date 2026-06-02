@@ -8,9 +8,9 @@ const labels: Record<Exclude<SignalKind, "low">, string> = {
 };
 
 const tones: Record<Exclude<SignalKind, "low">, string> = {
-  soon: "border-[color:var(--signal-soon)]/40 text-[color:var(--signal-soon)] bg-[color:var(--signal-soon)]/5",
-  hold: "border-[color:var(--signal-hold)]/40 text-[color:var(--signal-hold)] bg-[color:var(--signal-hold)]/5",
-  buy: "border-[color:var(--signal-buy)]/40 text-[color:var(--signal-buy)] bg-[color:var(--signal-buy)]/[0.08]",
+  soon: "border-[color:var(--signal-soon)]/40 text-[color:var(--signal-soon)] bg-[color:var(--signal-soon-wash)]",
+  hold: "border-[color:var(--signal-hold)]/40 text-[color:var(--signal-hold)] bg-[color:var(--signal-hold-wash)]",
+  buy: "border-[color:var(--signal-buy)]/40 text-[color:var(--signal-buy)] bg-[color:var(--signal-buy-wash)]",
 };
 
 export function SignalBadge({ signal, className }: { signal: SignalKind; className?: string }) {

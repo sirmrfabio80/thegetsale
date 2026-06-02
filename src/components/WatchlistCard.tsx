@@ -51,12 +51,19 @@ export function WatchlistCard({
     e.stopPropagation();
   };
 
+  const isLow = brand.signal === "low";
+  const wash = isLow ? undefined : `var(--signal-${brand.signal}-wash)`;
+
   return (
     <Link
       to="/brand/$id"
       params={{ id: brand.id }}
+      style={{
+        borderLeftColor: `var(--signal-${brand.signal})`,
+        ...(wash ? { backgroundColor: wash } : {}),
+      }}
       className={cn(
-        "group block border bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
+        "group block border border-l-2 bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
         selected ? "border-foreground" : "border-border",
       )}
     >
