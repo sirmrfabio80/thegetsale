@@ -10,15 +10,8 @@ import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore
 import { cn } from "@/lib/utils";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { useInfiniteCount } from "@/hooks/use-infinite-count";
 
 // Single source of truth so the "Updating list…" flash settles cleanly
 // after a bulk department toggle.
@@ -34,22 +27,7 @@ const CATEGORY_FILTERS: Array<"All" | Category> = [
   "Jewellery",
 ];
 
-type WatchlistSearch = { page: number; q: string; cat: "All" | Category };
-
-function buildPageItems(
-  current: number,
-  total: number,
-): Array<number | "ellipsis-l" | "ellipsis-r"> {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const items: Array<number | "ellipsis-l" | "ellipsis-r"> = [1];
-  const left = Math.max(2, current - 1);
-  const right = Math.min(total - 1, current + 1);
-  if (left > 2) items.push("ellipsis-l");
-  for (let i = left; i <= right; i++) items.push(i);
-  if (right < total - 1) items.push("ellipsis-r");
-  items.push(total);
-  return items;
-}
+type WatchlistSearch = { q: string; cat: "All" | Category };
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
@@ -80,15 +58,13 @@ function toBrand(h: HouseDashboardDTO): Brand {
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
   validateSearch: (raw: Record<string, unknown>): WatchlistSearch => {
-    const r = raw as { page?: unknown; q?: unknown; cat?: unknown };
-    const n = Number(r?.page);
-    const page = Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+    const r = raw as { q?: unknown; cat?: unknown };
     const q = typeof r?.q === "string" ? r.q : "";
     const catRaw = typeof r?.cat === "string" ? r.cat : "All";
     const cat = (CATEGORY_FILTERS as readonly string[]).includes(catRaw)
       ? (catRaw as "All" | Category)
       : "All";
-    return { page, q, cat };
+    return { q, cat };
   },
   head: () => ({
     meta: [
@@ -118,34 +94,24 @@ function WatchlistPage() {
   const { removeMany } = useWatchlistMutations();
   const { setup } = useSetup();
   const { save: saveSetupMutation } = useSetupMutation();
-  const { page, q, cat } = Route.useSearch();
+  const { q, cat } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const gridTopRef = useRef<HTMLDivElement>(null);
 
-  const resetPage = () => {
-    navigate({ search: (prev: WatchlistSearch) => ({ ...prev, page: 1 }), replace: true });
-  };
   const setQuery = (value: string) => {
     navigate({
-      search: (prev: WatchlistSearch) => ({ ...prev, q: value, page: 1 }),
+      search: (prev: WatchlistSearch) => ({ ...prev, q: value }),
       replace: true,
     });
   };
   const setCategory = (value: "All" | Category) => {
     navigate({
-      search: (prev: WatchlistSearch) => ({ ...prev, cat: value, page: 1 }),
+      search: (prev: WatchlistSearch) => ({ ...prev, cat: value }),
       replace: true,
-    });
-  };
-  const goToPage = (next: number) => {
-    navigate({ search: (prev: WatchlistSearch) => ({ ...prev, page: next }) });
-    requestAnimationFrame(() => {
-      gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
   const clearSearchAndCategory = () => {
     navigate({
-      search: (prev: WatchlistSearch) => ({ ...prev, q: "", cat: "All", page: 1 }),
+      search: (prev: WatchlistSearch) => ({ ...prev, q: "", cat: "All" }),
       replace: true,
     });
   };
@@ -252,35 +218,12 @@ function WatchlistPage() {
     return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
   }, [items, brandsBySlug, departments]);
 
-  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const startIdx = (safePage - 1) * PAGE_SIZE;
-  const pagedVisible = visible.slice(startIdx, startIdx + PAGE_SIZE);
-  const rangeStart = visible.length === 0 ? 0 : startIdx + 1;
-  const rangeEnd = startIdx + pagedVisible.length;
-  const pageItems = buildPageItems(safePage, totalPages);
-
-  // Clamp out-of-range ?page=N deep links.
-  useEffect(() => {
-    if (page !== safePage) {
-      navigate({
-        search: (prev: WatchlistSearch) => ({ ...prev, page: safePage }),
-        replace: true,
-      });
-    }
-  }, [page, safePage, navigate]);
-
-  // Reset to page 1 when filters that affect the visible list shrink it.
-  // (Sort changes don't shrink, but the page may now feel off; reset for clarity.)
-  useEffect(() => {
-    if (page !== 1 && (safePage - 1) * PAGE_SIZE >= visible.length) {
-      navigate({
-        search: (prev: WatchlistSearch) => ({ ...prev, page: 1 }),
-        replace: true,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departments, sortBy]);
+  const { count: pagedCount, sentinelRef, done } = useInfiniteCount(
+    visible.length,
+    PAGE_SIZE,
+    [q, cat, departments, sortBy, items.length],
+  );
+  const pagedVisible = visible.slice(0, pagedCount);
 
   const visibleIds = useMemo(() => pagedVisible.map((v) => v.brandId), [pagedVisible]);
   const selectedVisibleCount = useMemo(
@@ -467,7 +410,6 @@ function WatchlistPage() {
 
       <SectionRule />
 
-      <div ref={gridTopRef} className="scroll-mt-24" />
 
       {items.length > 0 && (visible.length > 0 || selectMode) && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -490,9 +432,7 @@ function WatchlistPage() {
                 <span className="[font-variant-numeric:tabular-nums]">
                   {visible.length === 0
                     ? "0 houses"
-                    : totalPages > 1
-                      ? `${rangeStart}–${rangeEnd} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`
-                      : `${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
+                    : `${pagedVisible.length} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
                 </span>
                 <span aria-hidden className="text-muted-foreground/50">
                   ·
@@ -511,10 +451,7 @@ function WatchlistPage() {
                 )}
                 {sortBy !== "signal" && (
                   <button
-                    onClick={() => {
-                      setSortBy("signal");
-                      resetPage();
-                    }}
+                    onClick={() => setSortBy("signal")}
                     className="underline-offset-4 hover:text-foreground hover:underline"
                   >
                     Reset sort
@@ -551,10 +488,7 @@ function WatchlistPage() {
                   <span className="hidden sm:inline">Sort</span>
                   <select
                     value={sortBy}
-                    onChange={(e) => {
-                      setSortBy(e.target.value as typeof sortBy);
-                      resetPage();
-                    }}
+                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="border border-border bg-transparent px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-foreground focus:border-foreground focus:outline-none"
                     aria-label="Sort watchlist"
                   >
@@ -645,74 +579,18 @@ function WatchlistPage() {
                 onToggleSelect={toggleSelect}
               />
             ))}
-            {safePage === totalPages &&
+            {done &&
               orphans.map((it) => (
                 <WatchlistCard key={it.brandId} item={it} brand={null} />
               ))}
           </section>
 
-          {totalPages > 1 && (
-            <div className="mt-10 flex flex-col items-center gap-3">
-              <p className="eyebrow [font-variant-numeric:tabular-nums]">
-                Showing {rangeStart}–{rangeEnd} of {visible.length} houses
-              </p>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      aria-disabled={safePage === 1}
-                      tabIndex={safePage === 1 ? -1 : undefined}
-                      className={
-                        safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (safePage > 1) goToPage(safePage - 1);
-                      }}
-                    />
-                  </PaginationItem>
-                  {pageItems.map((item) =>
-                    typeof item === "number" ? (
-                      <PaginationItem key={item}>
-                        <PaginationLink
-                          href="#"
-                          isActive={item === safePage}
-                          className="cursor-pointer"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (item !== safePage) goToPage(item);
-                          }}
-                        >
-                          {item}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={item}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ),
-                  )}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      aria-disabled={safePage === totalPages}
-                      tabIndex={safePage === totalPages ? -1 : undefined}
-                      className={
-                        safePage === totalPages
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (safePage < totalPages) goToPage(safePage + 1);
-                      }}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+          <InfiniteScrollSentinel
+            ref={sentinelRef}
+            done={done}
+            loadedLabel={`Showing ${pagedVisible.length} of ${visible.length} ${visible.length === 1 ? "house" : "houses"}`}
+            doneLabel="You're all caught up"
+          />
         </>
       )}
     </PageLayout>

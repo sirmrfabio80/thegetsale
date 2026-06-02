@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { BrandCard } from "@/components/BrandCard";
 import { SignalDistribution } from "@/components/SignalDistribution";
 import { EditorialBand } from "@/components/dashboard/EditorialBand";
+import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { useInfiniteCount } from "@/hooks/use-infinite-count";
 import type { Brand, Category } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { DEPARTMENT_OPTIONS, type Department, type StylePreference } from "@/data/setupStorage";
@@ -13,31 +15,10 @@ import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/ca
 import { styleScore } from "@/data/styles";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import { watchlistQueryOptions } from "@/data/store";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 const PAGE_SIZE = 12;
 
-type DashboardSearch = { page: number };
-
-function buildPageItems(current: number, total: number): Array<number | "ellipsis-l" | "ellipsis-r"> {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const items: Array<number | "ellipsis-l" | "ellipsis-r"> = [1];
-  const left = Math.max(2, current - 1);
-  const right = Math.min(total - 1, current + 1);
-  if (left > 2) items.push("ellipsis-l");
-  for (let i = left; i <= right; i++) items.push(i);
-  if (right < total - 1) items.push("ellipsis-r");
-  items.push(total);
-  return items;
-}
+type DashboardSearch = Record<string, never>;
 
 const housesQueryOptions = queryOptions({
   queryKey: ["houses", "dashboard"],
@@ -67,10 +48,7 @@ function toBrand(h: HouseDashboardDTO): Brand {
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  validateSearch: (raw: Record<string, unknown>): DashboardSearch => {
-    const n = Number((raw as { page?: unknown })?.page);
-    return { page: Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1 };
-  },
+  validateSearch: (): DashboardSearch => ({}),
   head: () => ({
     meta: [
       { title: "Signals — The Get" },
@@ -102,9 +80,6 @@ const FILTERS: Array<"All" | Category> = [
 
 function Dashboard() {
   const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
-  const { page } = Route.useSearch();
-  const navigate = Route.useNavigate();
-  const gridTopRef = useRef<HTMLDivElement>(null);
   const houseDTOs = dashboard.houses;
   const needsMarket = dashboard.needsMarket;
   const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
@@ -121,16 +96,9 @@ function Dashboard() {
   const [styles, setStyles] = useState<StylePreference[]>([]);
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
 
-  const resetPage = () => {
-    navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: 1 }), replace: true });
-  };
-
-  const goToPage = (next: number) => {
-    navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: next }) });
-    requestAnimationFrame(() => {
-      gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  };
+  // No-ops kept to preserve existing call sites that "reset to first page"
+  // when filters change. Infinite scroll resets via useInfiniteCount deps.
+  const resetPage = () => {};
 
 
 
@@ -219,19 +187,12 @@ function Dashboard() {
     resetPage();
   };
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const startIdx = (safePage - 1) * PAGE_SIZE;
-  const visible = filtered.slice(startIdx, startIdx + PAGE_SIZE);
-  const rangeStart = filtered.length === 0 ? 0 : startIdx + 1;
-  const rangeEnd = startIdx + visible.length;
-
-  // Clamp out-of-range ?page=N deep links.
-  useEffect(() => {
-    if (page !== safePage) {
-      navigate({ search: (prev: DashboardSearch) => ({ ...prev, page: safePage }), replace: true });
-    }
-  }, [page, safePage, navigate]);
+  const { count: visibleCount, sentinelRef, done } = useInfiniteCount(
+    filtered.length,
+    PAGE_SIZE,
+    [filter, q, onlyMine, departments, hasSetup, brands.length],
+  );
+  const visible = filtered.slice(0, visibleCount);
 
   const counts = useMemo(() => {
     const wait = brands.filter((b) => b.signal === "soon").length;
@@ -240,8 +201,6 @@ function Dashboard() {
     const low = brands.filter((b) => b.signal === "low").length;
     return { total: brands.length, wait, buy, hold, low };
   }, [brands]);
-
-  const pageItems = buildPageItems(safePage, totalPages);
 
 
   return (
@@ -369,8 +328,6 @@ function Dashboard() {
 
       <SectionRule />
 
-      <div ref={gridTopRef} className="scroll-mt-24" />
-
       {filtered.length === 0 ? (
         <div className="py-16 text-center text-sm text-muted-foreground">
           {onlyMine ? (
@@ -405,68 +362,12 @@ function Dashboard() {
             ))}
           </section>
 
-          {totalPages > 1 && (
-            <div className="mt-10 flex flex-col items-center gap-3">
-              <p className="eyebrow [font-variant-numeric:tabular-nums]">
-                Showing {rangeStart}–{rangeEnd} of {filtered.length} brands
-              </p>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      aria-disabled={safePage === 1}
-                      tabIndex={safePage === 1 ? -1 : undefined}
-                      className={
-                        safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (safePage > 1) goToPage(safePage - 1);
-                      }}
-                    />
-                  </PaginationItem>
-                  {pageItems.map((item) =>
-                    typeof item === "number" ? (
-                      <PaginationItem key={item}>
-                        <PaginationLink
-                          href="#"
-                          isActive={item === safePage}
-                          className="cursor-pointer"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (item !== safePage) goToPage(item);
-                          }}
-                        >
-                          {item}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={item}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ),
-                  )}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      aria-disabled={safePage === totalPages}
-                      tabIndex={safePage === totalPages ? -1 : undefined}
-                      className={
-                        safePage === totalPages
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (safePage < totalPages) goToPage(safePage + 1);
-                      }}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+          <InfiniteScrollSentinel
+            ref={sentinelRef}
+            done={done}
+            loadedLabel={`Showing ${visible.length} of ${filtered.length} ${filtered.length === 1 ? "brand" : "brands"}`}
+            doneLabel="You're all caught up"
+          />
         </>
       )}
 
