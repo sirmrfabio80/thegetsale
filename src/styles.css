@@ -32,6 +32,9 @@
   --color-signal-hold: var(--signal-hold);
   --color-signal-buy: var(--signal-buy);
   --color-signal-low: var(--signal-low);
+  --color-signal-soon-wash: var(--signal-soon-wash);
+  --color-signal-hold-wash: var(--signal-hold-wash);
+  --color-signal-buy-wash: var(--signal-buy-wash);
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
@@ -58,10 +61,18 @@
   --input: oklch(0.88 0.012 75);
   --ring: oklch(0.55 0.04 70);
 
-  --signal-soon: oklch(0.58 0.08 60);
-  --signal-hold: oklch(0.62 0.02 70);
-  --signal-buy: oklch(0.45 0.06 130);
-  --signal-low: oklch(0.7 0.012 75);
+  --signal-soon: oklch(0.55 0.10 70);
+  --signal-hold: oklch(0.48 0.045 250);
+  --signal-buy: oklch(0.42 0.09 145);
+  --signal-low: oklch(0.60 0.008 75);
+
+  --signal-soon-wash: oklch(0.965 0.028 75);
+  --signal-hold-wash: oklch(0.96 0.012 240);
+  --signal-buy-wash: oklch(0.96 0.025 140);
+
+  --shadow-1: 0 1px 0 0 oklch(0 0 0 / 0.04);
+  --shadow-2: 0 2px 12px -6px oklch(0 0 0 / 0.08);
+  --shadow-3: 0 12px 40px -16px oklch(0 0 0 / 0.12);
 }
 
 @layer base {
@@ -97,4 +108,92 @@
 @keyframes theget-shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
+}
+
+/* Paper grain — decorative noise layered on body via background-blend */
+body {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.15  0 0 0 0 0.1  0 0 0 0 0.05  0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-repeat: repeat;
+  background-blend-mode: multiply;
+}
+
+.paper-grain-heavy {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.07  0 0 0 0 0.03  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* Monogram fallback tints — calm warm/cool band at L≈0.92 C≈0.02 */
+.bg-mono-1 { background-color: oklch(0.92 0.022 60); }
+.bg-mono-2 { background-color: oklch(0.92 0.022 30); }
+.bg-mono-3 { background-color: oklch(0.92 0.022 130); }
+.bg-mono-4 { background-color: oklch(0.92 0.022 200); }
+.bg-mono-5 { background-color: oklch(0.92 0.022 260); }
+.bg-mono-6 { background-color: oklch(0.92 0.022 320); }
+
+/* Reveal-on-scroll: initial hidden, fades + lifts when .is-visible is toggled */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 400ms ease-out, transform 400ms ease-out;
+  transition-delay: inherit;
+}
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Distribution meter fills */
+.meter-fill {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: meter-fill 600ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@keyframes meter-fill {
+  to { transform: scaleX(1); }
+}
+
+/* Page cross-fade */
+.page-fade {
+  animation: page-fade 200ms ease-out both;
+}
+@keyframes page-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Brand-card hover hairline accent (no transform on the card itself) */
+.brand-card-link {
+  position: relative;
+}
+.brand-card-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background-color: var(--foreground);
+  opacity: 0.35;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 250ms ease-out;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .brand-card-link:hover::after { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll,
+  .meter-fill,
+  .page-fade,
+  .brand-card-link::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .reveal-on-scroll { transform: none !important; }
+  .meter-fill { transform: scaleX(1) !important; }
 }
