@@ -208,7 +208,8 @@ export function SaleEventsTab() {
     count: mobileLimit,
     sentinelRef,
     done: mobileDone,
-  } = useInfiniteCount(rows.length, MOBILE_PAGE_SIZE, [filters, rows.length]);
+    loading: mobileLoading,
+  } = useInfiniteCount(rows.length, MOBILE_PAGE_SIZE, [filters]);
 
   const mobileRows = useMemo(() => rows.slice(0, mobileLimit), [rows, mobileLimit]);
 
