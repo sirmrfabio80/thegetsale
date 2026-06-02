@@ -58,15 +58,13 @@ function toBrand(h: HouseDashboardDTO): Brand {
 
 export const Route = createFileRoute("/_authenticated/watchlist")({
   validateSearch: (raw: Record<string, unknown>): WatchlistSearch => {
-    const r = raw as { page?: unknown; q?: unknown; cat?: unknown };
-    const n = Number(r?.page);
-    const page = Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+    const r = raw as { q?: unknown; cat?: unknown };
     const q = typeof r?.q === "string" ? r.q : "";
     const catRaw = typeof r?.cat === "string" ? r.cat : "All";
     const cat = (CATEGORY_FILTERS as readonly string[]).includes(catRaw)
       ? (catRaw as "All" | Category)
       : "All";
-    return { page, q, cat };
+    return { q, cat };
   },
   head: () => ({
     meta: [
