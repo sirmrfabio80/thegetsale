@@ -453,7 +453,7 @@ function WatchlistPage() {
                   <button
                     onClick={() => {
                       setSortBy("signal");
-                      resetPage();
+                      // infinite scroll resets via useInfiniteCount dep array
                     }}
                     className="underline-offset-4 hover:text-foreground hover:underline"
                   >
@@ -493,7 +493,7 @@ function WatchlistPage() {
                     value={sortBy}
                     onChange={(e) => {
                       setSortBy(e.target.value as typeof sortBy);
-                      resetPage();
+                      // infinite scroll resets via useInfiniteCount dep array
                     }}
                     className="border border-border bg-transparent px-2 py-1.5 text-[11px] uppercase tracking-[0.18em] text-foreground focus:border-foreground focus:outline-none"
                     aria-label="Sort watchlist"
