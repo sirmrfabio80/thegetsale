@@ -219,12 +219,13 @@ function WatchlistPage() {
     return [...counts.entries()].map(([d, n]) => `${n} ${d}`).join(", ");
   }, [items, brandsBySlug, departments]);
 
-  const { count: pagedCount, sentinelRef, done } = useInfiniteCount(
+  const { count: pagedCount, sentinelRef, done, loading } = useInfiniteCount(
     visible.length,
     PAGE_SIZE,
-    [q, cat, departments, sortBy, items.length],
+    // User-driven filters only; removing items just clamps via the hook.
+    [q, cat, departments, sortBy],
   );
-  const pagedVisible = visible.slice(0, pagedCount);
+  const pagedVisible = useMemo(() => visible.slice(0, pagedCount), [visible, pagedCount]);
 
   const visibleIds = useMemo(() => pagedVisible.map((v) => v.brandId), [pagedVisible]);
   const selectedVisibleCount = useMemo(
