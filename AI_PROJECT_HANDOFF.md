@@ -544,6 +544,10 @@ Implications enforced in the UI:
     and only fills when watched, so it no longer competes with the brand name.
   - Categories eyebrow truncates to "first 3 · +N" and never wraps.
   - "For you" tag moved above the eyebrow as a small outlined pill.
+  - **Brand detail header** (`/brand/$id`) now also renders a `BrandLogo`
+    (size 96 in the authenticated view, 88 in the public preview) next to
+    the serif house name. `detailToBrand` in `routes/brand.$id.tsx` now
+    passes `logoUrl` through from `HouseDetailDTO` to the `Brand` shape.
 
 
 
