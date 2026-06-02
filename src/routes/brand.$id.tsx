@@ -50,6 +50,7 @@ function detailToBrand(h: HouseDetailDTO): Brand {
     factors: h.factors,
     history: h.history,
     websiteUrl: h.websiteUrl,
+    logoUrl: h.logoUrl,
     links: h.links.map((l) => ({ countryCode: l.countryCode, url: l.url })),
   };
 }
