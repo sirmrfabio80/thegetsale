@@ -1,5 +1,6 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { RouteErrorCard } from "@/components/RouteErrorCard";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { BrandCard } from "@/components/BrandCard";
@@ -86,26 +87,15 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function DashboardErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
-  const router = useRouter();
-  // TEMP — see whether these failures are sandbox HMR vs production. Remove
-  // once verified in the deployed preview.
+  // TEMP — distinguish sandbox HMR noise from real production failures.
   console.warn("[dashboard-loader] non-fatal failure", error);
   return (
-    <PageLayout>
-      <div className="py-24 text-center">
-        <p className="eyebrow text-muted-foreground">Couldn't load the signals</p>
-        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-        <button
-          onClick={() => {
-            router.invalidate();
-            reset();
-          }}
-          className="mt-4 underline underline-offset-4"
-        >
-          Try again
-        </button>
-      </div>
-    </PageLayout>
+    <RouteErrorCard
+      eyebrow="Couldn't load the signals"
+      title="The read didn't arrive."
+      error={error}
+      reset={reset}
+    />
   );
 }
 

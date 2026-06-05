@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, Link, notFound, isRedirect, isNotFound, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, isRedirect, isNotFound } from "@tanstack/react-router";
+import { RouteErrorCard } from "@/components/RouteErrorCard";
 
 function isAuthShapedError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
@@ -119,25 +120,18 @@ export const Route = createFileRoute("/brand/$id")({
 });
 
 function BrandErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
-  const router = useRouter();
+  // TEMP — distinguish sandbox HMR noise from real production failures.
+  console.warn("[brand-loader] non-fatal failure", error);
   return (
-    <PageLayout>
-      <div className="py-24 text-center">
-        <p className="eyebrow text-muted-foreground">Couldn't load this brand</p>
-        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-        <button
-          onClick={() => {
-            router.invalidate();
-            reset();
-          }}
-          className="mt-4 underline underline-offset-4"
-        >
-          Try again
-        </button>
-      </div>
-    </PageLayout>
+    <RouteErrorCard
+      eyebrow="Couldn't load this brand"
+      title="The dossier didn't open."
+      error={error}
+      reset={reset}
+    />
   );
 }
+
 
 
 
