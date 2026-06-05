@@ -27,7 +27,7 @@ export function WatchlistCard({
 
   if (!brand) {
     return (
-      <article className="border border-dashed border-border bg-card px-5 py-6">
+      <CardBase borderStyle="dashed" interactive={false}>
         <p className="eyebrow text-muted-foreground">Removed from tracking</p>
         <h3 className="mt-2 font-serif text-2xl leading-tight">
           We're no longer following this brand.
@@ -44,9 +44,10 @@ export function WatchlistCard({
             Remove from watchlist
           </button>
         </div>
-      </article>
+      </CardBase>
     );
   }
+
 
   const stop = (e: React.SyntheticEvent) => {
     e.preventDefault();
