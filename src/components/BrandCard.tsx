@@ -55,8 +55,7 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
     >
       <CardBase
         as={Link}
-        to="/brand/$id"
-        params={{ id: brand.id }}
+        {...({ to: "/brand/$id", params: { id: brand.id } } as Record<string, unknown>)}
         signalAccent={SIGNAL_ACCENT[brand.signal]}
         wash={wash}
         className={cn(
