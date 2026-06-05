@@ -1,10 +1,8 @@
-import {
-  forwardRef,
-  type ComponentPropsWithoutRef,
-  type CSSProperties,
-  type ElementType,
-  type ReactNode,
-  type Ref,
+import type {
+  ComponentPropsWithoutRef,
+  CSSProperties,
+  ElementType,
+  ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
 
@@ -33,14 +31,18 @@ type CardBaseOwnProps<T extends ElementType> = {
 export type CardBaseProps<T extends ElementType = "article"> = CardBaseOwnProps<T> &
   Omit<ComponentPropsWithoutRef<T>, keyof CardBaseOwnProps<T>>;
 
-function CardBaseInner<T extends ElementType = "article">(
-  { as, signalAccent, wash, className, style, children, ...rest }: CardBaseProps<T>,
-  ref: Ref<Element>,
-) {
+export function CardBase<T extends ElementType = "article">({
+  as,
+  signalAccent,
+  wash,
+  className,
+  style,
+  children,
+  ...rest
+}: CardBaseProps<T>) {
   const Comp = (as ?? "article") as ElementType;
   return (
     <Comp
-      ref={ref}
       {...rest}
       style={{
         ...(signalAccent ? { borderLeftColor: signalAccent } : {}),
@@ -57,10 +59,6 @@ function CardBaseInner<T extends ElementType = "article">(
   );
 }
 
-// forwardRef + cast keeps the polymorphic generic signature intact.
-export const CardBase = forwardRef(CardBaseInner) as <T extends ElementType = "article">(
-  props: CardBaseProps<T> & { ref?: Ref<Element> },
-) => ReturnType<typeof CardBaseInner>;
 
 /**
  * Paragraph that always reserves exactly N lines of vertical space and clamps
