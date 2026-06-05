@@ -48,7 +48,7 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
   return (
     <div
       ref={revealRef}
-      className="reveal-on-scroll relative"
+      className="reveal-on-scroll relative h-full"
       style={{ transitionDelay: `${(revealIndex % 6) * 60}ms` }}
     >
       <Link
@@ -59,7 +59,7 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
           ...(wash ? { backgroundColor: wash } : {}),
         }}
         className={cn(
-          "brand-card-link group block border border-border border-l-2 px-5 py-6 transition-all md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)]",
+          "brand-card-link group flex h-full flex-col border border-border border-l-2 px-5 py-6 transition-all md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)]",
           isLow && "bg-card",
         )}
       >
@@ -71,14 +71,17 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
           </div>
         )}
 
-        <div className="flex items-start gap-4 pr-10">
+        <div className="flex flex-1 items-start gap-4 pr-10">
           <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={64} />
           <div className="flex min-w-0 flex-1 flex-col self-stretch">
             <p className="eyebrow mb-1.5 truncate">{eyebrow}</p>
             <h3 className="font-serif text-[1.5rem] leading-tight">{brand.name}</h3>
-            {brand.tagline && (
-              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{brand.tagline}</p>
-            )}
+            <p
+              className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground"
+              style={{ minHeight: "calc(2 * 1.375em)" }}
+            >
+              {brand.tagline || "\u00A0"}
+            </p>
             <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
               <SignalBadge signal={brand.signal} />
             </div>
