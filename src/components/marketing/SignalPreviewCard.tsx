@@ -1,3 +1,5 @@
+import { CardClampedText } from "@/components/CardBase";
+
 type Signal = "Buy now" | "Wait" | "Hold";
 
 export type PreviewCardProps = {
