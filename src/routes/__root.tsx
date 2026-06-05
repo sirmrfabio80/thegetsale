@@ -10,6 +10,7 @@ import {
 // Toasts disabled app-wide — Toaster intentionally not mounted.
 
 import appCss from "../styles.css?url";
+import { useFocusRestoration } from "@/lib/focus-restoration";
 
 function NotFoundComponent() {
   return (
