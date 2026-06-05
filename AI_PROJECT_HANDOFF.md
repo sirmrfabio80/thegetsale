@@ -149,7 +149,7 @@ src/
 │   ├── profile/           # Avatar + connected accounts
 │   ├── brand/SignalEditorial.tsx
 │   ├── BrandCard / WatchlistCard / RecommendationCard / SignalBadge / SaleTimeline / PageLayout
-│   ├── CardBase.tsx          # Shared polymorphic card shell (`as` prop, `h-full` + `flex-col`, signal accent/wash, standardized border/padding tiers `default|hero|empty`, dashed-border variant, hover shadow-2 + active translate-y-px). Co-exports `CardClampedText` (polymorphic `as`, always reserves N lines via `line-clamp-2|3` + `min-height` so card heights never shift). Consumed by BrandCard, WatchlistCard, RecommendationCard, and EmptyStateCard.
+│   ├── CardBase.tsx          # Shared polymorphic card shell (`as` prop, `h-full` + `flex-col`, signal accent/wash, standardized border/padding tiers `default|hero|empty`, dashed-border variant, hover shadow-2 + active translate-y-px, standardized keyboard `focus-visible:ring-2 ring-ring ring-offset-2`). Co-exports `CardClampedText` (polymorphic `as`, always reserves N lines via `line-clamp-2|3` + `min-height` so card heights never shift). Consumed by BrandCard (name truncated, tagline clamped), WatchlistCard (name truncated, headline clamped), RecommendationCard (headline + body clamped), EmptyStateCard, and SignalPreviewCard (marketing).
 │   ├── EmptyStateCard.tsx    # Reusable zero-state surface built on CardBase (`padding="empty"`, `borderStyle="dashed"`, non-interactive). Eyebrow / title / description / actions slots. Used by Dashboard and Watchlist for all empty/filtered-out states so they align with the active card grid.
 ├── lib/
 │   ├── *.functions.ts     # createServerFn entry points (CLIENT-IMPORTABLE)
