@@ -2,6 +2,7 @@ import type { Brand } from "@/data/types";
 
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "./BrandLogo";
+import { CardBase, CardClampedText } from "./CardBase";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {
@@ -18,26 +19,39 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
   const wash = isLow ? undefined : `var(--signal-${brand.signal}-wash)`;
 
   return (
-    <section
-      style={{
-        borderLeftColor: `var(--signal-${brand.signal})`,
-        ...(wash ? { backgroundColor: wash } : {}),
-      }}
-      className="border border-l-2 border-border bg-card px-6 py-8 md:px-10 md:py-10"
+    <CardBase
+      as="section"
+      padding="hero"
+      interactive={false}
+      signalAccent={`var(--signal-${brand.signal})`}
+      wash={wash}
     >
-      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <div className="flex flex-1 flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="flex max-w-xl items-start gap-4">
           <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={64} />
           <div className="min-w-0 flex-1">
             <p className="eyebrow">Editor's note</p>
-            <h2 className="mt-2 font-serif text-[2rem] italic leading-[1.1]">{brand.headline}</h2>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Based on cadence, inventory, and market signals around{" "}
-              <span className="text-foreground">{brand.name}</span>.
-              {isWatched
-                ? " We'll keep watching and surface the read when the window opens."
-                : " Add to your watchlist to follow the next move."}
-            </p>
+            <CardClampedText
+              as="h2"
+              lines={2}
+              lineHeightEm={1.1}
+              className="mt-2 font-serif text-[2rem] italic leading-[1.1]"
+            >
+              {brand.headline}
+            </CardClampedText>
+            <CardClampedText
+              lines={3}
+              lineHeightEm={1.5}
+              className="mt-4 text-sm text-muted-foreground"
+            >
+              <>
+                Based on cadence, inventory, and market signals around{" "}
+                <span className="text-foreground">{brand.name}</span>.
+                {isWatched
+                  ? " We'll keep watching and surface the read when the window opens."
+                  : " Add to your watchlist to follow the next move."}
+              </>
+            </CardClampedText>
           </div>
         </div>
 
@@ -52,7 +66,7 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
           </Button>
         </div>
       </div>
-    </section>
+    </CardBase>
   );
 }
 

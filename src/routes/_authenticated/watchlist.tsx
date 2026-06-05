@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { EmptyStateCard } from "@/components/EmptyStateCard";
 import { BackToTop } from "@/components/BackToTop";
 import { useInfiniteCount } from "@/hooks/use-infinite-count";
 
@@ -512,61 +513,61 @@ function WatchlistPage() {
       )}
 
       {items.length === 0 ? (
-        <div className="border border-dashed border-border px-8 py-20 text-center">
-          <p className="font-serif text-2xl">Nothing on your watchlist yet. Add the houses you're watching.</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Add the brands you'd buy on sale. We'll tell you when to buy and when to wait.
-          </p>
-          <Link
-            to="/dashboard"
-            className="mt-6 inline-block border border-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] hover:bg-foreground hover:text-background"
-          >
-            Browse brands
-          </Link>
-        </div>
+        <EmptyStateCard
+          title="Nothing on your watchlist yet."
+          description="Add the houses you'd buy on sale. We'll tell you when to buy and when to wait."
+          actions={
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+            >
+              Browse houses
+            </Link>
+          }
+        />
       ) : visible.length === 0 ? (
         (q.trim() !== "" || cat !== "All") && filteredOutByQuery > 0 ? (
-          <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
-            <p className="eyebrow text-muted-foreground">No matches</p>
-            <p className="mt-4 font-serif text-3xl leading-tight">
-              No houses match your search.
-            </p>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Try a different category or clear the search to see your full watchlist.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+          <EmptyStateCard
+            eyebrow="No matches"
+            title="No houses match your search."
+            description="Try a different category or clear the search to see your full watchlist."
+            actions={
               <button
                 onClick={clearSearchAndCategory}
                 className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
               >
                 Clear search & filters
               </button>
-            </div>
-          </div>
+            }
+          />
         ) : (
-          <div className="relative overflow-hidden border border-dashed border-border bg-card/40 px-8 py-20 text-center">
-            <p className="eyebrow text-muted-foreground">Filtered out</p>
-            <p className="mt-4 font-serif text-3xl leading-tight">No brands in {deptLabel}.</p>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              {hiddenCount} {hiddenCount === 1 ? "brand is" : "brands are"} waiting in other
-              departments
-              {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={clearDepartmentFilters}
-                className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
-              >
-                Clear filters
-              </button>
-              <Link
-                to="/setup"
-                className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-              >
-                Adjust in setup
-              </Link>
-            </div>
-          </div>
+          <EmptyStateCard
+            eyebrow="Filtered out"
+            title={`No houses in ${deptLabel}.`}
+            description={
+              <>
+                {hiddenCount} {hiddenCount === 1 ? "house is" : "houses are"} waiting in other
+                departments
+                {hiddenDeptLabel ? ` — ${hiddenDeptLabel}` : ""}.
+              </>
+            }
+            actions={
+              <>
+                <button
+                  onClick={clearDepartmentFilters}
+                  className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+                >
+                  Clear filters
+                </button>
+                <Link
+                  to="/setup"
+                  className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Adjust in setup
+                </Link>
+              </>
+            }
+          />
         )
       ) : (
         <>
