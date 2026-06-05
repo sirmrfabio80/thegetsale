@@ -2,7 +2,8 @@ import type { Brand } from "@/data/types";
 
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "./BrandLogo";
-import { CardBase, CardClampedText } from "./CardBase";
+import { CardBase, CardClampedText, CARD_FOCUS_RING } from "./CardBase";
+import { cn } from "@/lib/utils";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 
 export function RecommendationCard({ brand }: { brand: Brand }) {
@@ -60,7 +61,9 @@ export function RecommendationCard({ brand }: { brand: Brand }) {
             onClick={onToggle}
             disabled={isPending}
             variant={isWatched ? "outline" : "default"}
-            className="rounded-none"
+            aria-pressed={isWatched}
+            aria-label={isWatched ? `Remove ${brand.name} from watchlist` : `Add ${brand.name} to watchlist`}
+            className={cn("rounded-none", CARD_FOCUS_RING)}
           >
             {isWatched ? "Remove from watchlist" : "Add to watchlist"}
           </Button>
