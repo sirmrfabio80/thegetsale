@@ -105,27 +105,18 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
 });
 
 function WatchlistErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
-  const router = useRouter();
   // TEMP — distinguish sandbox HMR noise from real production failures.
   console.warn("[watchlist-loader] non-fatal failure", error);
   return (
-    <PageLayout>
-      <div className="py-24 text-center">
-        <p className="eyebrow text-muted-foreground">Couldn't load your watchlist</p>
-        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-        <button
-          onClick={() => {
-            router.invalidate();
-            reset();
-          }}
-          className="mt-4 underline underline-offset-4"
-        >
-          Try again
-        </button>
-      </div>
-    </PageLayout>
+    <RouteErrorCard
+      eyebrow="Couldn't load your watchlist"
+      title="The houses didn't load."
+      error={error}
+      reset={reset}
+    />
   );
 }
+
 
 function WatchlistPage() {
   const items = useWatchlist();
