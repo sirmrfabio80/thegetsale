@@ -62,10 +62,7 @@ export function WatchlistCard({
       {...({ to: "/brand/$id", params: { id: brand.id } } as Record<string, unknown>)}
       signalAccent={`var(--signal-${brand.signal})`}
       wash={wash}
-      className={cn(
-        "md:hover:border-foreground/20",
-        selected ? "border-foreground" : "border-border",
-      )}
+      className={cn(selected ? "border-foreground" : "border-border")}
     >
       <div className="flex items-start gap-3">
         {selectable && (
