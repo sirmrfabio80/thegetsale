@@ -216,6 +216,7 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
 - **Radius**: `--radius: 0.25rem` — deliberately tight/architectural.
 - **Spacing/scale**: max width `5xl` for app, `3xl` for editorial blocks; sections breathe with `py-16/24`.
 - **Motion**: CSS-only — shimmer skeletons (`@keyframes theget-shimmer`), `reveal-on-scroll` (shared `useReveal` IntersectionObserver in `hooks/use-reveal.ts`), `meter-fill` (segmented distribution bar), native View Transitions crossfade between routes (router `defaultViewTransition: true`, tuned via `::view-transition-old/new(root)` in `styles.css`; silent no-op on browsers without the API — replaced the old `key={pathname}` remount + `.page-fade`), `useCountUp` (radial confidence arc + numerals). All gated behind `prefers-reduced-motion: reduce`. No Framer/GSAP.
+- **Scroll restoration**: router uses `scrollRestoration: true` with `getScrollRestorationKey: (loc) => loc.pathname` so `/dashboard` and `/watchlist` (and every other route) restore the exact prior scroll position on back/forward AND on re-entry via the top-nav link. Cross-route navigation still scrolls to top because each pathname is its own key. Window is the scroll container (no internal `overflow-auto` on `PageLayout`/`main`), so default window scroll restoration applies — do not add an `overflow-y` scroll container to the app shell or this breaks.
 - **Patterns**:
   - "Eyebrow" caps label (`.eyebrow`, 11px, 0.18em tracking).
   - Hairline rules (`.hairline`).
