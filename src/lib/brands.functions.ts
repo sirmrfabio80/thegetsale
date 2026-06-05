@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -314,4 +315,14 @@ export const getPublicHouseDetail = createServerFn({ method: "POST" })
       logoUrl: (brand as any).logo_url ?? null,
       links,
     };
+  });
+
+// Wrap getHouseDetail so transient failures (HMR drops, momentary 504,
+// refresh-token race) self-heal instead of surfacing the loader error UI.
+export const houseDetailQueryOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ["houses", "detail", slug] as const,
+    queryFn: () => getHouseDetail({ data: { slug } }),
+    retry: 2,
+    retryDelay: (i) => Math.min(400 * 2 ** i, 1500),
   });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, notFound, isRedirect, isNotFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, isRedirect, isNotFound, useRouter } from "@tanstack/react-router";
 
 function isAuthShapedError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
@@ -25,6 +25,7 @@ import { brandDepartment } from "@/data/categoryMap";
 import {
   getHouseDetail,
   getPublicHouseDetail,
+  houseDetailQueryOptions,
   type HouseDetailDTO,
   type PublicHouseDTO,
 } from "@/lib/brands.functions";
@@ -56,16 +57,27 @@ function detailToBrand(h: HouseDetailDTO): Brand {
 }
 
 export const Route = createFileRoute("/brand/$id")({
-  loader: async ({ params, context }) => {
+  loader: async ({ params, context, abortController }) => {
     const authed = context.auth?.status === "authenticated";
     if (authed) {
       void context.queryClient.ensureQueryData(watchlistQueryOptions).catch(() => {});
       try {
-        const detail = await getHouseDetail({ data: { slug: params.id } });
+        // Retries (configured in houseDetailQueryOptions) absorb transient
+        // failures so a single HMR drop / momentary 504 / refresh-token race
+        // never reaches the user-visible error UI.
+        const detail = await context.queryClient.ensureQueryData(
+          houseDetailQueryOptions(params.id),
+        );
         if (!detail) throw notFound();
         return { kind: "auth" as const, brand: detailToBrand(detail) };
       } catch (err) {
+        // Router-cancelled navigation (user clicked away mid-fetch) — let
+        // the next route take over without flashing the error boundary.
+        if (abortController.signal.aborted) throw err;
         if (isRedirect(err) || isNotFound(err)) throw err;
+        // TEMP — surface non-fatal loader failures so we can tell sandbox
+        // HMR noise apart from a real production issue. Remove once verified.
+        console.warn("[brand-loader] non-fatal failure", err);
         if (!isAuthShapedError(err)) throw err;
         // fall through to public view on auth failure
       }
@@ -91,17 +103,7 @@ export const Route = createFileRoute("/brand/$id")({
       meta: [{ title: `${name} — The Get` }, { name: "description", content: desc }],
     };
   },
-  errorComponent: ({ error, reset }) => (
-    <PageLayout>
-      <div className="py-24 text-center">
-        <p className="eyebrow text-muted-foreground">Couldn't load this brand</p>
-        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-        <button onClick={reset} className="mt-4 underline underline-offset-4">
-          Try again
-        </button>
-      </div>
-    </PageLayout>
-  ),
+  errorComponent: BrandErrorBoundary,
   notFoundComponent: () => (
     <PageLayout>
       <div className="py-24 text-center">
@@ -115,6 +117,29 @@ export const Route = createFileRoute("/brand/$id")({
   ),
   component: BrandPage,
 });
+
+function BrandErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  return (
+    <PageLayout>
+      <div className="py-24 text-center">
+        <p className="eyebrow text-muted-foreground">Couldn't load this brand</p>
+        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
+        <button
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
+          className="mt-4 underline underline-offset-4"
+        >
+          Try again
+        </button>
+      </div>
+    </PageLayout>
+  );
+}
+
+
 
 function BrandPage() {
   const data = Route.useLoaderData();

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
@@ -80,14 +80,51 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
     // Promise.all lets the router hold the previous page until data lands,
     // so direct navigation doesn't suspend into the skeleton.
     if (context.auth?.status !== "authenticated") return null;
+    // Optional — never blocks render, never fails the route.
+    void context.queryClient.ensureQueryData(setupQueryOptions).catch(() => {});
+    // Critical — both feed useSuspenseQuery on this page.
     return Promise.all([
       context.queryClient.ensureQueryData(watchlistQueryOptions),
-      context.queryClient.ensureQueryData(setupQueryOptions),
       context.queryClient.ensureQueryData(housesQueryOptions),
     ]);
   },
+  errorComponent: WatchlistErrorBoundary,
+  notFoundComponent: () => (
+    <PageLayout>
+      <div className="py-24 text-center">
+        <p className="eyebrow">Not found</p>
+        <h1 className="mt-3 font-serif text-3xl">Nothing in your watchlist yet.</h1>
+        <Link to="/dashboard" className="mt-6 inline-block underline">
+          Back to dashboard
+        </Link>
+      </div>
+    </PageLayout>
+  ),
   component: WatchlistPage,
 });
+
+function WatchlistErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  // TEMP — distinguish sandbox HMR noise from real production failures.
+  console.warn("[watchlist-loader] non-fatal failure", error);
+  return (
+    <PageLayout>
+      <div className="py-24 text-center">
+        <p className="eyebrow text-muted-foreground">Couldn't load your watchlist</p>
+        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
+        <button
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
+          className="mt-4 underline underline-offset-4"
+        >
+          Try again
+        </button>
+      </div>
+    </PageLayout>
+  );
+}
 
 function WatchlistPage() {
   const items = useWatchlist();
