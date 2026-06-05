@@ -118,6 +118,29 @@ export const Route = createFileRoute("/brand/$id")({
   component: BrandPage,
 });
 
+function BrandErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  return (
+    <PageLayout>
+      <div className="py-24 text-center">
+        <p className="eyebrow text-muted-foreground">Couldn't load this brand</p>
+        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
+        <button
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
+          className="mt-4 underline underline-offset-4"
+        >
+          Try again
+        </button>
+      </div>
+    </PageLayout>
+  );
+}
+
+
+
 function BrandPage() {
   const data = Route.useLoaderData();
   if (data.kind === "auth") return <AuthenticatedBrand brand={data.brand} />;
