@@ -1,5 +1,6 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { RouteErrorCard } from "@/components/RouteErrorCard";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { BrandCard } from "@/components/BrandCard";
