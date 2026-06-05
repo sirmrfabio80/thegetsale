@@ -58,10 +58,7 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
         {...({ to: "/brand/$id", params: { id: brand.id } } as Record<string, unknown>)}
         signalAccent={SIGNAL_ACCENT[brand.signal]}
         wash={wash}
-        className={cn(
-          "brand-card-link md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)]",
-          !isLow && "bg-transparent",
-        )}
+        className={cn("brand-card-link", !isLow && "bg-transparent")}
       >
         {forYou && (
           <div className="mb-3">
