@@ -57,15 +57,13 @@ export function WatchlistCard({
   const wash = isLow ? undefined : `var(--signal-${brand.signal}-wash)`;
 
   return (
-    <Link
-      to="/brand/$id"
-      params={{ id: brand.id }}
-      style={{
-        borderLeftColor: `var(--signal-${brand.signal})`,
-        ...(wash ? { backgroundColor: wash } : {}),
-      }}
+    <CardBase
+      as={Link}
+      {...({ to: "/brand/$id", params: { id: brand.id } } as Record<string, unknown>)}
+      signalAccent={`var(--signal-${brand.signal})`}
+      wash={wash}
       className={cn(
-        "group flex h-full flex-col border border-l-2 bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
+        "md:hover:border-foreground/20",
         selected ? "border-foreground" : "border-border",
       )}
     >
@@ -97,12 +95,12 @@ export function WatchlistCard({
 
       <div className="hairline my-5" />
 
-      <p
-        className="line-clamp-2 text-sm leading-relaxed text-foreground/90"
-        style={{ minHeight: "calc(2 * 1.625em)" }}
+      <CardClampedText
+        className="text-sm leading-relaxed text-foreground/90"
+        lineHeightEm={1.625}
       >
-        {brand.headline || "\u00A0"}
-      </p>
+        {brand.headline}
+      </CardClampedText>
 
       <div className="mt-4 border-l-2 border-border pl-3">
         <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -127,7 +125,7 @@ export function WatchlistCard({
           Remove
         </button>
       </div>
-    </Link>
+    </CardBase>
   );
 }
 
