@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { Brand, WatchlistItem } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { BrandLogo } from "./BrandLogo";
-import { CardBase, CardClampedText, CardTextAction } from "./CardBase";
+import { CardBase, CardClampedText, CardTextAction, CARD_FOCUS_RING } from "./CardBase";
 import { useWatchlistMutations } from "@/data/store";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
@@ -73,7 +73,7 @@ export function WatchlistCard({
             onChange={() => onToggleSelect?.(item.brandId)}
             onClick={stop}
             aria-label={`Select ${brand.name}`}
-            className="mt-1 h-4 w-4 cursor-pointer accent-foreground"
+            className={cn("mt-1 h-4 w-4 cursor-pointer accent-foreground", CARD_FOCUS_RING)}
           />
         )}
         <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={64} />
