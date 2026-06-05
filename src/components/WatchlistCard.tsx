@@ -36,13 +36,13 @@ export function WatchlistCard({
           On your watchlist since {formatDate(item.addedAt)}
         </p>
         <div className="mt-5 text-[12px]">
-          <button
+          <CardTextAction
             onClick={() => remove(item.brandId)}
             disabled={isPending}
-            className="text-foreground underline underline-offset-4 disabled:opacity-50"
+            className="text-foreground underline underline-offset-4"
           >
             Remove from watchlist
-          </button>
+          </CardTextAction>
         </div>
       </CardBase>
     );
