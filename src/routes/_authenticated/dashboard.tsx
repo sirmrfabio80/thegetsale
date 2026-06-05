@@ -62,14 +62,52 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     // protected query prefetch on the server; useSuspenseQuery will fetch
     // on the client once the session is hydrated.
     if (context.auth?.status !== "authenticated") return null;
+    // Optional — never blocks render, never fails the route.
+    void context.queryClient.ensureQueryData(setupQueryOptions).catch(() => {});
+    // Critical — both are consumed via useSuspenseQuery downstream.
     return Promise.all([
       context.queryClient.ensureQueryData(housesQueryOptions),
       context.queryClient.ensureQueryData(watchlistQueryOptions),
-      context.queryClient.ensureQueryData(setupQueryOptions),
     ]);
   },
+  errorComponent: DashboardErrorBoundary,
+  notFoundComponent: () => (
+    <PageLayout>
+      <div className="py-24 text-center">
+        <p className="eyebrow">Not found</p>
+        <h1 className="mt-3 font-serif text-3xl">Nothing to read here yet.</h1>
+        <Link to="/" className="mt-6 inline-block underline">
+          Back to The Get
+        </Link>
+      </div>
+    </PageLayout>
+  ),
   component: Dashboard,
 });
+
+function DashboardErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  // TEMP — see whether these failures are sandbox HMR vs production. Remove
+  // once verified in the deployed preview.
+  console.warn("[dashboard-loader] non-fatal failure", error);
+  return (
+    <PageLayout>
+      <div className="py-24 text-center">
+        <p className="eyebrow text-muted-foreground">Couldn't load the signals</p>
+        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
+        <button
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
+          className="mt-4 underline underline-offset-4"
+        >
+          Try again
+        </button>
+      </div>
+    </PageLayout>
+  );
+}
 
 const FILTERS: Array<"All" | Category> = [
   "All",
