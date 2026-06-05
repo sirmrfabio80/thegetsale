@@ -9,10 +9,37 @@ function isAuthShapedError(err: unknown): boolean {
   );
 }
 
+// Module-scoped retry latch: an auth-shaped error first triggers a single
+// router.invalidate() + reset() (the per-RPC attacher re-reads the current
+// session on the retry). Only a *second* auth-shaped error within the
+// window actually signs out. The latch lives outside the component because
+// the errorComponent fully remounts on reset(), so useRef/state would lose
+// the previous attempt. Reset on any successful authenticated render.
+const RETRY_WINDOW_MS = 8_000;
+let lastAuthRetryAt = 0;
+export function clearAuthRetryLatch() {
+  lastAuthRetryAt = 0;
+}
+
 function AuthErrorRecovery({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     if (!isAuthShapedError(error)) return;
+    const now = Date.now();
+    const withinWindow = now - lastAuthRetryAt < RETRY_WINDOW_MS;
+
+    if (!withinWindow) {
+      // First-strike: optimistic one-shot retry. The per-RPC bearer attacher
+      // will re-read whatever session Supabase has now (commonly a freshly
+      // refreshed token). Most transient 401s clear on this pass.
+      lastAuthRetryAt = now;
+      router.invalidate();
+      reset();
+      return;
+    }
+
+    // Repeated auth-shaped failure → genuinely unauthenticated. Sign out
+    // locally and bounce to /login.
     let cancelled = false;
     (async () => {
       try {
@@ -21,6 +48,7 @@ function AuthErrorRecovery({ error, reset }: { error: Error; reset: () => void }
         // ignore
       }
       if (cancelled) return;
+      lastAuthRetryAt = 0;
       reset();
       router.invalidate();
       router.navigate({ to: "/login" });
@@ -49,14 +77,30 @@ export const Route = createFileRoute("/_authenticated")({
   errorComponent: AuthErrorRecovery,
 });
 
+// Sticky "have we ever seen an authenticated commit this session?" flag.
+// Once true, the layout always renders <Outlet /> so the skeleton fallback
+// can never reappear mid-session (e.g. a brief auth context flicker during a
+// route transition). beforeLoad still owns the real unauthenticated →
+// /login redirect, so this can't accidentally show protected UI after a
+// real sign-out.
+let hasBeenAuthenticated = false;
+
 function AuthenticatedLayout() {
   const { auth } = Route.useRouteContext();
   const hydrated = useHydrated();
   // SSR always renders HydratingShell (server auth snapshot is "loading").
   // Match that on the first client commit to avoid a hydration mismatch
   // when the module-scoped auth store is already "authenticated" client-side.
-  if (!hydrated || auth.status === "loading") return <HydratingShell />;
-  return <Outlet />;
+  if (!hydrated) return <HydratingShell />;
+  if (auth.status === "authenticated") {
+    if (!hasBeenAuthenticated) hasBeenAuthenticated = true;
+    // Clear the auth-retry latch on a successful authenticated render so the
+    // one-shot retry window resets between unrelated incidents.
+    lastAuthRetryAt = 0;
+    return <Outlet />;
+  }
+  if (hasBeenAuthenticated) return <Outlet />;
+  return <HydratingShell />;
 }
 
 function HydratingShell() {

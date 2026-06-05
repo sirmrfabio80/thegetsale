@@ -75,9 +75,16 @@ export const Route = createFileRoute("/_authenticated/watchlist")({
     ],
   }),
   loader: ({ context }) => {
-    context.queryClient.ensureQueryData(watchlistQueryOptions);
-    context.queryClient.ensureQueryData(setupQueryOptions);
-    context.queryClient.ensureQueryData(housesQueryOptions);
+    // Auth context is "loading" during SSR (no client session yet); skip
+    // protected prefetch on the server, matching dashboard. Returning the
+    // Promise.all lets the router hold the previous page until data lands,
+    // so direct navigation doesn't suspend into the skeleton.
+    if (context.auth?.status !== "authenticated") return null;
+    return Promise.all([
+      context.queryClient.ensureQueryData(watchlistQueryOptions),
+      context.queryClient.ensureQueryData(setupQueryOptions),
+      context.queryClient.ensureQueryData(housesQueryOptions),
+    ]);
   },
   component: WatchlistPage,
 });
