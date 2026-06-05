@@ -149,6 +149,7 @@ src/
 │   ├── profile/           # Avatar + connected accounts
 │   ├── brand/SignalEditorial.tsx
 │   ├── BrandCard / WatchlistCard / RecommendationCard / SignalBadge / SaleTimeline / PageLayout
+│   ├── CardBase.tsx          # Shared polymorphic card shell (h-full + flex-col + signal accent/wash) + CardClampedText (always reserves N lines, default 2). Used by BrandCard and WatchlistCard so every card in a grid row stretches to the tallest sibling and descriptions never collapse the layout.
 ├── lib/
 │   ├── *.functions.ts     # createServerFn entry points (CLIENT-IMPORTABLE)
 │   ├── brands.server.ts   # Server-only derivation (deriveDashboardFields)
