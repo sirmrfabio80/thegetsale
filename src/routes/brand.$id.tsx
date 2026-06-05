@@ -103,17 +103,7 @@ export const Route = createFileRoute("/brand/$id")({
       meta: [{ title: `${name} — The Get` }, { name: "description", content: desc }],
     };
   },
-  errorComponent: ({ error, reset }) => (
-    <PageLayout>
-      <div className="py-24 text-center">
-        <p className="eyebrow text-muted-foreground">Couldn't load this brand</p>
-        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-        <button onClick={reset} className="mt-4 underline underline-offset-4">
-          Try again
-        </button>
-      </div>
-    </PageLayout>
-  ),
+  errorComponent: BrandErrorBoundary,
   notFoundComponent: () => (
     <PageLayout>
       <div className="py-24 text-center">
