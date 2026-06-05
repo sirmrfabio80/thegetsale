@@ -134,3 +134,69 @@ export function CardClampedText<T extends ElementType = "p">({
     </Comp>
   );
 }
+
+/**
+ * Shared focus-visible + active treatment for ANY clickable element living
+ * inside a card (icon toggles, inline text buttons, links, badges acting as
+ * triggers). Use via `className={cn(CARD_FOCUS_RING, ...)}` to keep the
+ * keyboard ring and press translate identical to CardBase itself.
+ */
+export const CARD_FOCUS_RING =
+  "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:translate-y-px";
+
+/**
+ * Standardised icon-only action button for the top corner of a card
+ * (bookmark, dismiss, more, etc.). Provides consistent size, border,
+ * hover, press, and focus-visible states across every CardBase-powered
+ * card. Always renders as a `<button type="button">` and requires an
+ * accessible `aria-label` from the caller.
+ */
+export function CardIconAction({
+  pressed,
+  className,
+  children,
+  ...rest
+}: Omit<ComponentPropsWithoutRef<"button">, "type"> & { pressed?: boolean }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      {...rest}
+      className={cn(
+        "inline-flex h-8 w-8 items-center justify-center border disabled:opacity-50",
+        pressed
+          ? "border-foreground bg-foreground text-background md:hover:opacity-90"
+          : "border-border bg-background/70 text-foreground md:hover:bg-muted md:hover:border-foreground/30",
+        CARD_FOCUS_RING,
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Standardised inline text action for inside a card (Remove, Undo, etc.).
+ * Renders as a `<button>` with muted-foreground hover and the shared focus
+ * ring + press translate.
+ */
+export function CardTextAction({
+  className,
+  children,
+  ...rest
+}: Omit<ComponentPropsWithoutRef<"button">, "type">) {
+  return (
+    <button
+      type="button"
+      {...rest}
+      className={cn(
+        "inline-flex items-center text-[12px] text-muted-foreground md:hover:text-foreground disabled:opacity-50",
+        CARD_FOCUS_RING,
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
