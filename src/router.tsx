@@ -30,7 +30,14 @@ export const getRouter = () => {
   const router = createRouter({
     routeTree,
     context: { queryClient, auth: initialAuth },
+    // Per-route scroll restoration. Default keys by history-entry id, which
+    // already covers browser back/forward. We override with pathname so that
+    // returning to /dashboard or /watchlist via the top-nav link (a brand-new
+    // history entry) ALSO lands at the prior scroll position — this is what
+    // users expect on a content feed. Cross-route nav still scrolls to top
+    // because each route has its own key.
     scrollRestoration: true,
+    getScrollRestorationKey: (location) => location.pathname,
     // Native View Transitions: a real crossfade between routes on browsers
     // that support `document.startViewTransition`, and a silent no-op
     // (instant swap) elsewhere. Replaces the old `key={pathname}` remount +
