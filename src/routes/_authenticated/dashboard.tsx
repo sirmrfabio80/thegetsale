@@ -6,6 +6,7 @@ import { BrandCard } from "@/components/BrandCard";
 import { SignalDistribution } from "@/components/SignalDistribution";
 import { EditorialBand } from "@/components/dashboard/EditorialBand";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { EmptyStateCard } from "@/components/EmptyStateCard";
 import { BackToTop } from "@/components/BackToTop";
 import { useInfiniteCount } from "@/hooks/use-infinite-count";
 import type { Brand, Category } from "@/data/types";
