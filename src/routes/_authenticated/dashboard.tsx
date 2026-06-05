@@ -332,26 +332,35 @@ function Dashboard() {
       <SectionRule />
 
       {filtered.length === 0 ? (
-        <div className="py-16 text-center text-sm text-muted-foreground">
-          {onlyMine ? (
-            <p>
-              None of your brands match right now.{" "}
-              <button
-                onClick={handleToggleOnlyMine}
-                className="underline underline-offset-4 hover:text-foreground"
-              >
-                See all brands
-              </button>{" "}
-              or{" "}
-              <Link to="/setup" className="underline underline-offset-4 hover:text-foreground">
-                edit your setup
-              </Link>
-              .
-            </p>
-          ) : (
-            <p>No brands match — try a different filter or search.</p>
-          )}
-        </div>
+        onlyMine ? (
+          <EmptyStateCard
+            eyebrow="No matches"
+            title="None of your houses match right now."
+            description="Try widening the filter, see all houses, or adjust your setup."
+            actions={
+              <>
+                <button
+                  onClick={handleToggleOnlyMine}
+                  className="inline-flex items-center border border-foreground bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
+                >
+                  See all houses
+                </button>
+                <Link
+                  to="/setup"
+                  className="inline-flex items-center border border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Edit your setup
+                </Link>
+              </>
+            }
+          />
+        ) : (
+          <EmptyStateCard
+            eyebrow="No matches"
+            title="No houses match your filters."
+            description="Try a different department, category, or clear your search."
+          />
+        )
       ) : (
         <>
           <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
