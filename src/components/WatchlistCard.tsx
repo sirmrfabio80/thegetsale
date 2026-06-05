@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { Brand, WatchlistItem } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { BrandLogo } from "./BrandLogo";
-import { CardBase, CardClampedText } from "./CardBase";
+import { CardBase, CardClampedText, CardTextAction } from "./CardBase";
 import { useWatchlistMutations } from "@/data/store";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
@@ -36,13 +36,13 @@ export function WatchlistCard({
           On your watchlist since {formatDate(item.addedAt)}
         </p>
         <div className="mt-5 text-[12px]">
-          <button
+          <CardTextAction
             onClick={() => remove(item.brandId)}
             disabled={isPending}
-            className="text-foreground underline underline-offset-4 disabled:opacity-50"
+            className="text-foreground underline underline-offset-4"
           >
             Remove from watchlist
-          </button>
+          </CardTextAction>
         </div>
       </CardBase>
     );
@@ -111,17 +111,15 @@ export function WatchlistCard({
       </div>
 
       <div className="mt-auto flex items-center justify-end pt-5 text-[12px]">
-        <button
-          type="button"
+        <CardTextAction
           onClick={(e) => {
             stop(e);
             remove(item.brandId, brand.name);
           }}
           disabled={isPending}
-          className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
         >
           Remove
-        </button>
+        </CardTextAction>
       </div>
     </CardBase>
   );

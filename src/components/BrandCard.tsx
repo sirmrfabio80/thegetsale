@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { Brand, Category, SignalKind } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { BrandLogo } from "./BrandLogo";
-import { CardBase, CardClampedText } from "./CardBase";
+import { CardBase, CardClampedText, CardIconAction } from "./CardBase";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -100,24 +100,18 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
         )}
       </CardBase>
 
-      <button
-        type="button"
+      <CardIconAction
         onClick={onToggle}
         disabled={isPending}
-        aria-pressed={isWatched}
+        pressed={isWatched}
         aria-label={
           isWatched ? `Remove ${brand.name} from watchlist` : `Add ${brand.name} to watchlist`
         }
         title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
-        className={cn(
-          "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border transition-colors disabled:opacity-50",
-          isWatched
-            ? "border-foreground bg-foreground text-background hover:opacity-90"
-            : "border-border bg-background/70 text-foreground hover:bg-muted",
-        )}
+        className="absolute right-3 top-3"
       >
         <Bookmark className={cn("h-4 w-4", isWatched && "fill-current")} aria-hidden />
-      </button>
+      </CardIconAction>
     </div>
   );
 }
