@@ -87,8 +87,8 @@
 ```
 
 **Empty/loading/error states**
-- `_authenticated` layout renders `HydratingShell` (shimmer skeleton) until session hydrates; "slow" copy after 1.8s, "stuck" + Sign-in-again link after 7s.
-- `AuthErrorRecovery` detects JWT/Unauthorized errors, signs out locally, redirects to `/login`.
+- `_authenticated` layout renders `HydratingShell` (shimmer skeleton) only on the first commit before auth resolves; a module-scoped `hasBeenAuthenticated` latch keeps `<Outlet />` mounted afterwards so the skeleton cannot reappear mid-session. "Slow" copy after 1.8s, "stuck" + Sign-in-again link after 7s.
+- `AuthErrorRecovery` uses a one-shot retry: the first auth-shaped error triggers `router.invalidate()` + `reset()` (lets the per-RPC bearer attacher re-read the refreshed session); only a *second* auth-shaped error within 8s actually signs out locally and redirects to `/login`. Latch is module-scoped (the boundary remounts on reset) and cleared on any successful authenticated render.
 - Root `ErrorComponent` and `NotFoundComponent` provide editorial-styled fallbacks.
 
 ## 5. Routes and information architecture
@@ -215,7 +215,7 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
 - **Color tokens** (`styles.css`, oklch): `background`, `foreground`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `ring`, and signal palette `--signal-soon/-hold/-buy/-low` (Jun 2026 retint: deep botanical green, warm ochre, slate-blue, muted stone) plus matching surface washes `--signal-{buy,soon,hold}-wash`. Elevation tokens `--shadow-1/2/3` and monogram-tint classes `.bg-mono-1..6` also live here.
 - **Radius**: `--radius: 0.25rem` — deliberately tight/architectural.
 - **Spacing/scale**: max width `5xl` for app, `3xl` for editorial blocks; sections breathe with `py-16/24`.
-- **Motion**: CSS-only — shimmer skeletons (`@keyframes theget-shimmer`), `reveal-on-scroll` (shared `useReveal` IntersectionObserver in `hooks/use-reveal.ts`), `meter-fill` (segmented distribution bar), `page-fade` (cross-fade in `PageLayout`), `useCountUp` (radial confidence arc + numerals). All gated behind `prefers-reduced-motion: reduce`. No Framer/GSAP.
+- **Motion**: CSS-only — shimmer skeletons (`@keyframes theget-shimmer`), `reveal-on-scroll` (shared `useReveal` IntersectionObserver in `hooks/use-reveal.ts`), `meter-fill` (segmented distribution bar), native View Transitions crossfade between routes (router `defaultViewTransition: true`, tuned via `::view-transition-old/new(root)` in `styles.css`; silent no-op on browsers without the API — replaced the old `key={pathname}` remount + `.page-fade`), `useCountUp` (radial confidence arc + numerals). All gated behind `prefers-reduced-motion: reduce`. No Framer/GSAP.
 - **Patterns**:
   - "Eyebrow" caps label (`.eyebrow`, 11px, 0.18em tracking).
   - Hairline rules (`.hairline`).
@@ -374,8 +374,8 @@ Suggested order: 1 → 2 → 3 → 9 → 4 → 8 → 5 → 6 → others.
 - **Do not call `supabase.auth.signInWithOAuth("google")`** directly — must go through `lovable.auth.signInWithOAuth`.
 - **Preserve hybrid terminology**: editorial = *house / signal / window / depth / cadence / The Get*; utility (empty/error/CTAs) = *brand* + buy/wait verbs. See §10.
 - **Keep AI_PROJECT_HANDOFF.md current**: any feature, route, schema, server-fn, terminology, UX-flow, or known-issue change must update the relevant section in the SAME turn. Skip only for typo/format/dep-bump edits.
-- **Fragile flows**: `_authenticated` HydratingShell timing, `AuthErrorRecovery` (don't throw new error types past it), brand.$id dual loader.
-- **Files requiring caution**: `routes/_authenticated/watchlist.tsx` (recently de-looped), `routes/brand.$id.tsx`, `lib/auth.ts`, `router.tsx`.
+- **Fragile flows**: `_authenticated` HydratingShell timing + `hasBeenAuthenticated` latch, `AuthErrorRecovery` one-shot retry (don't throw new error types past it; don't reintroduce instant sign-out on first error), router identity-change branches in `router.tsx` (boot/sign-in skips `invalidateQueries`; account-switch scopes to user keys; sign-out does neither), brand.$id dual loader.
+- **Files requiring caution**: `routes/_authenticated/watchlist.tsx` (recently de-looped + loader now returns `Promise.all`), `routes/brand.$id.tsx`, `lib/auth.ts`, `router.tsx`, `routes/_authenticated.tsx`.
 - **Coding standards**: TypeScript strict, no `any` in new code, zod-validate all server-fn inputs, optimistic-update + rollback pattern for mutations, queries via `*QueryOptions` + `useSuspenseQuery`.
 - **UI standards**: tokens only (no raw hex), serif for headlines, uppercase 0.18em tracking for labels, hairline borders, no flashy motion.
 - **Incremental work**: prefer surgical edits over rewrites; never regenerate `routeTree.gen.ts`; never alter `auth-middleware.ts` / `client.server.ts`.
@@ -398,7 +398,7 @@ Suggested order: 1 → 2 → 3 → 9 → 4 → 8 → 5 → 6 → others.
 - **`requireSupabaseAuth`** — server-fn middleware injecting `{ supabase, userId, claims }`.
 - **`attachSupabaseAuth`** — client function middleware attaching bearer token.
 - **`HydratingShell`** — shimmer skeleton shown while session hydrates.
-- **`AuthErrorRecovery`** — catches JWT errors and re-auths the user.
+- **`AuthErrorRecovery`** — one-shot retry on the first auth-shaped error; signs out + redirects to `/login` only on a second strike inside an 8s window.
 
 ## 19. One-page fast context summary
 

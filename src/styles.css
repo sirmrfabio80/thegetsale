@@ -153,13 +153,13 @@ body {
   to { transform: scaleX(1); }
 }
 
-/* Page cross-fade */
-.page-fade {
-  animation: page-fade 200ms ease-out both;
-}
-@keyframes page-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Native View Transitions crossfade between routes. The UA supplies the
+   default fade; we just tune timing/easing to match `meter-fill`. Browsers
+   without the API silently no-op these rules. Reduced-motion handled below. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 /* Brand-card hover hairline accent (no transform on the card itself) */
@@ -187,7 +187,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .reveal-on-scroll,
   .meter-fill,
-  .page-fade,
   .brand-card-link::after {
     animation: none !important;
     transition: none !important;
@@ -196,4 +195,6 @@ body {
   }
   .reveal-on-scroll { transform: none !important; }
   .meter-fill { transform: scaleX(1) !important; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none !important; }
 }
