@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
 import type { Brand, Category } from "@/data/types";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { EmptyStateCard } from "@/components/EmptyStateCard";
 import { BackToTop } from "@/components/BackToTop";
 import { useInfiniteCount } from "@/hooks/use-infinite-count";
 
