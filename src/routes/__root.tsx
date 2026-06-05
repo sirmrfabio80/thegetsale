@@ -10,6 +10,7 @@ import {
 // Toasts disabled app-wide — Toaster intentionally not mounted.
 
 import appCss from "../styles.css?url";
+import { useFocusRestoration } from "@/lib/focus-restoration";
 
 function NotFoundComponent() {
   return (
@@ -135,6 +136,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useFocusRestoration();
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />

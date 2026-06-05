@@ -110,18 +110,23 @@ function WatchlistPage() {
     navigate({
       search: (prev: WatchlistSearch) => ({ ...prev, q: value }),
       replace: true,
+      // Search/filter updates are an in-place refinement of the same list —
+      // never jump back to the top of the page.
+      resetScroll: false,
     });
   };
   const setCategory = (value: "All" | Category) => {
     navigate({
       search: (prev: WatchlistSearch) => ({ ...prev, cat: value }),
       replace: true,
+      resetScroll: false,
     });
   };
   const clearSearchAndCategory = () => {
     navigate({
       search: (prev: WatchlistSearch) => ({ ...prev, q: "", cat: "All" }),
       replace: true,
+      resetScroll: false,
     });
   };
   const [departments, setDepartments] = useState<Set<Department>>(new Set());
