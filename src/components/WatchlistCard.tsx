@@ -111,17 +111,15 @@ export function WatchlistCard({
       </div>
 
       <div className="mt-auto flex items-center justify-end pt-5 text-[12px]">
-        <button
-          type="button"
+        <CardTextAction
           onClick={(e) => {
             stop(e);
             remove(item.brandId, brand.name);
           }}
           disabled={isPending}
-          className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
         >
           Remove
-        </button>
+        </CardTextAction>
       </div>
     </CardBase>
   );
