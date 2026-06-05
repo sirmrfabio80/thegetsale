@@ -63,7 +63,7 @@ export function WatchlistCard({
         ...(wash ? { backgroundColor: wash } : {}),
       }}
       className={cn(
-        "group block border border-l-2 bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
+        "group flex h-full flex-col border border-l-2 bg-card px-5 py-6 transition-all md:hover:border-foreground/20",
         selected ? "border-foreground" : "border-border",
       )}
     >
@@ -95,7 +95,12 @@ export function WatchlistCard({
 
       <div className="hairline my-5" />
 
-      <p className="text-sm leading-relaxed text-foreground/90">{brand.headline}</p>
+      <p
+        className="line-clamp-2 text-sm leading-relaxed text-foreground/90"
+        style={{ minHeight: "calc(2 * 1.625em)" }}
+      >
+        {brand.headline || "\u00A0"}
+      </p>
 
       <div className="mt-4 border-l-2 border-border pl-3">
         <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -107,7 +112,7 @@ export function WatchlistCard({
         </p>
       </div>
 
-      <div className="mt-5 flex items-center justify-end text-[12px]">
+      <div className="mt-auto flex items-center justify-end pt-5 text-[12px]">
         <button
           type="button"
           onClick={(e) => {
