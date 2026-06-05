@@ -84,9 +84,9 @@ export function CardBase<T extends ElementType = "article">({
         "transition-[border-color,box-shadow,transform] duration-200 ease-out",
         // Empty / decorative variant
         borderStyle === "dashed" && "border-dashed bg-card/40",
-        // Standardised interactive feedback
+        // Standardised interactive feedback (hover, press, keyboard focus)
         interactive &&
-          "md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)] active:translate-y-px",
+          "cursor-pointer md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)] active:translate-y-px focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         className,
       )}
     >

@@ -72,7 +72,7 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
           <BrandLogo name={brand.name} logoUrl={brand.logoUrl} size={64} />
           <div className="flex min-w-0 flex-1 flex-col self-stretch">
             <p className="eyebrow mb-1.5 truncate">{eyebrow}</p>
-            <h3 className="font-serif text-[1.5rem] leading-tight">{brand.name}</h3>
+            <h3 className="truncate font-serif text-[1.5rem] leading-tight">{brand.name}</h3>
             <CardClampedText
               className="mt-1 text-sm leading-snug text-muted-foreground"
               lineHeightEm={1.375}

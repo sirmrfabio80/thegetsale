@@ -1,3 +1,5 @@
+import { CardClampedText } from "@/components/CardBase";
+
 type Signal = "Buy now" | "Wait" | "Hold";
 
 export type PreviewCardProps = {
@@ -17,8 +19,12 @@ export function SignalPreviewCard({ category, house, headline, signal }: Preview
         </span>
       </div>
 
-      <h3 className="mt-5 font-serif text-2xl leading-tight">{house}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{headline}</p>
+      <CardClampedText as="h3" lines={2} lineHeightEm={1.15} className="mt-5 font-serif text-2xl leading-tight">
+        {house}
+      </CardClampedText>
+      <CardClampedText lines={2} lineHeightEm={1.625} className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        {headline}
+      </CardClampedText>
 
       <div className="mt-6 flex-1" />
 
