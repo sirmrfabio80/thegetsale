@@ -2,11 +2,13 @@ import { Link } from "@tanstack/react-router";
 import type { Brand, Category, SignalKind } from "@/data/types";
 import { SignalBadge } from "./SignalBadge";
 import { BrandLogo } from "./BrandLogo";
+import { CardBase, CardClampedText } from "./CardBase";
 import { useWatchlist, useWatchlistMutations } from "@/data/store";
 import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { brandDepartment } from "@/data/categoryMap";
 import { useReveal } from "@/hooks/use-reveal";
+
 
 const SIGNAL_ACCENT: Record<SignalKind, string> = {
   buy: "var(--signal-buy)",
@@ -51,16 +53,14 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
       className="reveal-on-scroll relative h-full"
       style={{ transitionDelay: `${(revealIndex % 6) * 60}ms` }}
     >
-      <Link
-        to="/brand/$id"
-        params={{ id: brand.id }}
-        style={{
-          borderLeftColor: SIGNAL_ACCENT[brand.signal],
-          ...(wash ? { backgroundColor: wash } : {}),
-        }}
+      <CardBase
+        as={Link}
+        {...({ to: "/brand/$id", params: { id: brand.id } } as Record<string, unknown>)}
+        signalAccent={SIGNAL_ACCENT[brand.signal]}
+        wash={wash}
         className={cn(
-          "brand-card-link group flex h-full flex-col border border-border border-l-2 px-5 py-6 transition-all md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)]",
-          isLow && "bg-card",
+          "brand-card-link md:hover:border-foreground/20 md:hover:shadow-[var(--shadow-2)]",
+          !isLow && "bg-transparent",
         )}
       >
         {forYou && (
@@ -76,12 +76,12 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
           <div className="flex min-w-0 flex-1 flex-col self-stretch">
             <p className="eyebrow mb-1.5 truncate">{eyebrow}</p>
             <h3 className="font-serif text-[1.5rem] leading-tight">{brand.name}</h3>
-            <p
-              className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground"
-              style={{ minHeight: "calc(2 * 1.375em)" }}
+            <CardClampedText
+              className="mt-1 text-sm leading-snug text-muted-foreground"
+              lineHeightEm={1.375}
             >
-              {brand.tagline || "\u00A0"}
-            </p>
+              {brand.tagline}
+            </CardClampedText>
             <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
               <SignalBadge signal={brand.signal} />
             </div>
@@ -101,7 +101,7 @@ export function BrandCard({ brand, forYou = false, revealIndex = 0 }: BrandCardP
             <Stat label="Depth" value={brand.expectedDepth || "—"} />
           </div>
         )}
-      </Link>
+      </CardBase>
 
       <button
         type="button"
