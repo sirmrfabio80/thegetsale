@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { RouteErrorCard } from "@/components/RouteErrorCard";
 import { PageLayout, SectionRule } from "@/components/PageLayout";
 import { useWatchlist, useWatchlistMutations, watchlistQueryOptions } from "@/data/store";
 import { WatchlistCard } from "@/components/WatchlistCard";
