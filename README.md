@@ -139,46 +139,6 @@ Naming follows **flat dot‑separated** routes (`brand.$id.tsx`, not `brand/$id.
 
 ---
 
-## ✦ Getting started
-
-### Prerequisites
-
-- [Bun](https://bun.sh) ≥ 1.1 (or npm / pnpm — Bun is what the project uses)
-- A Lovable Cloud / Supabase project (already wired via `.env` in this repo)
-
-### Run it
-
-```bash
-bun install
-bun run dev          # http://localhost:5173
-```
-
-### Useful scripts
-
-```bash
-bun run dev          # Vite dev server
-bun run build        # Production build (Cloudflare Workers target)
-bun run build:dev    # Build in dev mode (prerender-friendly)
-bun run preview      # Preview the built app
-bun run test         # Vitest
-bun run lint         # ESLint
-bun run format       # Prettier --write
-```
-
-### Environment
-
-The auto‑managed `.env` provides:
-
-```
-VITE_SUPABASE_URL=…
-VITE_SUPABASE_PUBLISHABLE_KEY=…
-VITE_SUPABASE_PROJECT_ID=…
-```
-
-Server‑only secrets (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) are injected by the runtime and read inside server function handlers via `process.env.*`.
-
----
-
 ## ✦ Architectural notes (for future contributors)
 
 A condensed version of the living [`AI_PROJECT_HANDOFF.md`](./AI_PROJECT_HANDOFF.md):
