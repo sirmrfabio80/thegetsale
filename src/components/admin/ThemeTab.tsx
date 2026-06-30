@@ -232,8 +232,26 @@ export function ThemeTab() {
             size="sm"
             disabled={!isDirty}
             onClick={resetDraft}
+            title="Discard unsaved changes and return to the last saved values"
           >
             Revert
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!selectedTheme}
+            onClick={() => {
+              if (!window.confirm(
+                "Reset every variable to the seeded Editorial defaults? You'll still need to press Save in each section to persist.",
+              )) return;
+              const next: Record<string, string> = {};
+              for (const def of THEME_REGISTRY) next[def.key] = def.default;
+              setDraft(next);
+            }}
+            title="Restore every variable to the seeded Editorial defaults"
+          >
+            Reset to Editorial
           </Button>
         </div>
       </div>
