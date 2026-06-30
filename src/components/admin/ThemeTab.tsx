@@ -10,6 +10,7 @@ import {
   type ThemeRecord,
 } from "@/lib/theme.functions";
 import {
+  seededDefaultsFor,
   THEME_GROUPS_ORDER,
   THEME_REGISTRY,
   type ThemeTokenDef,
@@ -72,16 +73,23 @@ export function ThemeTab() {
 
   const selectedTheme = themes.find((t) => t.key === selectedKey);
 
-  // Local editable copy of the selected theme's tokens (merged with defaults).
+  // Per-theme seeded defaults (what shipped in the migration for THIS theme).
+  // Falls back to registry defaults for tokens not overridden by the seed.
+  const seededDefaults = useMemo(
+    () => seededDefaultsFor(selectedKey),
+    [selectedKey],
+  );
+
+  // Local editable copy of the selected theme's tokens (merged with seeded defaults).
   const [draft, setDraft] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!selectedTheme) return;
     const merged: Record<string, string> = {};
     for (const def of THEME_REGISTRY) {
-      merged[def.key] = selectedTheme.tokens[def.key] ?? def.default;
+      merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
     setDraft(merged);
-  }, [selectedTheme]);
+  }, [selectedTheme, seededDefaults]);
 
   const [savedGroup, setSavedGroup] = useState<ThemeTokenGroup | null>(null);
   const saveMutation = useMutation({
@@ -129,7 +137,7 @@ export function ThemeTab() {
   function saveGroup(group: ThemeTokenGroup) {
     if (!selectedTheme) return;
     const tokens: Record<string, string> = {};
-    for (const def of grouped[group]) tokens[def.key] = draft[def.key] ?? def.default;
+    for (const def of grouped[group]) tokens[def.key] = draft[def.key] ?? seededDefaults[def.key];
     setSavedGroup(null);
     saveMutation.mutate(
       { key: selectedTheme.key, tokens },
@@ -166,20 +174,23 @@ export function ThemeTab() {
   const isDirty = useMemo(() => {
     if (!selectedTheme) return false;
     for (const def of THEME_REGISTRY) {
-      const current = selectedTheme.tokens[def.key] ?? def.default;
-      if ((draft[def.key] ?? def.default) !== current) return true;
+      const current = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
+      if ((draft[def.key] ?? seededDefaults[def.key]) !== current) return true;
     }
     return false;
-  }, [draft, selectedTheme]);
+  }, [draft, selectedTheme, seededDefaults]);
 
   function resetDraft() {
     if (!selectedTheme) return;
     const merged: Record<string, string> = {};
     for (const def of THEME_REGISTRY) {
-      merged[def.key] = selectedTheme.tokens[def.key] ?? def.default;
+      merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
     setDraft(merged);
   }
+
+  // Human label for the active theme's seeded defaults (used in copy/tooltips).
+  const seedLabel = selectedTheme?.name ?? "seeded";
 
   return (
     <div className="space-y-10">
@@ -243,15 +254,13 @@ export function ThemeTab() {
             disabled={!selectedTheme}
             onClick={() => {
               if (!window.confirm(
-                "Reset every variable to the seeded Editorial defaults? You'll still need to press Save in each section to persist.",
+                `Reset every variable to the seeded ${seedLabel} defaults? You'll still need to press Save in each section to persist.`,
               )) return;
-              const next: Record<string, string> = {};
-              for (const def of THEME_REGISTRY) next[def.key] = def.default;
-              setDraft(next);
+              setDraft({ ...seededDefaults });
             }}
-            title="Restore every variable to the seeded Editorial defaults"
+            title={`Restore every variable to the seeded ${seedLabel} defaults`}
           >
-            Reset to Editorial
+            Reset to {seedLabel} defaults
           </Button>
         </div>
       </div>
@@ -326,16 +335,21 @@ export function ThemeTab() {
                 </div>
               </header>
               <div className="divide-y divide-border">
-                {grouped[group].map((def) => (
-                  <TokenRow
-                    key={def.key}
-                    def={def}
-                    value={draft[def.key] ?? def.default}
-                    disabled={disabled}
-                    onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
-                    onReset={() => setDraft((d) => ({ ...d, [def.key]: def.default }))}
-                  />
-                ))}
+                {grouped[group].map((def) => {
+                  const seeded = seededDefaults[def.key];
+                  return (
+                    <TokenRow
+                      key={def.key}
+                      def={def}
+                      seededDefault={seeded}
+                      seedLabel={seedLabel}
+                      value={draft[def.key] ?? seeded}
+                      disabled={disabled}
+                      onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
+                      onReset={() => setDraft((d) => ({ ...d, [def.key]: seeded }))}
+                    />
+                  );
+                })}
               </div>
             </section>
           ))}
@@ -347,18 +361,22 @@ export function ThemeTab() {
 
 function TokenRow({
   def,
+  seededDefault,
+  seedLabel,
   value,
   disabled,
   onChange,
   onReset,
 }: {
   def: ThemeTokenDef;
+  seededDefault: string;
+  seedLabel: string;
   value: string;
   disabled: boolean;
   onChange: (v: string) => void;
   onReset: () => void;
 }) {
-  const isChanged = value !== def.default;
+  const isChanged = value !== seededDefault;
   return (
     <div
       className={cn(
@@ -381,8 +399,8 @@ function TokenRow({
         {isChanged && (
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px]">
             <span className="text-muted-foreground/60">Before</span>
-            <span className="max-w-[16ch] truncate text-muted-foreground/80" title={def.default}>
-              {def.default}
+            <span className="max-w-[16ch] truncate text-muted-foreground/80" title={seededDefault}>
+              {seededDefault}
             </span>
             <span className="text-muted-foreground/40">→</span>
             <span className="text-muted-foreground/60">After</span>
@@ -430,7 +448,7 @@ function TokenRow({
           type="button"
           onClick={onReset}
           disabled={disabled || !isChanged}
-          title={isChanged ? `Reset to ${def.default}` : "Already matches Editorial default"}
+          title={isChanged ? `Reset to ${seededDefault}` : `Already matches ${seedLabel} default`}
           className={cn(
             "shrink-0 border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground",
             "hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground",
