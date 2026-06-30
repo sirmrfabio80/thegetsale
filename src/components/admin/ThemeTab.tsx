@@ -254,15 +254,13 @@ export function ThemeTab() {
             disabled={!selectedTheme}
             onClick={() => {
               if (!window.confirm(
-                "Reset every variable to the seeded Editorial defaults? You'll still need to press Save in each section to persist.",
+                `Reset every variable to the seeded ${seedLabel} defaults? You'll still need to press Save in each section to persist.`,
               )) return;
-              const next: Record<string, string> = {};
-              for (const def of THEME_REGISTRY) next[def.key] = def.default;
-              setDraft(next);
+              setDraft({ ...seededDefaults });
             }}
-            title="Restore every variable to the seeded Editorial defaults"
+            title={`Restore every variable to the seeded ${seedLabel} defaults`}
           >
-            Reset to Editorial
+            Reset to {seedLabel} defaults
           </Button>
         </div>
       </div>
