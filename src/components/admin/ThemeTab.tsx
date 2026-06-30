@@ -361,18 +361,22 @@ export function ThemeTab() {
 
 function TokenRow({
   def,
+  seededDefault,
+  seedLabel,
   value,
   disabled,
   onChange,
   onReset,
 }: {
   def: ThemeTokenDef;
+  seededDefault: string;
+  seedLabel: string;
   value: string;
   disabled: boolean;
   onChange: (v: string) => void;
   onReset: () => void;
 }) {
-  const isChanged = value !== def.default;
+  const isChanged = value !== seededDefault;
   return (
     <div
       className={cn(
@@ -395,8 +399,8 @@ function TokenRow({
         {isChanged && (
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px]">
             <span className="text-muted-foreground/60">Before</span>
-            <span className="max-w-[16ch] truncate text-muted-foreground/80" title={def.default}>
-              {def.default}
+            <span className="max-w-[16ch] truncate text-muted-foreground/80" title={seededDefault}>
+              {seededDefault}
             </span>
             <span className="text-muted-foreground/40">→</span>
             <span className="text-muted-foreground/60">After</span>
@@ -444,7 +448,7 @@ function TokenRow({
           type="button"
           onClick={onReset}
           disabled={disabled || !isChanged}
-          title={isChanged ? `Reset to ${def.default}` : "Already matches Editorial default"}
+          title={isChanged ? `Reset to ${seededDefault}` : `Already matches ${seedLabel} default`}
           className={cn(
             "shrink-0 border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground",
             "hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground",
