@@ -149,11 +149,25 @@ body {
   user-select: none;
 }
 
-/* Keep form fields and editable surfaces selectable everywhere. */
-input, textarea, select, [contenteditable="true"], [contenteditable=""] {
+/* Keep form fields, editable surfaces, and combobox/search values selectable
+   everywhere — covers native controls plus Radix/shadcn Select, Combobox,
+   Command (cmdk), and any element opted in via [data-selectable]. */
+input,
+textarea,
+select,
+option,
+optgroup,
+[contenteditable="true"],
+[contenteditable=""],
+[role="textbox"],
+[role="searchbox"],
+[role="combobox"],
+[role="spinbutton"],
+[data-selectable] {
   -webkit-user-select: text;
   user-select: text;
 }
+
 
 /* Opt-in selection (applied at the Admin layout root). */
 .allow-select,
