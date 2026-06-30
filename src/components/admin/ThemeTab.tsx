@@ -232,8 +232,26 @@ export function ThemeTab() {
             size="sm"
             disabled={!isDirty}
             onClick={resetDraft}
+            title="Discard unsaved changes and return to the last saved values"
           >
             Revert
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!selectedTheme}
+            onClick={() => {
+              if (!window.confirm(
+                "Reset every variable to the seeded Editorial defaults? You'll still need to press Save in each section to persist.",
+              )) return;
+              const next: Record<string, string> = {};
+              for (const def of THEME_REGISTRY) next[def.key] = def.default;
+              setDraft(next);
+            }}
+            title="Restore every variable to the seeded Editorial defaults"
+          >
+            Reset to Editorial
           </Button>
         </div>
       </div>
@@ -315,6 +333,7 @@ export function ThemeTab() {
                     value={draft[def.key] ?? def.default}
                     disabled={disabled}
                     onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
+                    onReset={() => setDraft((d) => ({ ...d, [def.key]: def.default }))}
                   />
                 ))}
               </div>
@@ -331,12 +350,15 @@ function TokenRow({
   value,
   disabled,
   onChange,
+  onReset,
 }: {
   def: ThemeTokenDef;
   value: string;
   disabled: boolean;
   onChange: (v: string) => void;
+  onReset: () => void;
 }) {
+  const isDefault = value === def.default;
   return (
     <div className="grid grid-cols-1 gap-3 px-5 py-4 md:grid-cols-[1fr_1.2fr] md:items-center md:gap-6">
       <div>
@@ -378,7 +400,21 @@ function TokenRow({
             )}
           />
         )}
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={disabled || isDefault}
+          title={isDefault ? "Already matches Editorial default" : `Reset to ${def.default}`}
+          className={cn(
+            "shrink-0 border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground",
+            "hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground",
+            "focus:outline-none focus:ring-1 focus:ring-ring",
+          )}
+        >
+          Reset
+        </button>
       </div>
     </div>
   );
 }
+
