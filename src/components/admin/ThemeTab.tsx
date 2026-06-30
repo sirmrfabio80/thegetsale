@@ -23,9 +23,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { tokensToCss } from "@/lib/theme/css";
 import { cn } from "@/lib/utils";
 
 const THEMES_QUERY_KEY = ["themes"] as const;
+const PREVIEW_STYLE_ID = "theme-tokens-preview";
+
+function writePreviewStyle(css: string) {
+  if (typeof document === "undefined") return;
+  let el = document.getElementById(PREVIEW_STYLE_ID) as HTMLStyleElement | null;
+  if (!el) {
+    el = document.createElement("style");
+    el.id = PREVIEW_STYLE_ID;
+    // Append last so it overrides the SSR-injected <style id="theme-tokens">.
+    document.head.appendChild(el);
+  }
+  el.textContent = css;
+}
+
+function clearPreviewStyle() {
+  if (typeof document === "undefined") return;
+  document.getElementById(PREVIEW_STYLE_ID)?.remove();
+}
 
 export function ThemeTab() {
   const router = useRouter();
