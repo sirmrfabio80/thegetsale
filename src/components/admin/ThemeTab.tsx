@@ -332,12 +332,15 @@ function TokenRow({
   value,
   disabled,
   onChange,
+  onReset,
 }: {
   def: ThemeTokenDef;
   value: string;
   disabled: boolean;
   onChange: (v: string) => void;
+  onReset: () => void;
 }) {
+  const isDefault = value === def.default;
   return (
     <div className="grid grid-cols-1 gap-3 px-5 py-4 md:grid-cols-[1fr_1.2fr] md:items-center md:gap-6">
       <div>
@@ -379,7 +382,21 @@ function TokenRow({
             )}
           />
         )}
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={disabled || isDefault}
+          title={isDefault ? "Already matches Editorial default" : `Reset to ${def.default}`}
+          className={cn(
+            "shrink-0 border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground",
+            "hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground",
+            "focus:outline-none focus:ring-1 focus:ring-ring",
+          )}
+        >
+          Reset
+        </button>
       </div>
     </div>
   );
+}
 }
