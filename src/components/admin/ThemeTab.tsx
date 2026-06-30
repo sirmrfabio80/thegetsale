@@ -82,6 +82,9 @@ export function ThemeTab() {
 
   // Local editable copy of the selected theme's tokens (merged with seeded defaults).
   const [draft, setDraft] = useState<Record<string, string>>({});
+  // Undo stack: each entry is a prior draft snapshot. Capped to avoid growth.
+  const [history, setHistory] = useState<Record<string, string>[]>([]);
+  const HISTORY_LIMIT = 50;
   useEffect(() => {
     if (!selectedTheme) return;
     const merged: Record<string, string> = {};
@@ -89,7 +92,38 @@ export function ThemeTab() {
       merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
     setDraft(merged);
+    setHistory([]);
   }, [selectedTheme, seededDefaults]);
+
+  /** Apply a draft change and push the previous draft onto the undo stack. */
+  function mutateDraft(next: Record<string, string>) {
+    setDraft((prev) => {
+      // Skip if nothing actually changed (prevents noise from no-op typing).
+      let changed = false;
+      for (const k of Object.keys(next)) {
+        if (prev[k] !== next[k]) { changed = true; break; }
+      }
+      if (!changed) return prev;
+      setHistory((h) => {
+        const nextH = [...h, prev];
+        return nextH.length > HISTORY_LIMIT ? nextH.slice(-HISTORY_LIMIT) : nextH;
+      });
+      return next;
+    });
+  }
+
+  function setTokenValue(key: string, value: string) {
+    mutateDraft({ ...draft, [key]: value });
+  }
+
+  function undo() {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setDraft(prev);
+      return h.slice(0, -1);
+    });
+  }
 
   const [savedGroup, setSavedGroup] = useState<ThemeTokenGroup | null>(null);
   const saveMutation = useMutation({
