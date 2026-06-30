@@ -358,13 +358,39 @@ function TokenRow({
   onChange: (v: string) => void;
   onReset: () => void;
 }) {
-  const isDefault = value === def.default;
+  const isChanged = value !== def.default;
   return (
-    <div className="grid grid-cols-1 gap-3 px-5 py-4 md:grid-cols-[1fr_1.2fr] md:items-center md:gap-6">
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-3 px-5 py-4 md:grid-cols-[1fr_1.2fr] md:items-center md:gap-6",
+        isChanged && "bg-[var(--signal-soon)]/[0.03]",
+      )}
+    >
       <div>
-        <p className="text-sm font-medium text-foreground">{def.label}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-foreground">{def.label}</p>
+          {isChanged && (
+            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-foreground" aria-hidden />
+              Changed
+            </span>
+          )}
+        </div>
         <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{def.description}</p>
         <p className="mt-1 font-mono text-[10px] text-muted-foreground/70">{def.cssVar}</p>
+        {isChanged && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px]">
+            <span className="text-muted-foreground/60">Before</span>
+            <span className="max-w-[16ch] truncate text-muted-foreground/80" title={def.default}>
+              {def.default}
+            </span>
+            <span className="text-muted-foreground/40">→</span>
+            <span className="text-muted-foreground/60">After</span>
+            <span className="max-w-[16ch] truncate text-foreground" title={value}>
+              {value}
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-3">
         {def.type === "color" && (
@@ -403,8 +429,8 @@ function TokenRow({
         <button
           type="button"
           onClick={onReset}
-          disabled={disabled || isDefault}
-          title={isDefault ? "Already matches Editorial default" : `Reset to ${def.default}`}
+          disabled={disabled || !isChanged}
+          title={isChanged ? `Reset to ${def.default}` : "Already matches Editorial default"}
           className={cn(
             "shrink-0 border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground",
             "hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground",
@@ -417,4 +443,5 @@ function TokenRow({
     </div>
   );
 }
+
 
