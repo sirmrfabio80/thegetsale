@@ -31,15 +31,10 @@ export function SignalBadge({ signal, className }: { signal: SignalKind; classNa
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 border px-2.5 py-1 text-[10px] badge-shape",
-        "uppercase-token tracking-token",
+        "inline-flex items-center gap-2 border px-2.5 py-1 text-[10px] badge-shape label-style",
         tones[signal],
         className,
       )}
-      style={{
-        textTransform: "var(--label-transform)" as React.CSSProperties["textTransform"],
-        letterSpacing: "var(--label-tracking)",
-      }}
     >
       <span
         className="h-1.5 w-1.5"
