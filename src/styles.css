@@ -144,7 +144,24 @@ body {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.15  0 0 0 0 0.1  0 0 0 0 0.05  0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-repeat: repeat;
   background-blend-mode: multiply;
+  /* Disable text selection app-wide. Admin pages opt back in via .allow-select. */
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+/* Keep form fields and editable surfaces selectable everywhere. */
+input, textarea, select, [contenteditable="true"], [contenteditable=""] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Opt-in selection (applied at the Admin layout root). */
+.allow-select,
+.allow-select * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 
 .paper-grain-heavy {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.07  0 0 0 0 0.03  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
