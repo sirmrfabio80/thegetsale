@@ -11,6 +11,8 @@ import {
 
 import appCss from "../styles.css?url";
 import { useFocusRestoration } from "@/lib/focus-restoration";
+import { getActiveTheme } from "@/lib/theme.functions";
+import { tokensToCss } from "@/lib/theme/css";
 
 function NotFoundComponent() {
   return (
