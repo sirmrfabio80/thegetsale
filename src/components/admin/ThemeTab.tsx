@@ -137,7 +137,7 @@ export function ThemeTab() {
   function saveGroup(group: ThemeTokenGroup) {
     if (!selectedTheme) return;
     const tokens: Record<string, string> = {};
-    for (const def of grouped[group]) tokens[def.key] = draft[def.key] ?? def.default;
+    for (const def of grouped[group]) tokens[def.key] = draft[def.key] ?? seededDefaults[def.key];
     setSavedGroup(null);
     saveMutation.mutate(
       { key: selectedTheme.key, tokens },
