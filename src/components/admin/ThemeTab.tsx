@@ -174,20 +174,23 @@ export function ThemeTab() {
   const isDirty = useMemo(() => {
     if (!selectedTheme) return false;
     for (const def of THEME_REGISTRY) {
-      const current = selectedTheme.tokens[def.key] ?? def.default;
-      if ((draft[def.key] ?? def.default) !== current) return true;
+      const current = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
+      if ((draft[def.key] ?? seededDefaults[def.key]) !== current) return true;
     }
     return false;
-  }, [draft, selectedTheme]);
+  }, [draft, selectedTheme, seededDefaults]);
 
   function resetDraft() {
     if (!selectedTheme) return;
     const merged: Record<string, string> = {};
     for (const def of THEME_REGISTRY) {
-      merged[def.key] = selectedTheme.tokens[def.key] ?? def.default;
+      merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
     setDraft(merged);
   }
+
+  // Human label for the active theme's seeded defaults (used in copy/tooltips).
+  const seedLabel = selectedTheme?.name ?? "seeded";
 
   return (
     <div className="space-y-10">
