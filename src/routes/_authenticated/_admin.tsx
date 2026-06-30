@@ -75,5 +75,9 @@ function AdminLayout() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <div className="allow-select">
+      <Outlet />
+    </div>
+  );
 }
