@@ -275,6 +275,20 @@ export function ThemeTab() {
             type="button"
             variant="outline"
             size="sm"
+            disabled={history.length === 0}
+            onClick={undo}
+            title={
+              history.length === 0
+                ? "Nothing to undo"
+                : `Undo last change (${history.length} step${history.length === 1 ? "" : "s"} available)`
+            }
+          >
+            Undo{history.length > 0 ? ` (${history.length})` : ""}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             disabled={!isDirty}
             onClick={resetDraft}
             title="Discard unsaved changes and return to the last saved values"
@@ -290,7 +304,7 @@ export function ThemeTab() {
               if (!window.confirm(
                 `Reset every variable to the seeded ${seedLabel} defaults? You'll still need to press Save in each section to persist.`,
               )) return;
-              setDraft({ ...seededDefaults });
+              mutateDraft({ ...seededDefaults });
             }}
             title={`Restore every variable to the seeded ${seedLabel} defaults`}
           >
