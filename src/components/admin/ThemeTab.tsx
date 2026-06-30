@@ -335,16 +335,21 @@ export function ThemeTab() {
                 </div>
               </header>
               <div className="divide-y divide-border">
-                {grouped[group].map((def) => (
-                  <TokenRow
-                    key={def.key}
-                    def={def}
-                    value={draft[def.key] ?? def.default}
-                    disabled={disabled}
-                    onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
-                    onReset={() => setDraft((d) => ({ ...d, [def.key]: def.default }))}
-                  />
-                ))}
+                {grouped[group].map((def) => {
+                  const seeded = seededDefaults[def.key];
+                  return (
+                    <TokenRow
+                      key={def.key}
+                      def={def}
+                      seededDefault={seeded}
+                      seedLabel={seedLabel}
+                      value={draft[def.key] ?? seeded}
+                      disabled={disabled}
+                      onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
+                      onReset={() => setDraft((d) => ({ ...d, [def.key]: seeded }))}
+                    />
+                  );
+                })}
               </div>
             </section>
           ))}
