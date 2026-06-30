@@ -48,7 +48,9 @@ export const getActiveTheme = createServerFn({ method: "GET" }).handler(
   },
 );
 
-async function assertAdmin(context: { supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> }; userId: string }) {
+type AuthCtx = { supabase: { rpc: typeof import("@/integrations/supabase/client").supabase.rpc }; userId: string };
+
+async function assertAdmin(context: AuthCtx) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
