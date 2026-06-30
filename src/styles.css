@@ -103,14 +103,30 @@
   }
   .eyebrow {
     font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    letter-spacing: var(--label-tracking);
+    text-transform: var(--label-transform);
     color: var(--color-muted-foreground);
   }
   .hairline {
     height: 1px;
     background-color: var(--color-border);
   }
+}
+
+/* Structural utilities — token-driven so themes can reshape the system */
+@utility ui-card-radius {
+  border-radius: var(--radius-card);
+}
+@utility btn-shape {
+  border-radius: var(--radius-button);
+}
+@utility badge-shape {
+  border-radius: var(--radius-badge);
+}
+@utility tab-trigger {
+  border-radius: var(--radius-button);
+  text-transform: var(--label-transform);
+  letter-spacing: var(--label-tracking);
 }
 
 @keyframes theget-shimmer {
