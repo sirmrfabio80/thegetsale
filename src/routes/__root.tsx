@@ -116,6 +116,14 @@ export const Route = createRootRouteWithContext<{
       },
     ],
   }),
+  loader: async () => {
+    try {
+      const theme = await getActiveTheme();
+      return { themeCss: tokensToCss(theme.tokens) };
+    } catch {
+      return { themeCss: tokensToCss({}) };
+    }
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -123,10 +131,20 @@ export const Route = createRootRouteWithContext<{
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  // Safe even if loader failed — tokensToCss falls back to registry defaults.
+  let themeCss = "";
+  try {
+    themeCss = Route.useLoaderData().themeCss;
+  } catch {
+    themeCss = tokensToCss({});
+  }
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        {/* DB-driven theme tokens; injected after the stylesheet link in
+            HeadContent so they override the static defaults in styles.css. */}
+        <style id="theme-tokens" dangerouslySetInnerHTML={{ __html: themeCss }} />
       </head>
       <body>
         {children}
