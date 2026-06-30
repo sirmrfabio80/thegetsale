@@ -191,6 +191,54 @@ export function ThemeTab() {
         </p>
       </div>
 
+      {/* Live preview controls */}
+      <div className="flex flex-col gap-3 border border-border bg-card p-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={livePreview}
+            onClick={() => setLivePreview((v) => !v)}
+            className={cn(
+              "mt-0.5 inline-flex h-5 w-9 shrink-0 items-center border border-border transition-colors",
+              livePreview ? "bg-foreground" : "bg-background",
+            )}
+          >
+            <span
+              className={cn(
+                "block h-3.5 w-3.5 bg-background transition-transform",
+                livePreview ? "translate-x-[18px] bg-background" : "translate-x-[2px] bg-foreground",
+              )}
+            />
+            <span className="sr-only">Toggle live preview</span>
+          </button>
+          <div>
+            <p className="text-sm font-medium text-foreground">Live preview</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Apply unsaved token changes to this browser only. Other visitors keep
+              seeing the saved theme until you press Save.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {isDirty ? (
+            <span className="text-xs text-muted-foreground">Unsaved changes</span>
+          ) : (
+            <span className="text-xs text-muted-foreground/70">No changes</span>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!isDirty}
+            onClick={resetDraft}
+          >
+            Revert
+          </Button>
+        </div>
+      </div>
+
+
       {/* Theme selector + actions */}
       <div className="flex flex-col gap-3 border border-border bg-card p-5 md:flex-row md:items-end">
         <div className="flex-1">
