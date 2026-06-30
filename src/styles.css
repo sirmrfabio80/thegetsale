@@ -128,6 +128,11 @@
   text-transform: var(--label-transform);
   letter-spacing: var(--label-tracking);
 }
+/* Label treatment (case + tracking) driven by theme tokens. */
+@utility label-style {
+  text-transform: var(--label-transform);
+  letter-spacing: var(--label-tracking);
+}
 
 @keyframes theget-shimmer {
   0% { transform: translateX(-100%); }
