@@ -220,7 +220,7 @@ export function ThemeTab() {
     for (const def of THEME_REGISTRY) {
       merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
-    setDraft(merged);
+    mutateDraft(merged);
   }
 
   // Human label for the active theme's seeded defaults (used in copy/tooltips).
