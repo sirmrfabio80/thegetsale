@@ -393,8 +393,8 @@ export function ThemeTab() {
                       seedLabel={seedLabel}
                       value={draft[def.key] ?? seeded}
                       disabled={disabled}
-                      onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
-                      onReset={() => setDraft((d) => ({ ...d, [def.key]: seeded }))}
+                      onChange={(v) => mutateDraft({ ...draft, [def.key]: v })}
+                      onReset={() => mutateDraft({ ...draft, [def.key]: seeded })}
                     />
                   );
                 })}
