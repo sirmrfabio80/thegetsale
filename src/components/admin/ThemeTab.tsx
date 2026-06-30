@@ -73,16 +73,23 @@ export function ThemeTab() {
 
   const selectedTheme = themes.find((t) => t.key === selectedKey);
 
-  // Local editable copy of the selected theme's tokens (merged with defaults).
+  // Per-theme seeded defaults (what shipped in the migration for THIS theme).
+  // Falls back to registry defaults for tokens not overridden by the seed.
+  const seededDefaults = useMemo(
+    () => seededDefaultsFor(selectedKey),
+    [selectedKey],
+  );
+
+  // Local editable copy of the selected theme's tokens (merged with seeded defaults).
   const [draft, setDraft] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!selectedTheme) return;
     const merged: Record<string, string> = {};
     for (const def of THEME_REGISTRY) {
-      merged[def.key] = selectedTheme.tokens[def.key] ?? def.default;
+      merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
     setDraft(merged);
-  }, [selectedTheme]);
+  }, [selectedTheme, seededDefaults]);
 
   const [savedGroup, setSavedGroup] = useState<ThemeTokenGroup | null>(null);
   const saveMutation = useMutation({
