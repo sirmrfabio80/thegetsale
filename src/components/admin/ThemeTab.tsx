@@ -10,6 +10,7 @@ import {
   type ThemeRecord,
 } from "@/lib/theme.functions";
 import {
+  seededDefaultsFor,
   THEME_GROUPS_ORDER,
   THEME_REGISTRY,
   type ThemeTokenDef,
