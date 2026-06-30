@@ -95,16 +95,29 @@ export function ThemeTab() {
     setHistory([]);
   }, [selectedTheme, seededDefaults]);
 
-  /** Apply a draft change and push the previous draft onto the undo stack. */
+  /** Apply a draft change and push the previous draft onto the undo stack.
+   *  Consecutive edits to the same single token coalesce into one undo step
+   *  so typing in a text field doesn't flood history. */
   function mutateDraft(next: Record<string, string>) {
     setDraft((prev) => {
-      // Skip if nothing actually changed (prevents noise from no-op typing).
-      let changed = false;
+      const changedKeys: string[] = [];
       for (const k of Object.keys(next)) {
-        if (prev[k] !== next[k]) { changed = true; break; }
+        if (prev[k] !== next[k]) changedKeys.push(k);
       }
-      if (!changed) return prev;
+      if (changedKeys.length === 0) return prev;
       setHistory((h) => {
+        // Coalesce: if previous step also differed from `prev` only in the
+        // same single key, keep the older snapshot as the undo target.
+        if (h.length > 0 && changedKeys.length === 1) {
+          const top = h[h.length - 1];
+          const topDiff: string[] = [];
+          for (const k of Object.keys(prev)) {
+            if (top[k] !== prev[k]) topDiff.push(k);
+          }
+          if (topDiff.length === 1 && topDiff[0] === changedKeys[0]) {
+            return h;
+          }
+        }
         const nextH = [...h, prev];
         return nextH.length > HISTORY_LIMIT ? nextH.slice(-HISTORY_LIMIT) : nextH;
       });
