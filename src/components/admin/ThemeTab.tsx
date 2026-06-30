@@ -315,6 +315,7 @@ export function ThemeTab() {
                     value={draft[def.key] ?? def.default}
                     disabled={disabled}
                     onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
+                    onReset={() => setDraft((d) => ({ ...d, [def.key]: def.default }))}
                   />
                 ))}
               </div>
