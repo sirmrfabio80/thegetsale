@@ -150,6 +150,37 @@ export function ThemeTab() {
 
   const disabled = themesQ.isLoading || saveMutation.isPending || activateMutation.isPending;
 
+  // Live preview: inject draft tokens as a <style> block appended after the
+  // SSR <style id="theme-tokens">, so changes apply globally before saving.
+  const [livePreview, setLivePreview] = useState(true);
+  const hasDraft = Object.keys(draft).length > 0;
+  useEffect(() => {
+    if (!livePreview || !hasDraft) {
+      clearPreviewStyle();
+      return;
+    }
+    writePreviewStyle(tokensToCss(draft));
+  }, [livePreview, hasDraft, draft]);
+  useEffect(() => () => clearPreviewStyle(), []);
+
+  const isDirty = useMemo(() => {
+    if (!selectedTheme) return false;
+    for (const def of THEME_REGISTRY) {
+      const current = selectedTheme.tokens[def.key] ?? def.default;
+      if ((draft[def.key] ?? def.default) !== current) return true;
+    }
+    return false;
+  }, [draft, selectedTheme]);
+
+  function resetDraft() {
+    if (!selectedTheme) return;
+    const merged: Record<string, string> = {};
+    for (const def of THEME_REGISTRY) {
+      merged[def.key] = selectedTheme.tokens[def.key] ?? def.default;
+    }
+    setDraft(merged);
+  }
+
   return (
     <div className="space-y-10">
       <div>
