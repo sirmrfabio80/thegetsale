@@ -125,9 +125,6 @@ export function ThemeTab() {
     });
   }
 
-  function setTokenValue(key: string, value: string) {
-    mutateDraft({ ...draft, [key]: value });
-  }
 
   function undo() {
     setHistory((h) => {
