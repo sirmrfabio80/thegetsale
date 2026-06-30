@@ -77,7 +77,7 @@ export function CardBase<T extends ElementType = "article">({
       }}
       className={cn(
         // Layout + surface
-        "group flex h-full flex-col border border-l-2 border-border bg-card",
+        "group flex h-full flex-col border border-l-2 border-border bg-card ui-card-radius",
         // Padding tier
         PADDING_CLASS[padding],
         // Motion

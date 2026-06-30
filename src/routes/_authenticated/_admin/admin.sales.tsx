@@ -6,6 +6,7 @@ import { SaleEventsTab } from "@/components/admin/SaleEventsTab";
 import { UsersRolesTab } from "@/components/admin/UsersRolesTab";
 import { SystemTab } from "@/components/admin/SystemTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
+import { ThemeTab } from "@/components/admin/ThemeTab";
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/sales")({
   head: () => ({
@@ -32,34 +33,40 @@ function AdminSalesPage() {
           <TabsList className="inline-flex h-auto w-max flex-nowrap rounded-none border border-border bg-transparent p-1 md:w-auto">
             <TabsTrigger
               value="houses"
-              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+              className="tab-trigger px-3 py-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
             >
               Houses
             </TabsTrigger>
             <TabsTrigger
               value="sales"
-              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+              className="tab-trigger px-3 py-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
             >
               Sale events
             </TabsTrigger>
             <TabsTrigger
               value="users"
-              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+              className="tab-trigger px-3 py-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
             >
               <span className="md:hidden">Users</span>
               <span className="hidden md:inline">Users &amp; roles</span>
             </TabsTrigger>
             <TabsTrigger
               value="system"
-              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+              className="tab-trigger px-3 py-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
             >
               System
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="rounded-none px-3 py-2 text-[11px] uppercase tracking-[0.18em] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+              className="tab-trigger px-3 py-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
             >
               Settings
+            </TabsTrigger>
+            <TabsTrigger
+              value="design"
+              className="tab-trigger px-3 py-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+            >
+              Design
             </TabsTrigger>
           </TabsList>
         </div>
@@ -78,6 +85,9 @@ function AdminSalesPage() {
         </TabsContent>
         <TabsContent value="settings" className="mt-0">
           <SettingsTab />
+        </TabsContent>
+        <TabsContent value="design" className="mt-0">
+          <ThemeTab />
         </TabsContent>
       </Tabs>
     </PageLayout>
