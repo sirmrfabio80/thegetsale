@@ -82,6 +82,9 @@ export function ThemeTab() {
 
   // Local editable copy of the selected theme's tokens (merged with seeded defaults).
   const [draft, setDraft] = useState<Record<string, string>>({});
+  // Undo stack: each entry is a prior draft snapshot. Capped to avoid growth.
+  const [history, setHistory] = useState<Record<string, string>[]>([]);
+  const HISTORY_LIMIT = 50;
   useEffect(() => {
     if (!selectedTheme) return;
     const merged: Record<string, string> = {};
@@ -89,7 +92,48 @@ export function ThemeTab() {
       merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
     setDraft(merged);
+    setHistory([]);
   }, [selectedTheme, seededDefaults]);
+
+  /** Apply a draft change and push the previous draft onto the undo stack.
+   *  Consecutive edits to the same single token coalesce into one undo step
+   *  so typing in a text field doesn't flood history. */
+  function mutateDraft(next: Record<string, string>) {
+    setDraft((prev) => {
+      const changedKeys: string[] = [];
+      for (const k of Object.keys(next)) {
+        if (prev[k] !== next[k]) changedKeys.push(k);
+      }
+      if (changedKeys.length === 0) return prev;
+      setHistory((h) => {
+        // Coalesce: if previous step also differed from `prev` only in the
+        // same single key, keep the older snapshot as the undo target.
+        if (h.length > 0 && changedKeys.length === 1) {
+          const top = h[h.length - 1];
+          const topDiff: string[] = [];
+          for (const k of Object.keys(prev)) {
+            if (top[k] !== prev[k]) topDiff.push(k);
+          }
+          if (topDiff.length === 1 && topDiff[0] === changedKeys[0]) {
+            return h;
+          }
+        }
+        const nextH = [...h, prev];
+        return nextH.length > HISTORY_LIMIT ? nextH.slice(-HISTORY_LIMIT) : nextH;
+      });
+      return next;
+    });
+  }
+
+
+  function undo() {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setDraft(prev);
+      return h.slice(0, -1);
+    });
+  }
 
   const [savedGroup, setSavedGroup] = useState<ThemeTokenGroup | null>(null);
   const saveMutation = useMutation({
@@ -186,7 +230,7 @@ export function ThemeTab() {
     for (const def of THEME_REGISTRY) {
       merged[def.key] = selectedTheme.tokens[def.key] ?? seededDefaults[def.key];
     }
-    setDraft(merged);
+    mutateDraft(merged);
   }
 
   // Human label for the active theme's seeded defaults (used in copy/tooltips).
@@ -241,6 +285,20 @@ export function ThemeTab() {
             type="button"
             variant="outline"
             size="sm"
+            disabled={history.length === 0}
+            onClick={undo}
+            title={
+              history.length === 0
+                ? "Nothing to undo"
+                : `Undo last change (${history.length} step${history.length === 1 ? "" : "s"} available)`
+            }
+          >
+            Undo{history.length > 0 ? ` (${history.length})` : ""}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             disabled={!isDirty}
             onClick={resetDraft}
             title="Discard unsaved changes and return to the last saved values"
@@ -256,7 +314,7 @@ export function ThemeTab() {
               if (!window.confirm(
                 `Reset every variable to the seeded ${seedLabel} defaults? You'll still need to press Save in each section to persist.`,
               )) return;
-              setDraft({ ...seededDefaults });
+              mutateDraft({ ...seededDefaults });
             }}
             title={`Restore every variable to the seeded ${seedLabel} defaults`}
           >
@@ -345,8 +403,8 @@ export function ThemeTab() {
                       seedLabel={seedLabel}
                       value={draft[def.key] ?? seeded}
                       disabled={disabled}
-                      onChange={(v) => setDraft((d) => ({ ...d, [def.key]: v }))}
-                      onReset={() => setDraft((d) => ({ ...d, [def.key]: seeded }))}
+                      onChange={(v) => mutateDraft({ ...draft, [def.key]: v })}
+                      onReset={() => mutateDraft({ ...draft, [def.key]: seeded })}
                     />
                   );
                 })}
