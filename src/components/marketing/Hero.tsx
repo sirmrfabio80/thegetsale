@@ -1,18 +1,24 @@
 import { Link } from "@tanstack/react-router";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
-import { heroSummer } from "@/lib/marketing-media";
+import { useHeroMedia } from "@/lib/marketing-media";
 import { FullBleedSection } from "@/components/FullBleedSection";
 import { MediaBackdrop } from "@/components/MediaBackdrop";
 
 export function Hero() {
   const { enabled: privateBeta } = usePrivateBeta();
+  const { data: media } = useHeroMedia();
 
   const primaryTo = privateBeta ? "/login" : "/signup";
   const primaryLabel = privateBeta ? "Sign in" : "Create your signal";
 
   return (
     <FullBleedSection className="isolate flex min-h-[72svh] flex-col justify-end bg-foreground md:min-h-[82vh]">
-      <MediaBackdrop poster={heroSummer.poster} webm={heroSummer.webm} mp4={heroSummer.mp4} />
+      <MediaBackdrop
+        poster={media?.poster ?? ""}
+        webm={media?.webm ?? undefined}
+        mp4={media?.mp4 ?? undefined}
+      />
+
 
 
       {/* Bottom-up dark scrim for text legibility */}
