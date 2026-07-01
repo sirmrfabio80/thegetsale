@@ -55,8 +55,26 @@ describe("sticky header stays opaque so bands sit flush", () => {
         expect(cls, `${file}: header must not use backdrop-blur`).not.toMatch(/backdrop-blur/);
       }
     });
+
+    it(`${file}: header inner row uses the shared --header-h token`, () => {
+      const src = read(file);
+      expect(
+        src,
+        `${file}: header inner container must size via h-[var(--header-h)] (single source of truth)`,
+      ).toMatch(/h-\[var\(--header-h\)\]/);
+      // No ad-hoc vertical padding on the header row — height is controlled
+      // by the CSS variable so all layouts stay in lockstep.
+      expect(src).not.toMatch(/max-w-\dxl[^"]*\bpy-\d/);
+    });
   }
+
+  it("styles.css defines --header-h exactly once at :root", () => {
+    const css = read("src/styles.css");
+    const decls = css.match(/--header-h\s*:/g) ?? [];
+    expect(decls.length, "expected a single --header-h declaration in :root").toBe(1);
+  });
 });
+
 
 describe("FullBleedSection keeps its viewport-breakout classes", () => {
   const src = read("src/components/FullBleedSection.tsx");
