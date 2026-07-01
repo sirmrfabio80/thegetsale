@@ -48,7 +48,6 @@ export function MarketingNav() {
                   Sign up
                 </Link>
               )}
-
             </>
           )}
         </nav>
