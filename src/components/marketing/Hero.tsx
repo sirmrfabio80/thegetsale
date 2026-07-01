@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 import { heroSummer } from "@/lib/marketing-media";
+import { FullBleedSection } from "@/components/FullBleedSection";
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -24,7 +25,7 @@ export function Hero() {
   const primaryLabel = privateBeta ? "Sign in" : "Create your signal";
 
   return (
-    <section className="relative isolate flex min-h-[72svh] w-full flex-col justify-end overflow-hidden bg-foreground md:min-h-[82vh]">
+    <FullBleedSection className="isolate flex min-h-[72svh] flex-col justify-end bg-foreground md:min-h-[82vh]">
       {reducedMotion ? (
         <img
           src={heroSummer.poster}
@@ -81,6 +82,6 @@ export function Hero() {
           </a>
         </div>
       </div>
-    </section>
+    </FullBleedSection>
   );
 }
