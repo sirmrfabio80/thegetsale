@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { MediaBackdropOptions } from "@/components/media/types";
+
+export type { MediaBackdropOptions, MediaSources, MediaScrim } from "@/components/media/types";
 
 /**
  * SSR-safe reduced-motion hook. Returns true when the user has
@@ -18,25 +21,21 @@ export function useReducedMotion() {
   return reduced;
 }
 
-interface MediaBackdropProps {
-  /** Poster image; always shown as fallback and when reduced motion is on. */
-  poster: string;
-  /** Optional WebM source. */
-  webm?: string;
-  /** Optional MP4 source. */
-  mp4?: string;
-  /** Optional class overrides for the media element. */
-  className?: string;
-}
+/**
+ * MediaBackdrop only consumes the media-layer subset of `MediaBackdropOptions`
+ * — scrim/grain live on the wrapping banner so they can be composed above
+ * the media without leaking into this primitive.
+ */
+export type MediaBackdropProps = Pick<
+  MediaBackdropOptions,
+  "poster" | "webm" | "mp4" | "className"
+>;
 
 /**
- * Single fallback pattern used by both the marketing Hero and the
- * dashboard EditorialBand. Renders an absolute-positioned, object-cover
- * video by default; swaps to the static poster image when the user
- * prefers reduced motion or when no video sources are provided.
- *
- * Keeps overlay/scrim behaviour consistent: same absolute positioning,
- * same sizing, same `aria-hidden` treatment.
+ * Single fallback pattern used by every full-bleed media section. Renders
+ * an absolute-positioned, object-cover video by default; swaps to the
+ * static poster image when the user prefers reduced motion or when no
+ * video sources are provided.
  */
 export function MediaBackdrop({ poster, webm, mp4, className }: MediaBackdropProps) {
   const reducedMotion = useReducedMotion();
@@ -58,7 +57,6 @@ export function MediaBackdrop({ poster, webm, mp4, className }: MediaBackdropPro
       />
     );
   }
-
 
   return (
     <video
