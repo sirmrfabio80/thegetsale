@@ -252,7 +252,13 @@ function Dashboard() {
           </Link>
         </section>
       )}
-      <EditorialBand eyebrow="The Read · Today" headline="Your buy/wait read." />
+      <EditorialBand
+        eyebrow="The Read · Today"
+        headline="Your buy/wait read."
+        videoWebm={heroSummer.webm}
+        videoMp4={heroSummer.mp4}
+        poster={heroSummer.poster}
+      />
 
       <section className="mt-6">
         <p className="max-w-xl text-muted-foreground">
