@@ -82,6 +82,6 @@ export function Hero() {
           </a>
         </div>
       </div>
-    </section>
+    </FullBleedSection>
   );
 }
