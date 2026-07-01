@@ -7,6 +7,7 @@ import { UsersRolesTab } from "@/components/admin/UsersRolesTab";
 import { SystemTab } from "@/components/admin/SystemTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { ThemeTab } from "@/components/admin/ThemeTab";
+import { MediaTab } from "@/components/admin/MediaTab";
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/sales")({
   head: () => ({
@@ -68,8 +69,15 @@ function AdminSalesPage() {
             >
               Design
             </TabsTrigger>
+            <TabsTrigger
+              value="media"
+              className="tab-trigger px-3 py-2 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background md:px-4"
+            >
+              Media
+            </TabsTrigger>
           </TabsList>
         </div>
+
 
         <TabsContent value="houses" className="mt-0">
           <HousesTab />
@@ -89,7 +97,11 @@ function AdminSalesPage() {
         <TabsContent value="design" className="mt-0">
           <ThemeTab />
         </TabsContent>
+        <TabsContent value="media" className="mt-0">
+          <MediaTab />
+        </TabsContent>
       </Tabs>
+
     </PageLayout>
   );
 }
