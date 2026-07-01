@@ -41,9 +41,13 @@ interface MediaBackdropProps {
 export function MediaBackdrop({ poster, webm, mp4, className }: MediaBackdropProps) {
   const reducedMotion = useReducedMotion();
   const hasVideo = Boolean(webm || mp4);
+  const hasPoster = Boolean(poster);
   const shared = cn("absolute inset-0 h-full w-full object-cover", className);
 
+  if (!hasVideo && !hasPoster) return null;
+
   if (!hasVideo || reducedMotion) {
+    if (!hasPoster) return null;
     return (
       <img
         src={poster}
@@ -54,6 +58,7 @@ export function MediaBackdrop({ poster, webm, mp4, className }: MediaBackdropPro
       />
     );
   }
+
 
   return (
     <video

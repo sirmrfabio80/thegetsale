@@ -17,7 +17,7 @@ import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore
 import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
-import { heroSummer } from "@/lib/marketing-media";
+import { useHeroMedia } from "@/lib/marketing-media";
 import { watchlistQueryOptions } from "@/data/store";
 
 const PAGE_SIZE = 12;
@@ -111,6 +111,7 @@ const FILTERS: Array<"All" | Category> = [
 
 function Dashboard() {
   const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
+  const { data: media } = useHeroMedia();
   const houseDTOs = dashboard.houses;
   const needsMarket = dashboard.needsMarket;
   const brands = useMemo(() => houseDTOs.map(toBrand), [houseDTOs]);
@@ -255,10 +256,11 @@ function Dashboard() {
       <EditorialBand
         eyebrow="The Read · Today"
         headline="Your buy/wait read."
-        videoWebm={heroSummer.webm}
-        videoMp4={heroSummer.mp4}
-        poster={heroSummer.poster}
+        videoWebm={media?.webm ?? undefined}
+        videoMp4={media?.mp4 ?? undefined}
+        poster={media?.poster ?? undefined}
       />
+
 
       <section className="mt-6">
         <p className="max-w-xl text-muted-foreground">
