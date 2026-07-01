@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { AuthCTA } from "./AuthCTA";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export function FinalCTA() {
@@ -19,19 +19,15 @@ export function FinalCTA() {
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-3">
-          <Link
-            to={privateBeta ? "/login" : "/signup"}
-            className="inline-flex h-12 items-center justify-center border border-foreground bg-foreground px-8 text-[12px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90"
-          >
-            {privateBeta ? "Sign in" : "Create your signal"}
-          </Link>
+          <AuthCTA variant="primary" size="default" mode="auto" className="px-8" />
           {!privateBeta && (
-            <Link
-              to="/login"
-              className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+            <AuthCTA
+              variant="text"
+              mode="signin"
+              className="text-[12px] uppercase tracking-[0.18em]"
             >
               Already have an account · Sign in
-            </Link>
+            </AuthCTA>
           )}
         </div>
       </div>

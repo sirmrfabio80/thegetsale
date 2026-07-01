@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import { SignalPreviewCard } from "./SignalPreviewCard";
+import { AuthCTA } from "./AuthCTA";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 const samples = [
@@ -49,23 +49,25 @@ export function PreviewSection() {
         {privateBeta ? (
           <>
             Full signals unlock after sign-in.{" "}
-            <Link
-              to="/login"
+            <AuthCTA
+              variant="text"
+              mode="signin"
               className="text-foreground underline underline-offset-4 hover:opacity-70"
             >
               Sign in
-            </Link>
+            </AuthCTA>
             .
           </>
         ) : (
           <>
             Full signals unlock after sign-up.{" "}
-            <Link
-              to="/signup"
+            <AuthCTA
+              variant="text"
+              mode="signup"
               className="text-foreground underline underline-offset-4 hover:opacity-70"
             >
               Create your signal
-            </Link>
+            </AuthCTA>
             .
           </>
         )}

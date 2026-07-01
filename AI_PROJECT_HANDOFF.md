@@ -33,7 +33,7 @@
 
 | Feature | Where | Key files | State | Notes / risks |
 |---|---|---|---|---|
-| Marketing landing | `/` | `routes/index.tsx`, `components/marketing/*` | Production-ready frontend | Redirects authed users to `/dashboard`. |
+| Marketing landing | `/` | `routes/index.tsx`, `components/marketing/*` | Production-ready frontend | Redirects authed users to `/dashboard`. All sign-in/sign-up CTAs use shared `<AuthCTA>` so `/login` and `/signup` routes stay consistent and respect the private-beta gate. |
 | Email + Google auth | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/auth/callback` | `routes/login.tsx` etc., `lib/auth.ts`, `integrations/lovable/index.ts` | Production-ready | Google goes via Lovable broker; never call raw `signInWithOAuth("google")`. |
 | Private-beta gate | Across auth pages | `hooks/use-private-beta.ts`, `lib/app-settings.functions.ts`, `app_settings` table | Working | Default ON if row missing. |
 | Signals dashboard | `/dashboard` | `routes/_authenticated/dashboard.tsx`, `components/BrandCard.tsx` | Backend-connected | Reads `listHousesForDashboard`; sort uses personal setup + style affinity. Infinite scroll via `useInfiniteCount` + `<InfiniteScrollSentinel/>` (initial 12, +12 on bottom sentinel intersect via IntersectionObserver with `400px` rootMargin). Reset deps are user-driven filters only (filter/q/onlyMine/departments/hasSetup) — data refreshes never reset scroll. Hook exposes `loading` for the sentinel pulse and an internal `cooldownRef` (~220ms) that prevents duplicate intersection triggers. `<BackToTop/>` floating button appears past 720px scroll. No `?page` URL param. |
@@ -149,7 +149,7 @@ src/
 │   ├── profile/           # Avatar + connected accounts
 │   ├── brand/SignalEditorial.tsx
 │   ├── BrandCard / WatchlistCard / RecommendationCard / SignalBadge / SaleTimeline / PageLayout
-│   ├── CardBase.tsx          # Shared polymorphic card shell (`as` prop, `h-full` + `flex-col`, signal accent/wash, padding tiers `default|hero|empty`, dashed-border variant, hover shadow-2 + active `translate-y-px`, standardized keyboard `focus-visible:ring-2 ring-ring ring-offset-2`). Co-exports: `CardClampedText` (polymorphic `as`, reserves N lines via `line-clamp-2|3` + `min-height` so heights never shift — covered by `CardClampedText.test.ts`), `CARD_FOCUS_RING` (shared outline+press+transition class for any clickable inside a card), `CardIconAction` (icon-only top-corner toggle button with `pressed` state, shared focus ring, used by BrandCard bookmark), `CardTextAction` (inline text action button, used by WatchlistCard Remove). Consumed by BrandCard, WatchlistCard, RecommendationCard, EmptyStateCard, and SignalPreviewCard (marketing).
+│   ├── AuthCTA.tsx           # Shared sign-in / sign-up CTA component used across marketing header, hero, footer, and preview CTAs. Respects `usePrivateBeta` so `auto` mode routes to `/signup` when open and `/login` during private beta. Variants: `primary`, `secondary`, `text`; sizes: `default`, `small`, `nav`. Always renders TanStack `<Link>` for href, preload, and accessibility.
 │   ├── EmptyStateCard.tsx    # Reusable zero-state surface built on CardBase (`padding="empty"`, `borderStyle="dashed"`, non-interactive). Eyebrow / title / description / actions slots. Used by Dashboard and Watchlist for all empty/filtered-out states so they align with the active card grid.
 ├── lib/
 │   ├── *.functions.ts     # createServerFn entry points (CLIENT-IMPORTABLE)
