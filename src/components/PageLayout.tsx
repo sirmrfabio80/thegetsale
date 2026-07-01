@@ -38,7 +38,8 @@ function TopNav() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-10">
+      <div className="mx-auto flex h-[var(--header-h)] w-full max-w-5xl items-center justify-between px-5 md:px-10">
+
         <Link
           to={auth.status === "authenticated" ? "/dashboard" : "/"}
           aria-label="The Get — home"

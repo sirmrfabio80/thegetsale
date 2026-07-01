@@ -120,7 +120,8 @@ function HydratingShell() {
     <div className="min-h-screen bg-background text-foreground" aria-busy="true" aria-live="polite">
       {/* Top nav skeleton — mirrors PageLayout chrome */}
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-10">
+        <div className="mx-auto flex h-[var(--header-h)] w-full max-w-5xl items-center justify-between px-5 md:px-10">
+
           <span className="font-serif text-2xl leading-none tracking-tight text-foreground/90">
             The Get
           </span>

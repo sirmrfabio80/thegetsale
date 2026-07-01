@@ -41,6 +41,11 @@
 
 :root {
   --radius: 0.25rem;
+  /* Sticky header height — single source of truth for every layout
+     (marketing nav, authenticated shell, skeleton). Consumers can also
+     offset content with `pt-[var(--header-h)]` when needed. */
+  --header-h: 3.5rem;
+
   --background: oklch(0.975 0.008 80);
   --foreground: oklch(0.19 0.015 65);
   --card: oklch(0.99 0.006 80);
