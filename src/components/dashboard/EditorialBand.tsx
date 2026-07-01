@@ -40,8 +40,8 @@ export function EditorialBand({
   return (
     <section
       aria-label={alt ?? headline}
-      className="relative mt-10 overflow-hidden border border-border"
-      style={{ height: "clamp(200px, 32vw, 340px)", boxShadow: "var(--shadow-3)" }}
+      className="relative left-1/2 right-1/2 -mx-[50vw] w-screen max-w-none overflow-hidden border-y border-border"
+      style={{ height: "clamp(220px, 36vw, 420px)", boxShadow: "var(--shadow-3)" }}
     >
       {hasVideo && !reducedMotion ? (
         <video
