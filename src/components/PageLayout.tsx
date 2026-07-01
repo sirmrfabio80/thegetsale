@@ -41,17 +41,25 @@ function TopNav() {
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-10">
         <Link
           to={auth.status === "authenticated" ? "/dashboard" : "/"}
+          aria-label="The Get — home"
           className="font-serif text-2xl leading-none tracking-tight"
         >
           The Get
         </Link>
-        <nav className="flex items-center gap-1 text-[12px]">
+        <nav aria-label="Primary" className="flex items-center gap-1 text-[12px]">
           <NavLink to="/dashboard">Signals</NavLink>
           <NavLink to="/watchlist">Watchlist</NavLink>
           {isAdmin && <NavLink to="/admin/sales">Admin</NavLink>}
           {auth.status === "authenticated" && (
             <DropdownMenu>
-              <DropdownMenuTrigger className="ml-2 inline-flex h-9 items-center gap-2 border border-border pl-1 pr-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground">
+              <DropdownMenuTrigger
+                aria-label={
+                  triggerLabel
+                    ? `Account menu for ${triggerLabel}`
+                    : "Account menu"
+                }
+                className="ml-2 inline-flex min-h-11 items-center gap-2 border border-border pl-1 pr-3 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <AvatarBlock
                   url={profile?.avatarUrl ?? null}
                   fallback={fallback}
@@ -85,6 +93,7 @@ function TopNav() {
             </DropdownMenu>
           )}
         </nav>
+
       </div>
     </header>
   );
@@ -94,13 +103,17 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <Link
       to={to}
-      className="px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
-      activeProps={{ className: "px-3 py-2 text-foreground" }}
+      className="inline-flex min-h-11 items-center px-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      activeProps={{
+        className:
+          "inline-flex min-h-11 items-center px-3 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      }}
     >
       {children}
     </Link>
   );
 }
+
 
 function Footer() {
   return (
