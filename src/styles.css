@@ -176,6 +176,42 @@ optgroup,
   user-select: text;
 }
 
+/* Radix/shadcn overlays — Dialog, AlertDialog, Sheet, Drawer, Popover,
+   HoverCard, Tooltip, Dropdown/Context/Menubar content, and Select content.
+   Anything rendered into a Radix portal should let users select text inside. */
+[role="dialog"],
+[role="alertdialog"],
+[role="tooltip"],
+[data-radix-popper-content-wrapper],
+[data-radix-popper-content-wrapper] *,
+[data-radix-dialog-content],
+[data-radix-dialog-content] *,
+[data-radix-alert-dialog-content],
+[data-radix-alert-dialog-content] *,
+[data-radix-popover-content],
+[data-radix-popover-content] *,
+[data-radix-hover-card-content],
+[data-radix-hover-card-content] *,
+[data-radix-tooltip-content],
+[data-radix-tooltip-content] *,
+[data-radix-dropdown-menu-content],
+[data-radix-dropdown-menu-content] *,
+[data-radix-context-menu-content],
+[data-radix-context-menu-content] *,
+[data-radix-menubar-content],
+[data-radix-menubar-content] *,
+[data-radix-select-content],
+[data-radix-select-content] *,
+[data-sonner-toaster],
+[data-sonner-toaster] *,
+[role="dialog"] *,
+[role="alertdialog"] *,
+[role="tooltip"] * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+
 
 /* Opt-in selection (applied at the Admin layout root). */
 .allow-select,
