@@ -18,6 +18,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BrandIdRouteImport } from './routes/brand.$id'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthSplatRouteImport } from './routes/auth.$'
 import { Route as AuthenticatedWatchlistRouteImport } from './routes/_authenticated/watchlist'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -69,6 +70,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthSplatRoute = AuthSplatRouteImport.update({
+  id: '/auth/$',
+  path: '/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWatchlistRoute = AuthenticatedWatchlistRouteImport.update({
   id: '/watchlist',
   path: '/watchlist',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
+  '/auth/$': typeof AuthSplatRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/brand/$id': typeof BrandIdRoute
   '/admin/sales': typeof AuthenticatedAdminAdminSalesRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
+  '/auth/$': typeof AuthSplatRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/brand/$id': typeof BrandIdRoute
   '/admin/sales': typeof AuthenticatedAdminAdminSalesRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/watchlist': typeof AuthenticatedWatchlistRoute
+  '/auth/$': typeof AuthSplatRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/brand/$id': typeof BrandIdRoute
   '/_authenticated/_admin/admin/sales': typeof AuthenticatedAdminAdminSalesRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/setup'
     | '/watchlist'
+    | '/auth/$'
     | '/auth/callback'
     | '/brand/$id'
     | '/admin/sales'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/setup'
     | '/watchlist'
+    | '/auth/$'
     | '/auth/callback'
     | '/brand/$id'
     | '/admin/sales'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/setup'
     | '/_authenticated/watchlist'
+    | '/auth/$'
     | '/auth/callback'
     | '/brand/$id'
     | '/_authenticated/_admin/admin/sales'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   PreviewRoute: typeof PreviewRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  AuthSplatRoute: typeof AuthSplatRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   BrandIdRoute: typeof BrandIdRoute
 }
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/$': {
+      id: '/auth/$'
+      path: '/auth/$'
+      fullPath: '/auth/$'
+      preLoaderRoute: typeof AuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/watchlist': {
@@ -359,6 +379,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreviewRoute: PreviewRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  AuthSplatRoute: AuthSplatRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   BrandIdRoute: BrandIdRoute,
 }
