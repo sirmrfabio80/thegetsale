@@ -10,12 +10,14 @@ export function MarketingNav() {
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-4 md:px-10">
         <Link
           to={auth.status === "authenticated" ? "/dashboard" : "/"}
+          aria-label="The Get — home"
           className="font-serif text-2xl leading-none tracking-tight"
         >
           The Get
         </Link>
 
-        <nav className="flex items-center gap-2 md:gap-3">
+        <nav aria-label="Primary" className="flex items-center gap-2 md:gap-3">
+
           {auth.status === "authenticated" ? (
             <>
               <button
