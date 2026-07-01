@@ -31,6 +31,14 @@ function AdminLayout() {
   const { data, isLoading } = useIsAdmin();
   const navigate = useNavigate();
 
+  // Admin pages are the exception to the app-wide text-selection block.
+  // Dialogs/drawers/popovers portal to document.body, so we also toggle the
+  // .allow-select class on the body so their content inherits selection.
+  useEffect(() => {
+    document.body.classList.add("allow-select");
+    return () => document.body.classList.remove("allow-select");
+  }, []);
+
   const denied = !isLoading && data?.isAdmin === false;
 
   useEffect(() => {

@@ -229,6 +229,7 @@ Public reads (brand detail, dashboard for logged-out) → supabaseAdmin scoped b
   - `ConfidenceArc` (`components/ConfidenceArc.tsx`) — small radial SVG arc + numeric `{score}/100` text (signal is never colour-only); mounted inside `SignalEditorial`'s top rail.
   - SignalBadge color-coded by `--signal-*`.
 - **Responsive**: mobile-first; grids collapse to single column; nav avoids overflow.
+- **Text selection**: disabled app-wide via `body { user-select: none; }` in `styles.css` (keeps the app feel like a native surface). Form fields, textareas, comboboxes/searchboxes, and any `[data-selectable]` element remain selectable. Admin pages opt back in with `.allow-select`, and the admin layout also toggles that class on `document.body` so portaled modals, drawers, and popovers inherit selection.
 - **Accessibility**: focus rings via `--ring`; `aria-busy`/`aria-live` on shells; semantic headings. Some custom buttons could use better focus contrast — `unclear`, worth audit.
 - **Inconsistencies / polish opportunities**:
   - Root `<head>` still has `"Lorem ipsum"` description + Twitter copy.
