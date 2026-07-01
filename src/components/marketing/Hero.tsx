@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 import { useHeroMedia } from "@/lib/marketing-media";
-import { FullBleedSection } from "@/components/FullBleedSection";
-import { MediaBackdrop } from "@/components/MediaBackdrop";
+import { VideoBanner } from "@/components/VideoBanner";
 
 export function Hero() {
   const { enabled: privateBeta } = usePrivateBeta();
@@ -12,22 +11,14 @@ export function Hero() {
   const primaryLabel = privateBeta ? "Sign in" : "Create your signal";
 
   return (
-    <FullBleedSection className="isolate flex min-h-[72svh] flex-col justify-end bg-foreground md:min-h-[82vh]">
-      <MediaBackdrop
-        poster={media?.poster ?? ""}
-        webm={media?.webm ?? undefined}
-        mp4={media?.mp4 ?? undefined}
-      />
-
-
-
-      {/* Bottom-up dark scrim for text legibility */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
-      />
-
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 pt-40 pb-16 text-background md:px-10 md:pt-56 md:pb-24">
+    <VideoBanner
+      webm={media?.webm ?? undefined}
+      mp4={media?.mp4 ?? undefined}
+      poster={media?.poster ?? undefined}
+      scrim="bottom"
+      className="flex min-h-[72svh] flex-col justify-end bg-foreground md:min-h-[82vh]"
+    >
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col justify-end px-5 pt-40 pb-16 text-background md:px-10 md:pt-56 md:pb-24">
         <p className="eyebrow text-background/80">Private shopping intelligence</p>
         <h1 className="mt-6 font-serif text-[2.75rem] leading-[1.02] tracking-tight md:text-[5.5rem]">
           Know when to buy.
@@ -54,6 +45,6 @@ export function Hero() {
           </a>
         </div>
       </div>
-    </FullBleedSection>
+    </VideoBanner>
   );
 }
