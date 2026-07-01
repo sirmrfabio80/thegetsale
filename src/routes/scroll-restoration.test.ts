@@ -18,7 +18,7 @@ import { resolve } from "node:path";
  * /tmp/browser/scroll/run.py; this test guards the source contract.
  */
 
-const read = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8");
+const read = (p: string) => readFileSync(resolve(__dirname, "..", "..", p), "utf8");
 
 describe("dashboard/watchlist scroll restoration", () => {
   const router = read("src/router.tsx");
