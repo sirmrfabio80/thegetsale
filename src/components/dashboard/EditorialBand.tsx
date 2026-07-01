@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import defaultBand from "@/assets/editorial-band-default.svg";
+import { FullBleedSection } from "@/components/FullBleedSection";
 
 interface EditorialBandProps {
   eyebrow: string;
@@ -38,9 +39,9 @@ export function EditorialBand({
   const fallbackSrc = poster ?? imageUrl ?? defaultBand;
 
   return (
-    <section
-      aria-label={alt ?? headline}
-      className="relative left-1/2 right-1/2 -mx-[50vw] w-screen max-w-none overflow-hidden border-y border-border"
+    <FullBleedSection
+      ariaLabel={alt ?? headline}
+      className="border-y border-border"
       style={{ height: "clamp(220px, 36vw, 420px)", boxShadow: "var(--shadow-3)" }}
     >
       {hasVideo && !reducedMotion ? (
@@ -73,6 +74,6 @@ export function EditorialBand({
           <h1 className="mt-1 font-serif text-3xl leading-[1.05] md:text-5xl">{headline}</h1>
         </div>
       </div>
-    </section>
+    </FullBleedSection>
   );
 }
