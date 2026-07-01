@@ -1,53 +1,19 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 import { heroSummer } from "@/lib/marketing-media";
 import { FullBleedSection } from "@/components/FullBleedSection";
-
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
-}
+import { MediaBackdrop } from "@/components/MediaBackdrop";
 
 export function Hero() {
   const { enabled: privateBeta } = usePrivateBeta();
-  const reducedMotion = useReducedMotion();
 
   const primaryTo = privateBeta ? "/login" : "/signup";
   const primaryLabel = privateBeta ? "Sign in" : "Create your signal";
 
   return (
     <FullBleedSection className="isolate flex min-h-[72svh] flex-col justify-end bg-foreground md:min-h-[82vh]">
-      {reducedMotion ? (
-        <img
-          src={heroSummer.poster}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      ) : (
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster={heroSummer.poster}
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover"
-        >
-          <source src={heroSummer.webm} type="video/webm" />
-          <source src={heroSummer.mp4} type="video/mp4" />
-        </video>
-      )}
+      <MediaBackdrop poster={heroSummer.poster} webm={heroSummer.webm} mp4={heroSummer.mp4} />
+
 
       {/* Bottom-up dark scrim for text legibility */}
       <div
