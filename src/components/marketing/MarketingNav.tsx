@@ -1,11 +1,11 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useAuth, signOut } from "@/lib/auth";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 export function MarketingNav() {
   const auth = useAuth();
-  const navigate = useNavigate();
   const { enabled: privateBeta } = usePrivateBeta();
+
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -42,13 +42,14 @@ export function MarketingNav() {
                 Sign in
               </Link>
               {!privateBeta && (
-                <button
-                  onClick={() => navigate({ to: "/signup" })}
+                <Link
+                  to="/signup"
                   className="inline-flex h-11 items-center border border-foreground bg-foreground px-4 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 md:px-5"
                 >
                   Sign up
-                </button>
+                </Link>
               )}
+
             </>
           )}
         </nav>
