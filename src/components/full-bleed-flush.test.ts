@@ -116,3 +116,62 @@ describe("Dashboard and Watchlist mount the band at the top of PageLayout", () =
     expect(watchSrc).toMatch(/<EditorialBand\b/);
   });
 });
+
+/**
+ * Reduced-motion + overlay consistency: any future full-bleed editorial
+ * band MUST reuse `VideoBanner` / `MediaBackdrop` so overlay spacing,
+ * scrim variants, and the `prefers-reduced-motion` poster swap stay
+ * identical across sections. Hand-rolled `<video>` tags in components
+ * or routes drift from that contract and are forbidden.
+ */
+describe("full-bleed bands share the reduced-motion + overlay pattern", () => {
+  const { readdirSync, statSync } = require("node:fs") as typeof import("node:fs");
+
+  const ALLOWED = new Set([
+    "src/components/MediaBackdrop.tsx",
+    "src/components/VideoBanner.tsx",
+  ]);
+
+  function walk(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const full = `${dir}/${entry}`;
+      const rel = full.replace(`${resolve(__dirname, "..", "..")}/`, "");
+      const s = statSync(full);
+      if (s.isDirectory()) {
+        if (entry === "node_modules" || entry.startsWith(".")) continue;
+        walk(full, out);
+      } else if (/\.(tsx|jsx)$/.test(entry) && !entry.endsWith(".test.tsx")) {
+        out.push(rel);
+      }
+    }
+    return out;
+  }
+
+  const files = walk(resolve(__dirname, "..", "..", "src"));
+
+  it("no component/route defines a raw <video> outside MediaBackdrop", () => {
+    const offenders: string[] = [];
+    for (const rel of files) {
+      if (ALLOWED.has(rel)) continue;
+      const src = read(rel);
+      if (/<video[\s>]/.test(src)) offenders.push(rel);
+    }
+    expect(
+      offenders,
+      `Use <VideoBanner> or <MediaBackdrop> instead of a raw <video>: ${offenders.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("MediaBackdrop still owns the prefers-reduced-motion swap", () => {
+    const src = read("src/components/MediaBackdrop.tsx");
+    expect(src).toMatch(/prefers-reduced-motion:\s*reduce/);
+    expect(src).toMatch(/useReducedMotion/);
+  });
+
+  it("VideoBanner exposes the shared overlay contract", () => {
+    const src = read("src/components/VideoBanner.tsx");
+    expect(src).toMatch(/MediaBackdropOptions/);
+    expect(src).toMatch(/scrim\s*=\s*"none"/);
+  });
+});
+

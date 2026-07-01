@@ -1,11 +1,20 @@
 /**
  * Shared prop interfaces for media backdrop patterns.
  *
- * Both `MediaBackdrop` (the low-level img/video swap) and `VideoBanner`
- * (the full-bleed section wrapper) consume these types so future sections
- * — product spotlights, editorial covers, footer bands — can reuse the
- * exact same shape without introducing behaviour drift.
+ * Every full-bleed editorial band on the site — marketing hero, dashboard
+ * band, watchlist band, and any future section — MUST be built with
+ * `VideoBanner` (which composes `FullBleedSection` + `MediaBackdrop`).
+ * That guarantees a single implementation of:
+ *   • `prefers-reduced-motion` → poster swap
+ *   • absolute-inset, object-cover sizing
+ *   • scrim + grain overlay timing and spacing
+ *   • flush, viewport-edge layout under the sticky header
+ *
+ * Do NOT hand-roll `<video>` elements in new sections; extend this
+ * interface additively if a new option is needed. The
+ * `full-bleed-flush.test.ts` suite enforces this contract.
  */
+
 
 /** Video source URLs. Either or both may be omitted; the poster is used alone. */
 export interface MediaSources {
