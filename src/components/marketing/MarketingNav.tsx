@@ -4,7 +4,6 @@ import { AuthCTA } from "./AuthCTA";
 
 export function MarketingNav() {
   const auth = useAuth();
-  const { enabled: privateBeta } = usePrivateBeta();
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -34,20 +33,13 @@ export function MarketingNav() {
             </>
           ) : (
             <>
-              <Link
-                to="/login"
-                className="inline-flex h-11 items-center px-3 text-[12px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Sign in
-              </Link>
-              {!privateBeta && (
-                <Link
-                  to="/signup"
-                  className="inline-flex h-11 items-center border border-foreground bg-foreground px-4 text-[11px] uppercase tracking-[0.18em] text-background transition-opacity hover:opacity-90 md:px-5"
-                >
-                  Sign up
-                </Link>
-              )}
+              <AuthCTA variant="text" size="nav" mode="signin" />
+              <AuthCTA
+                variant="primary"
+                size="nav"
+                mode="signup"
+                className="px-4 md:px-5 text-[11px]"
+              />
             </>
           )}
         </nav>
