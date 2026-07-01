@@ -15,6 +15,8 @@ import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import { EmptyStateCard } from "@/components/EmptyStateCard";
 import { BackToTop } from "@/components/BackToTop";
 import { useInfiniteCount } from "@/hooks/use-infinite-count";
+import { EditorialBand } from "@/components/dashboard/EditorialBand";
+import { useHeroMedia } from "@/lib/marketing-media";
 
 // Single source of truth so the "Updating list…" flash settles cleanly
 // after a bulk department toggle.
@@ -121,6 +123,7 @@ function WatchlistErrorBoundary({ error, reset }: { error: Error; reset: () => v
 function WatchlistPage() {
   const items = useWatchlist();
   const { data: dashboard } = useSuspenseQuery(housesQueryOptions);
+  const { data: media } = useHeroMedia();
   const houseDTOs = dashboard.houses;
   const needsMarket = dashboard.needsMarket;
   const brandsBySlug = useMemo(() => {
@@ -353,6 +356,13 @@ function WatchlistPage() {
 
   return (
     <PageLayout>
+      <EditorialBand
+        eyebrow="Your watchlist"
+        headline="The houses you're watching."
+        videoWebm={media?.webm ?? undefined}
+        videoMp4={media?.mp4 ?? undefined}
+        poster={media?.poster ?? undefined}
+      />
       {needsMarket && (
         <section className="mt-10 border border-foreground/20 bg-muted/40 p-5 md:p-6">
           <p className="eyebrow">Set your market</p>
@@ -367,7 +377,7 @@ function WatchlistPage() {
           </Link>
         </section>
       )}
-      <section className="pt-16 md:pt-24">
+      <section className="pt-10 md:pt-14">
 
         <p className="eyebrow">Your watchlist</p>
         <h1 className="mt-4 font-serif text-4xl leading-tight md:text-6xl">
