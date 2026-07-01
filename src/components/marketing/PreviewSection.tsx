@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import { SignalPreviewCard } from "./SignalPreviewCard";
+import { AuthCTA } from "./AuthCTA";
 import { usePrivateBeta } from "@/hooks/use-private-beta";
 
 const samples = [
