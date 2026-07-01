@@ -6,7 +6,6 @@ export function MarketingNav() {
   const auth = useAuth();
   const { enabled: privateBeta } = usePrivateBeta();
 
-
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-4 md:px-10">
