@@ -33,7 +33,7 @@
 
 | Feature | Where | Key files | State | Notes / risks |
 |---|---|---|---|---|
-| Marketing landing | `/` | `routes/index.tsx`, `components/marketing/*` | Production-ready frontend | Redirects authed users to `/dashboard`. |
+| Marketing landing | `/` | `routes/index.tsx`, `components/marketing/*` | Production-ready frontend | Redirects authed users to `/dashboard`. All sign-in/sign-up CTAs use shared `<AuthCTA>` so `/login` and `/signup` routes stay consistent and respect the private-beta gate. |
 | Email + Google auth | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/auth/callback` | `routes/login.tsx` etc., `lib/auth.ts`, `integrations/lovable/index.ts` | Production-ready | Google goes via Lovable broker; never call raw `signInWithOAuth("google")`. |
 | Private-beta gate | Across auth pages | `hooks/use-private-beta.ts`, `lib/app-settings.functions.ts`, `app_settings` table | Working | Default ON if row missing. |
 | Signals dashboard | `/dashboard` | `routes/_authenticated/dashboard.tsx`, `components/BrandCard.tsx` | Backend-connected | Reads `listHousesForDashboard`; sort uses personal setup + style affinity. Infinite scroll via `useInfiniteCount` + `<InfiniteScrollSentinel/>` (initial 12, +12 on bottom sentinel intersect via IntersectionObserver with `400px` rootMargin). Reset deps are user-driven filters only (filter/q/onlyMine/departments/hasSetup) — data refreshes never reset scroll. Hook exposes `loading` for the sentinel pulse and an internal `cooldownRef` (~220ms) that prevents duplicate intersection triggers. `<BackToTop/>` floating button appears past 720px scroll. No `?page` URL param. |
