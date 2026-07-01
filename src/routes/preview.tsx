@@ -51,7 +51,7 @@ function PreviewDashboard() {
     <PageLayout>
       <section className="mt-8 border border-border bg-muted/30 px-4 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         Preview · sample data · no sign-in required ·{" "}
-        <Link to="/auth" className="underline-offset-4 hover:text-foreground hover:underline">
+        <Link to="/login" className="underline-offset-4 hover:text-foreground hover:underline">
           Sign in for the live read
         </Link>
       </section>
