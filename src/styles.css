@@ -163,6 +163,14 @@ optgroup,
 [role="searchbox"],
 [role="combobox"],
 [role="spinbutton"],
+[role="listbox"],
+[role="option"],
+[role="menu"],
+[role="menuitem"],
+[role="menuitemcheckbox"],
+[role="menuitemradio"],
+[cmdk-root],
+[cmdk-root] *,
 [data-selectable] {
   -webkit-user-select: text;
   user-select: text;
