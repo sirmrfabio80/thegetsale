@@ -19,10 +19,8 @@ const baseClasses =
   "inline-flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 const variantClasses: Record<AuthCTAVariant, string> = {
-  primary:
-    "border border-foreground bg-foreground text-background hover:opacity-90",
-  secondary:
-    "border border-border text-foreground transition-colors hover:border-foreground",
+  primary: "border border-foreground bg-foreground text-background hover:opacity-90",
+  secondary: "border border-border text-foreground transition-colors hover:border-foreground",
   text: "text-muted-foreground transition-colors hover:text-foreground",
 };
 
@@ -59,7 +57,7 @@ export function AuthCTA({
         variantClasses[variant],
         sizeClasses[size],
         variant === "text" && "h-auto px-0 normal-case tracking-normal",
-        className
+        className,
       )}
     >
       {children ?? defaultLabels[mode]}
