@@ -17,6 +17,7 @@ import { setupQueryOptions, useSetup, useSetupMutation } from "@/data/setupStore
 import { mapSetupCategories, matchesSelection, brandDepartment } from "@/data/categoryMap";
 import { styleScore } from "@/data/styles";
 import { listHousesForDashboard, type HouseDashboardDTO } from "@/lib/brands.functions";
+import { heroSummer } from "@/lib/marketing-media";
 import { watchlistQueryOptions } from "@/data/store";
 
 const PAGE_SIZE = 12;
