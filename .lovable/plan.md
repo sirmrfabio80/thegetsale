@@ -1,136 +1,76 @@
+# Full-bleed video Hero (revised)
 
-# DB-driven global theming for The Get
+Replace the current padded Hero with an edge-to-edge, tall banner playing a muted looping summer video behind the existing headline, eyebrow, subcopy, and CTAs.
 
-One registry of named visual variables, persisted in the database, edited from a new admin **Design** tab, applied globally (including logged-out pages) with no flash. Ship a second seeded **Playful** theme to prove the switch.
+## Scope (only these change)
 
-## 1. Database — `themes` table
+1. New public Supabase Storage bucket `marketing-media`.
+2. New helper `src/lib/marketing-media.ts` — wraps `supabase.storage.from("marketing-media").getPublicUrl(path)` and exports resolved URLs for `hero-summer.webm`, `hero-summer.mp4`, `hero-summer-poster.jpg`.
+3. Rewrite `src/components/marketing/Hero.tsx`.
 
-Migration creates:
+No changes to `MarketingLayout`, `MarketingNav`, `index.tsx`, other sections, tokens, or dependencies.
 
-- `public.themes`: `id uuid pk default gen_random_uuid()`, `key text unique not null` (slug), `name text not null`, `tokens jsonb not null default '{}'::jsonb`, `is_active boolean not null default false`, `created_at`, `updated_at`.
-- Partial unique index `create unique index themes_only_one_active on public.themes (is_active) where is_active = true` — guarantees a single active row.
-- GRANTs: `SELECT` to `anon, authenticated` (public pages must read the active theme during SSR via anon as well as the admin client); `ALL` to `service_role`.
-- RLS enabled. Policies mirror `app_settings`:
-  - `select` to `anon, authenticated`: `using (true)`.
-  - `all` to `authenticated` gated by `public.has_role(auth.uid(), 'admin')`.
-- `update_updated_at_column` trigger on update.
-- Seed two rows in the same migration (see §6).
+## CTAs
 
-## 2. Token registry — single source of truth
+Keep the **existing inline markup** — a TanStack `<Link>` primary CTA whose `to` and label are driven by `usePrivateBeta` (`/login` + "Sign in" when beta, `/signup` + "Create your signal" otherwise), plus the `<a href="#how-it-works">See how it works</a>` secondary. No `AuthCTA` component. Only restyle for dark scrim using existing tokens (`text-background`, `border-background/40`, `hover:border-background`).
 
-`src/lib/theme/registry.ts` exports an ordered array. Each entry:
+## Hero structure
 
-```ts
-{ key, cssVar, label, description, group, type, default, options? }
+```text
+<section relative full-bleed min-h-[72svh] md:min-h-[82vh] overflow-hidden bg-foreground>
+  ├─ if !reducedMotion: <video absolute inset-0 w-full h-full object-cover
+  │     autoPlay muted loop playsInline preload="metadata" poster={posterUrl} aria-hidden>
+  │        <source src=webm type=video/webm />
+  │        <source src=mp4  type=video/mp4  />
+  │     </video>
+  ├─ if reducedMotion: <img src={posterUrl} class="absolute inset-0 h-full w-full object-cover" aria-hidden />
+  ├─ scrim: absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none
+  └─ content: relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-end
+              px-5 md:px-10 pt-40 md:pt-56 pb-16 md:pb-24
+        - eyebrow
+        - h1 serif (existing copy)
+        - subcopy
+        - CTA row (existing Link + anchor, dark-scrim styling)
 ```
 
-- `group`: `"Color" | "Typography" | "Shape & Borders" | "Shadows" | "Labels & Motion"`.
-- `type`: `"color" | "font" | "length" | "select" | "shadow"`.
-- Includes every existing token in `:root` (background, foreground, card, popover, primary, secondary, muted, accent, destructive, border, input, ring, signal-*, signal-*-wash, --radius, --font-serif, --font-sans, --shadow-1/2/3) **plus** new structural tokens:
-  - `--radius-card`, `--radius-button`, `--radius-badge`
-  - `--border-width`
-  - `--label-transform` (select: `uppercase | none`)
-  - `--label-tracking` (length)
+Full-bleed: the section drops `max-w-*` and side padding so it spans the viewport; the inner content column re-introduces `max-w-6xl` + `px-5 md:px-10`. Height uses `min-h-[72svh] md:min-h-[82vh]` only (no `min-h-inherit`); the content column fills the section via `absolute inset-0` or by making the section a flex column (`flex flex-col justify-end`) with the content column as a normal child — the plan uses the flex-column approach so no absolute positioning of text is needed.
 
-Defaults exactly match today's `:root` values so Editorial is byte-for-byte unchanged.
+## Reduced motion
 
-Helper: `tokensToCss(tokens) -> ":root{ --x: y; … }"` — falls back to registry defaults for missing keys; ignores unknown keys.
+Small SSR-safe `useReducedMotion` hook (matchMedia `(prefers-reduced-motion: reduce)`, `useState` + `useEffect`). When true, render only the poster `<img>`; skip `<video>` entirely so no sources are fetched and no autoplay occurs.
 
-## 3. Structural tokenisation
+## Media helper
 
-Goal: stop encoding "serious editorial" only in scattered utility classes so a Playful theme can actually look different.
+`src/lib/marketing-media.ts`:
 
-- `src/styles.css`:
-  - Add new tokens to `:root` with current-look defaults: `--radius-card: 0; --radius-button: 0; --radius-badge: 0; --border-width: 1px; --label-transform: uppercase; --label-tracking: 0.18em;`
-  - Expose what's needed via `@theme inline`.
-  - Update `.eyebrow` to `text-transform: var(--label-transform); letter-spacing: var(--label-tracking);`
-  - Add small reusable utility classes (`@utility`): `.ui-card-radius { border-radius: var(--radius-card); }`, `.btn-shape { border-radius: var(--radius-button); }`, `.badge-shape { border-radius: var(--radius-badge); }`, `.tab-trigger { border-radius: var(--radius-button); text-transform: var(--label-transform); letter-spacing: var(--label-tracking); }`.
-- Replace hard-coded clusters (visual-only, no behaviour change) in at minimum:
-  - `src/components/CardBase.tsx` (cards inherit `--radius-card`).
-  - `src/components/SignalBadge.tsx` (`uppercase tracking-[0.18em]` → token-driven; pill via `badge-shape`).
-  - `src/components/ui/button.tsx` (`rounded-*` → `btn-shape`).
-  - `src/routes/_authenticated/_admin/admin.sales.tsx` Tabs (`rounded-none …` → `tab-trigger`).
-- Other `rounded-none` / `uppercase tracking-[0.18em]` occurrences are not blocking; sweep where touched.
+```ts
+import { supabase } from "@/integrations/supabase/client";
+const url = (p: string) =>
+  supabase.storage.from("marketing-media").getPublicUrl(p).data.publicUrl;
+export const heroSummer = {
+  webm: url("hero-summer.webm"),
+  mp4: url("hero-summer.mp4"),
+  poster: url("hero-summer-poster.jpg"),
+};
+```
 
-## 4. Server functions — `src/lib/theme.functions.ts`
+## Storage bucket & policies
 
-Pattern matches `src/lib/app-settings.functions.ts` (Zod input validators, `requireSupabaseAuth` + `has_role` for admin writes, `supabaseAdmin` for writes loaded inside handlers per Cloud rules).
+Create `marketing-media` (public) via the storage tool. Then migration on `storage.objects` mirroring the real `brand-logos` pattern:
 
-- `getActiveTheme` — `GET`, **no auth**. Reads via server publishable client (anon) so SSR for logged-out pages works. Returns `{ key, name, tokens }`; if no row, returns registry defaults under `key: "editorial"`.
-- `listThemes` — admin.
-- `getTheme({ key })` — admin.
-- `createTheme({ name })` — admin. Slugifies name → `key`; duplicates the currently-active theme's tokens; `is_active = false`.
-- `upsertThemeTokens({ key, tokens })` — admin. Validates each token key against the registry; merges into existing `tokens` jsonb.
-- `setActiveTheme({ key })` — admin. Single transaction (RPC or two-step `update … set is_active = false where is_active`; `update … set is_active = true where key = $1`) so the partial-unique constraint never trips mid-flight.
+- **SELECT**: public (anyone) where `bucket_id = 'marketing-media'`.
+- **INSERT / UPDATE / DELETE**: admin-only via `public.has_role(auth.uid(), 'admin')` where `bucket_id = 'marketing-media'`.
 
-## 5. SSR injection — no FOUC
+You upload `hero-summer.webm`, `hero-summer.mp4`, `hero-summer-poster.jpg` to the bucket root after it exists.
 
-`src/routes/__root.tsx`:
+## Accessibility & perf
 
-- Add a root `loader` that calls `getActiveTheme()` and returns `{ themeCss }` (string from `tokensToCss`).
-- In `RootShell`, render after `<HeadContent />` and after the stylesheet `<link>`:
-  ```tsx
-  <style id="theme-tokens" dangerouslySetInnerHTML={{ __html: themeCss }} />
-  ```
-- Source order matters: defaults in `styles.css` first, DB overrides last. Public/marketing pages get themed server-side. Existing meta/links and the async Google Fonts script untouched.
-- React Query key `["theme", "active"]` invalidated after `setActiveTheme` / `upsertThemeTokens`; `router.invalidate()` re-runs the loader so the injected `<style>` updates without a full reload.
+- Video/poster are decorative → `aria-hidden`, no captions.
+- `preload="metadata"` keeps initial payload small; poster paints immediately.
+- Legibility from bottom-up scrim; only existing tokens used.
 
-## 6. Seeded themes (in migration)
+## Out of scope
 
-- **`editorial`** — `is_active = true`. `tokens` = exact current `:root` values (warm off-white OKLCH, sharp corners, uppercase 0.18em labels, quiet shadows).
-- **`playful`** — `is_active = false`. Visibly different:
-  - `--radius-card: 1rem; --radius-button: 9999px; --radius-badge: 9999px;`
-  - `--label-transform: none; --label-tracking: 0;`
-  - Higher-chroma vibrant OKLCH primary/accent and brighter signal colours, contrast-safe against the surface.
-  - Softer/larger shadows (e.g. `--shadow-2: 0 8px 24px -8px oklch(0 0 0 / 0.14)`).
-  - Keep Inter/Instrument Serif to avoid loading a new font in this slice.
+Sections below the hero, nav, layout wrappers, tokens, deps, analytics.
 
-## 7. Admin Design tab
-
-`src/components/admin/ThemeTab.tsx`, wired into the existing `<Tabs>` in `src/routes/_authenticated/_admin/admin.sales.tsx` as a new `TabsTrigger value="design"` labelled "Design" using the same `tab-trigger` styling.
-
-Contents:
-
-- Theme `<Select>` listing all themes + a small "Active" tag next to the active one.
-- Buttons: **Set as active** (calls `setActiveTheme`), **Duplicate** (calls `createTheme`, prompts for name).
-- Registry-driven form: variables grouped by `group`, each row shows `label`, `description` as helper text, and an input chosen from `type`:
-  - `color`: text input prefilled with the OKLCH string + a live swatch (`<div style={{ background: value }}>`). Note explaining OKLCH is fine and not lossy.
-  - `font` / `length`: text input.
-  - `select`: `<Select>` of `options`.
-  - `shadow`: text input.
-- Save calls `upsertThemeTokens`; inline pending → "Saved" indicator beside each group's save button. **No toasts** (per `src/lib/toast.ts` shim). Inputs disabled while mutating. Invalidate `["themes"]` and `["theme","active"]` on success.
-- Admin-only enforced by existing `_admin` route guard; server fns re-check `has_role`.
-
-## Technical notes
-
-- `themes.tokens` shape: flat `Record<string,string>` keyed by `cssVar` (e.g. `"--primary": "oklch(0.19 0.015 65)"`). Validation rejects keys not in the registry on write.
-- `getActiveTheme` is called from the root loader on every request — cheap single-row read; safe for anon. No service-role needed on read.
-- Partial-unique index + transactional `setActiveTheme` keeps the "one active" invariant without app-layer races.
-- `tokensToCss` escapes values minimally (strip `;` `}` `<`) to prevent CSS-injection; only registry-allowed keys are emitted regardless.
-- No `tailwind.config.js`. Stays on Tailwind v4 + `@theme inline` in `styles.css`. OKLCH preserved.
-- Toasts remain disabled. Sonner is not reintroduced.
-- AI_PROJECT_HANDOFF.md gets a short "Theming" section noting the registry, server fns, SSR injection, and seeded themes.
-
-## Files
-
-New:
-- `supabase/migrations/<ts>_themes.sql`
-- `src/lib/theme/registry.ts`
-- `src/lib/theme/css.ts` (`tokensToCss`)
-- `src/lib/theme.functions.ts`
-- `src/components/admin/ThemeTab.tsx`
-
-Edited:
-- `src/styles.css` (new tokens, `.eyebrow`, shared `@utility` classes)
-- `src/routes/__root.tsx` (loader + `<style id="theme-tokens">`)
-- `src/components/CardBase.tsx`, `src/components/SignalBadge.tsx`, `src/components/ui/button.tsx`, `src/routes/_authenticated/_admin/admin.sales.tsx` (replace hard-coded rounded/uppercase clusters)
-- `AI_PROJECT_HANDOFF.md`
-
-## Verification
-
-1. Editorial unchanged — visually identical to today on `/`, dashboard, brand detail, admin.
-2. View source on a logged-out hard reload shows the populated `<style id="theme-tokens">`; no flash.
-3. Admin → Design: change `--primary` and `--radius-card`, save, set active → reload → changes reflected everywhere including marketing.
-4. Switch to **Playful** → rounded, vibrant, sentence-case labels, pill buttons. Switch back → reverts.
-5. RLS: anon and non-admin authenticated users cannot write `themes`; `getActiveTheme` succeeds for everyone. Supabase linter clean.
-6. `bun run lint` and `bun run build` pass.
+Approve and I'll implement.
